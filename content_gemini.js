@@ -42,30 +42,51 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  * Injects prompt text into Gemini input box and simulates pressing Send
  */
 function injectPromptAndSend(promptText) {
-  // Snapshot existing response state BEFORE injecting new prompt
-  const existingResponses = getGeminiResponseElements();
-  baselineResponseCount = existingResponses.length;
-  baselineResponseText = existingResponses.length > 0 ? (existingResponses[existingResponses.length - 1].innerText?.trim() || "") : "";
-  lastSubmissionTime = Date.now();
+  // Wait for input element readiness (handles freshly opened Gemini tab)
+  let waitAttempts = 0;
+  const maxWait = 20;
 
-  console.log(`[InstaReel-AI] Gemini baseline snapshot: ${baselineResponseCount} messages. Length: ${baselineResponseText.length}`);
+  function waitForEditorThenInject() {
+    const editorEl =
+      document.querySelector('rich-textarea div[contenteditable="true"]') ||
+      document.querySelector('div.ql-editor') ||
+      document.querySelector('rich-textarea p') ||
+      document.querySelector('div[contenteditable="true"]') ||
+      document.querySelector('textarea') ||
+      document.querySelector('div[role="textbox"]');
 
-  // Locate input container in Gemini DOM
-  const editorEl = document.querySelector('rich-textarea div[contenteditable="true"]') ||
-                   document.querySelector('div.ql-editor') ||
-                   document.querySelector('rich-textarea p') ||
-                   document.querySelector('div[contenteditable="true"]') ||
-                   document.querySelector('textarea') ||
-                   document.querySelector('div[role="textbox"]');
+    if (!editorEl && waitAttempts < maxWait) {
+      waitAttempts++;
+      setTimeout(waitForEditorThenInject, 200);
+      return;
+    }
 
-  if (!editorEl) {
-    throw new Error("Could not find Gemini prompt input box. Ensure gemini.google.com is open.");
+    if (!editorEl) {
+      console.error('[InstaReel-AI] Gemini editor not found after waiting.');
+      return;
+    }
+
+    doGeminiInjectAndSubmit(editorEl, promptText);
   }
 
+  // Snapshot baseline BEFORE starting wait
+  const existingResponses = getGeminiResponseElements();
+  baselineResponseCount = existingResponses.length;
+  baselineResponseText = existingResponses.length > 0 ? (existingResponses[existingResponses.length - 1].innerText?.trim() || '') : '';
+  lastSubmissionTime = Date.now();
+
+  console.log(`[InstaReel-AI] Gemini baseline: ${baselineResponseCount} messages, length: ${baselineResponseText.length}`);
+
+  waitForEditorThenInject();
+  return { success: true, status: 'submitted', provider: 'gemini' };
+}
+
+function doGeminiInjectAndSubmit(editorEl, promptText) {
   editorEl.focus();
 
   if (editorEl.tagName.toLowerCase() === 'textarea') {
     editorEl.value = promptText;
+    editorEl.dispatchEvent(new Event('input', { bubbles: true }));
   } else {
     // 1. Clear existing text
     try {
@@ -73,27 +94,19 @@ function injectPromptAndSend(promptText) {
       document.execCommand('delete', false, null);
     } catch (e) {}
 
-    // 2. Dispatch paste event (Quill/Angular editor in Gemini updates on paste)
+    // 2. Paste event (Quill/Angular in Gemini updates on paste)
     let pasted = false;
     try {
       const dt = new DataTransfer();
       dt.setData('text/plain', promptText);
-      const pasteEvt = new ClipboardEvent('paste', {
-        clipboardData: dt,
-        bubbles: true,
-        cancelable: true
-      });
+      const pasteEvt = new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true });
       editorEl.dispatchEvent(pasteEvt);
       pasted = editorEl.textContent.trim().length > 0;
-    } catch (e) {
-      pasted = false;
-    }
+    } catch (e) { pasted = false; }
 
     // 3. Fallback: execCommand insertText
     if (!pasted || !editorEl.textContent.trim()) {
-      try {
-        document.execCommand('insertText', false, promptText);
-      } catch (e) {}
+      try { document.execCommand('insertText', false, promptText); } catch (e) {}
     }
 
     // 4. Final fallback: innerHTML paragraphs
@@ -105,10 +118,7 @@ function injectPromptAndSend(promptText) {
   // Trigger reactive input events for Gemini / Angular
   try {
     editorEl.dispatchEvent(new InputEvent('beforeinput', {
-      bubbles: true,
-      cancelable: true,
-      inputType: 'insertText',
-      data: promptText
+      bubbles: true, cancelable: true, inputType: 'insertText', data: promptText
     }));
   } catch (e) {}
 
@@ -121,64 +131,45 @@ function injectPromptAndSend(promptText) {
     parentRich.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
   }
 
-  // Atomic single-submission helper for Web Components / Angular
-  let submitted = false;
-  let attempts = 0;
-  const maxAttempts = 12;
+  // Wait 300ms for editor to process content, then submit
+  setTimeout(() => trySubmitGeminiOnce(editorEl, 0), 300);
+}
 
-  function trySubmitGeminiOnce() {
-    if (submitted) return;
+function trySubmitGeminiOnce(editorEl, attempts) {
+  const maxAttempts = 20; // 20 × 200ms = 4 seconds of retries
 
-    const sendBtn = document.querySelector('button[aria-label*="Send" i]') ||
-                    document.querySelector('button.send-button') ||
-                    document.querySelector('button[jsname="Q42zjd"]') ||
-                    document.querySelector('.send-button-container button') ||
-                    document.querySelector('button[aria-label="Send message"]') ||
-                    document.querySelector('button[type="submit"]');
+  const sendBtn =
+    document.querySelector('button[aria-label*="Send" i]') ||
+    document.querySelector('button.send-button') ||
+    document.querySelector('button[jsname="Q42zjd"]') ||
+    document.querySelector('.send-button-container button') ||
+    document.querySelector('button[aria-label="Send message"]') ||
+    document.querySelector('button[type="submit"]');
 
-    if (sendBtn && !sendBtn.disabled && sendBtn.getAttribute('aria-disabled') !== 'true') {
-      submitted = true;
-      try {
-        sendBtn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
-        sendBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-        sendBtn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true }));
-        sendBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-        sendBtn.click();
-      } catch (err) {
-        sendBtn.click();
-      }
-      return;
+  if (sendBtn && !sendBtn.disabled && sendBtn.getAttribute('aria-disabled') !== 'true') {
+    try {
+      sendBtn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+      sendBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+      sendBtn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true }));
+      sendBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+      sendBtn.click();
+    } catch (err) {
+      sendBtn.click();
     }
-
-    attempts++;
-    if (attempts < maxAttempts) {
-      setTimeout(trySubmitGeminiOnce, 150);
-    } else if (!submitted) {
-      submitted = true;
-      editorEl.dispatchEvent(new KeyboardEvent('keydown', {
-        key: 'Enter',
-        code: 'Enter',
-        keyCode: 13,
-        which: 13,
-        bubbles: true,
-        cancelable: true
-      }));
-      editorEl.dispatchEvent(new KeyboardEvent('keyup', {
-        key: 'Enter',
-        code: 'Enter',
-        keyCode: 13,
-        which: 13,
-        bubbles: true,
-        cancelable: true
-      }));
-    }
+    console.log(`[InstaReel-AI] Gemini send button clicked on attempt ${attempts + 1}`);
+    return;
   }
 
-  // Trigger submission attempt
-  setTimeout(trySubmitGeminiOnce, 250);
-
-  return { success: true, status: "submitted", provider: "gemini" };
+  if (attempts < maxAttempts) {
+    setTimeout(() => trySubmitGeminiOnce(editorEl, attempts + 1), 200);
+  } else {
+    // Final Enter key fallback
+    console.log('[InstaReel-AI] Gemini send button not found — using Enter key fallback.');
+    editorEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
+    editorEl.dispatchEvent(new KeyboardEvent('keyup',  { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
+  }
 }
+
 
 /**
  * Checks generation status and extracts the latest response text from Gemini

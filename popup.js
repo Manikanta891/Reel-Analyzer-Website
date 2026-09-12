@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (changes.igUsername && document.activeElement !== igUsernameInput) {
         igUsernameInput.value = changes.igUsername.newValue || '';
       }
-      if (changes.reelsData) {
+      if (changes.reelsData || changes.categoriesRegistry) {
         updateSavedCount();
       }
     }
@@ -283,8 +283,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateSavedCount() {
-    chrome.storage.local.get({ reelsData: [] }, (result) => {
-      savedCountEl.innerText = result.reelsData ? result.reelsData.length : 0;
+    chrome.storage.local.get({ reelsData: [], categoriesRegistry: [] }, (result) => {
+      const count = result.reelsData ? result.reelsData.length : 0;
+      savedCountEl.innerText = count;
+      renderCategoryPills(result.categoriesRegistry || []);
     });
   }
 
