@@ -543,11 +543,6 @@ async function handleNextIG() {
 }
 
 /**
- * Universal Category Normalizer — maps raw AI category names to existing categories
- * using token overlap against BASE_CATEGORIES and known keyword clusters.
- */
-const BASE_CATEGORIES = [
-/**
  * Base Starter Domains (Universal high-level anchors — NO hardcoded subdomains)
  * Subdomains are 100% emergent, dynamic, and discovered from the user's reels.
  */
