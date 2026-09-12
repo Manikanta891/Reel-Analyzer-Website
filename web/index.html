@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reel Analyzer - Knowledge Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <header class="top-nav">
+        <div class="brand">
+            <div class="logo"></div>
+            <div class="brand-text">
+                <h1>Reel Analyzer</h1>
+                <span class="subtitle">Knowledge Dashboard</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <input type="text" id="searchInput" placeholder="Search insights, tools, or tags...">
+            <button id="btnSync" class="btn-primary">Sync from Extension</button>
+        </div>
+    </header>
+
+    <div class="layout-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h2>Categories</h2>
+                <ul id="categoryList" class="category-list">
+                    <li class="active"><span class="cat-name">All Reels</span><span class="badge">0</span></li>
+                    <li><span class="cat-name">Technology & AI</span><span class="badge">0</span></li>
+                    <li><span class="cat-name">Finance & Business</span><span class="badge">0</span></li>
+                    <li><span class="cat-name">Fitness & Health</span><span class="badge">0</span></li>
+                    <li><span class="cat-name">Career & Education</span><span class="badge">0</span></li>
+                    <li><span class="cat-name">Design & Creative</span><span class="badge">0</span></li>
+                    <li><span class="cat-name">Productivity & Habits</span><span class="badge">0</span></li>
+                    <li><span class="cat-name">Lifestyle & Hobbies</span><span class="badge">0</span></li>
+                    <li><span class="cat-name">General Insights</span><span class="badge">0</span></li>
+                </ul>
+            </div>
+            
+            <div id="ad-sidebar" class="ad-placeholder sidebar-ad">
+                <span>Advertisement</span>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="tabs">
+                <button class="tab-btn active" data-target="reels">Reels Library</button>
+                <button class="tab-btn" data-target="tools">Tools & Entities Directory</button>
+            </div>
+
+            <div id="ad-banner-top" class="ad-placeholder banner-ad">
+                <span>Advertisement</span>
+            </div>
+
+            <div id="reelsView" class="tab-pane active">
+                <div id="emptyState" class="empty-state">
+                    <div class="empty-icon">📂</div>
+                    <h2>No reels synced yet</h2>
+                    <p>Click <strong>Sync from Extension</strong> to load your knowledge base.</p>
+                </div>
+                
+                <div id="reelGrid" class="reel-grid" style="display: none;">
+                    <!-- Reel cards will be populated here -->
+                </div>
+            </div>
+
+            <div id="toolsView" class="tab-pane">
+                <div class="table-responsive">
+                    <table class="tools-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Mentioned In</th>
+                            </tr>
+                        </thead>
+                        <tbody id="toolsTableBody">
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">No tools or entities extracted yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer>
+        <p>Reel Analyzer v1.1 | Built for personal knowledge management</p>
+    </footer>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

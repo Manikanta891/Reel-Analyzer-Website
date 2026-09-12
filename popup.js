@@ -88,6 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnExportMd = document.getElementById('btnExportMd');
   const btnExportCsv = document.getElementById('btnExportCsv');
   const btnClearData = document.getElementById('btnClearData');
+  const btnExportPlaybookZip = document.getElementById('btnExportPlaybookZip');
+  const btnOpenDashboard = document.getElementById('btnOpenDashboard');
+  const categoryPillsEl = document.getElementById('categoryPills');
 
   // Instagram Source & Auto-Connect Elements
   const igUsernameInput = document.getElementById('igUsername');
@@ -379,11 +382,10 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.runtime.sendMessage({ action: "STOP_BATCH" });
   }
 
-  // Export Handler
+  // Export Handler (legacy CSV / all-in-one Markdown)
   function handleExport(format) {
     chrome.runtime.sendMessage({ action: "EXPORT_DATA", format }, (response) => {
       if (!response || !response.success) return;
-
       const blob = new Blob([response.content], { type: format === 'csv' ? 'text/csv' : 'text/markdown' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -394,14 +396,58 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Playbook ZIP Export — downloads each category file sequentially
+  function handleExportPlaybookZip() {
+    chrome.runtime.sendMessage({ action: "EXPORT_ALL_PLAYBOOKS_ZIP" }, (response) => {
+      if (!response || !response.success) {
+        alert(response?.error || "No reels saved yet.");
+        return;
+      }
+      response.files.forEach((file, i) => {
+        setTimeout(() => {
+          const blob = new Blob([file.content], { type: 'text/markdown' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = file.filename;
+          a.click();
+          URL.revokeObjectURL(url);
+        }, i * 300); // Stagger downloads 300ms apart
+      });
+    });
+  }
+
+  // Open Web Dashboard
+  function handleOpenDashboard() {
+    chrome.runtime.sendMessage({ action: "OPEN_WEB_DASHBOARD" });
+  }
+
   // Clear Storage with Confirmation
   function handleClearData() {
-    if (confirm("Delete all saved summaries from storage?")) {
-      chrome.storage.local.set({ reelsData: [] }, () => {
+    if (confirm("Delete all saved summaries and categories from storage?")) {
+      chrome.runtime.sendMessage({ action: "CLEAR_DATA" }, () => {
         updateSavedCount();
+        renderCategoryPills([]);
         setStatus("Cleared", "idle");
       });
     }
+  }
+
+  // Render dynamic category filter pills
+  function renderCategoryPills(categories) {
+    if (!categoryPillsEl) return;
+    if (!categories || categories.length === 0) {
+      categoryPillsEl.style.display = 'none';
+      return;
+    }
+    categoryPillsEl.style.display = 'flex';
+    categoryPillsEl.innerHTML = '';
+    categories.forEach(cat => {
+      const pill = document.createElement('span');
+      pill.className = 'category-pill';
+      pill.textContent = cat;
+      categoryPillsEl.appendChild(pill);
+    });
   }
 
   function getProviderName(provider) {
@@ -409,4 +455,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (provider === "chatgpt") return "ChatGPT";
     return "Gemini";
   }
+
+  // Wire new buttons
+  if (btnExportPlaybookZip) btnExportPlaybookZip.addEventListener('click', handleExportPlaybookZip);
+  if (btnOpenDashboard) btnOpenDashboard.addEventListener('click', handleOpenDashboard);
 });

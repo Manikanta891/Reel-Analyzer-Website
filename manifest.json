@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Reel Analyzer",
-  "version": "1.0",
-  "description": "Extract Instagram Reels, analyze insights and generate notes with Meta AI, Gemini, or ChatGPT.",
+  "version": "1.1",
+  "description": "Extract Instagram Reels, auto-categorize insights into knowledge playbooks, and analyze with Meta AI, Gemini, or ChatGPT.",
   "permissions": [
     "activeTab",
     "tabs",
@@ -59,6 +59,12 @@
       "matches": ["https://www.meta.ai/*", "https://meta.ai/*"],
       "js": ["content_meta.js"],
       "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["web/index.html", "web/dashboard.css", "web/dashboard.js"],
+      "matches": ["<all_urls>"]
     }
   ]
 }

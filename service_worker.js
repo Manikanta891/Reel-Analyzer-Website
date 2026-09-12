@@ -109,8 +109,41 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "CLEAR_DATA") {
-    chrome.storage.local.set({ reelsData: [] }, () => {
+    chrome.storage.local.set({ reelsData: [], categoriesRegistry: [] }, () => {
       sendResponse({ success: true, message: "Storage cleared." });
+    });
+    return true;
+  }
+
+  if (request.action === "GET_CATEGORIES") {
+    chrome.storage.local.get({ categoriesRegistry: [] }, (res) => {
+      sendResponse({ success: true, categories: res.categoriesRegistry });
+    });
+    return true;
+  }
+
+  if (request.action === "EXPORT_CATEGORY_PLAYBOOK") {
+    exportCategoryPlaybook(request.category).then(res => sendResponse(res));
+    return true;
+  }
+
+  if (request.action === "EXPORT_ALL_PLAYBOOKS_ZIP") {
+    exportAllPlaybooksAsZip().then(res => sendResponse(res));
+    return true;
+  }
+
+  if (request.action === "OPEN_WEB_DASHBOARD") {
+    chrome.storage.local.get({ reelsData: [] }, (res) => {
+      chrome.tabs.create({ url: chrome.runtime.getURL("web/index.html"), active: true }, (tab) => {
+        // Inject data after tab loads
+        setTimeout(() => {
+          chrome.tabs.sendMessage(tab.id, {
+            action: "SYNC_DATA",
+            reelsData: res.reelsData
+          }).catch(() => {});
+        }, 1500);
+      });
+      sendResponse({ success: true });
     });
     return true;
   }
@@ -510,70 +543,171 @@ async function handleNextIG() {
 }
 
 /**
- * Builds either custom or redesigned high-impact prompt for the given reel
+ * Universal Category Normalizer — maps raw AI category names to existing categories
+ * using token overlap against BASE_CATEGORIES and known keyword clusters.
  */
-function buildPromptForReel(reelData, provider = "meta", customPrompt = "") {
-  // If user provided a custom prompt
-  if (customPrompt && customPrompt.trim()) {
-    let userPrompt = customPrompt.trim();
-    if (userPrompt.includes("{url}") || userPrompt.includes("{caption}") || userPrompt.includes("{author}") || userPrompt.includes("{audio}")) {
-      return userPrompt
-        .replace(/\{url\}/g, () => reelData.url || "")
-        .replace(/\{author\}/g, () => reelData.author || "Unknown")
-        .replace(/\{audio\}/g, () => reelData.audioTitle || "Original Audio")
-        .replace(/\{caption\}/g, () => reelData.caption || "");
-    } else {
-      return `${userPrompt}
+const BASE_CATEGORIES = [
+  "Technology & AI",
+  "Finance & Business",
+  "Fitness & Health",
+  "Career & Education",
+  "Design & Creative",
+  "Productivity & Habits",
+  "Lifestyle & Hobbies",
+  "General Insights"
+];
 
-📌 Reel URL: ${reelData.url}
-👤 Author: @${reelData.author}
-🎵 Audio: ${reelData.audioTitle || 'Original Audio'}
+const CLUSTER_MAP = {
+  "Technology & AI":     ["tech","ai","llm","code","coding","software","python","developer","web","cloud","github","app","programming","machine","learning","data","model","api","framework"],
+  "Finance & Business":  ["finance","money","invest","investing","stock","crypto","tax","business","revenue","profit","marketing","sales","startup","estate","wealth","accounting","budget"],
+  "Fitness & Health":    ["fitness","workout","gym","diet","nutrition","health","exercise","muscle","training","yoga","run","cardio","weight","body","sleep","recovery","protein"],
+  "Career & Education":  ["career","job","interview","resume","study","learn","skill","course","degree","college","university","leadership","work","salary","networking"],
+  "Design & Creative":   ["design","ui","ux","figma","css","animation","video","photo","creative","art","color","typography","brand","logo","graphic","illustration"],
+  "Productivity & Habits":["productivity","habit","focus","routine","mindset","goal","time","manage","system","discipline","morning","evening","journal","planning"],
+  "Lifestyle & Hobbies": ["food","cook","recipe","travel","fashion","music","game","gaming","sport","diy","craft","garden","pet","hobby","decor","culture"],
+  "General Insights":    ["quote","motivation","inspire","philosophy","mindfulness","life","general","advice","tip","lesson"]
+};
 
---- REEL CONTENT & CAPTION ---
-${reelData.caption}
-------------------------------`;
-    }
+function normalizeCategory(raw, existingCategories = []) {
+  if (!raw) return "General Insights";
+  const allKnown = [...new Set([...BASE_CATEGORIES, ...existingCategories])];
+
+  // 1. Exact match first
+  for (const known of allKnown) {
+    if (known.toLowerCase() === raw.toLowerCase()) return known;
   }
 
-  // Redesigned Default Prompts
+  // 2. Token overlap against all known categories
+  const rawTokens = raw.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter(t => t.length > 2);
+  for (const known of allKnown) {
+    const knownTokens = known.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/);
+    if (rawTokens.some(t => knownTokens.includes(t))) return known;
+  }
+
+  // 3. Keyword cluster match
+  for (const [cat, keywords] of Object.entries(CLUSTER_MAP)) {
+    if (rawTokens.some(t => keywords.includes(t))) return cat;
+  }
+
+  // 4. Completely new topic — format and accept dynamically
+  return raw.trim().replace(/^\w/, c => c.toUpperCase());
+}
+
+/**
+ * Hashtag & keyword-based fallback categorizer (runs when AI skips YAML block)
+ */
+function fallbackCategorizer(caption, summaryText, existingCategories = []) {
+  const combined = `${caption} ${summaryText}`.toLowerCase();
+  const hashtags = (combined.match(/#(\w+)/g) || []).map(h => h.replace("#", ""));
+
+  // Check hashtags against cluster map first
+  for (const [cat, keywords] of Object.entries(CLUSTER_MAP)) {
+    if (hashtags.some(tag => keywords.includes(tag))) return cat;
+  }
+
+  // Check full text for cluster keywords
+  for (const [cat, keywords] of Object.entries(CLUSTER_MAP)) {
+    if (keywords.some(kw => combined.includes(kw))) return cat;
+  }
+
+  return "General Insights";
+}
+
+/**
+ * Parse YAML-like metadata block from AI response
+ */
+function parseMetadataFromResponse(responseText) {
+  const yamlMatch = responseText.match(/---\s*([\s\S]*?)\s*---/);
+  const meta = { category: null, subject: null, personalUtility: null, entities: null, tags: null };
+  if (!yamlMatch) return meta;
+  const block = yamlMatch[1];
+  const get = (key) => {
+    const m = block.match(new RegExp(`${key}:\\s*([^\\n]+)`, "i"));
+    return m ? m[1].trim() : null;
+  };
+  meta.category = get("Category");
+  meta.subject = get("Subject");
+  meta.personalUtility = get("Personal Utility");
+  meta.entities = get("Entities");
+  meta.tags = get("Tags");
+  return meta;
+}
+
+/**
+ * Builds either custom or default high-impact prompt with Universal YAML metadata envelope
+ */
+async function buildPromptForReel(reelData, provider = "meta", customPrompt = "") {
+  // Load existing categories from storage
+  const existingCategories = await new Promise(resolve => {
+    chrome.storage.local.get({ categoriesRegistry: [] }, res => resolve(res.categoriesRegistry || []));
+  });
+
+  const categoryListStr = existingCategories.length > 0
+    ? `Existing Categories: [${existingCategories.map(c => `"${c}"`).join(", ")}]\nRule: If this Reel fits an existing category above, use that EXACT name. Only create a new category name if the topic is genuinely different.\n\n`
+    : "";
+
+  const metadataBlock = `${categoryListStr}At the very top of your response, output this exact metadata block between --- markers:
+---
+Category: [Choose from existing categories above, OR one of: Technology & AI, Finance & Business, Fitness & Health, Career & Education, Design & Creative, Productivity & Habits, Lifestyle & Hobbies, General Insights, OR a concise new 2-3 word category]
+Subject: [3-7 word punchy title for this specific reel]
+Personal Utility: [1-2 sentences: exactly how this helps the reader and how to apply it immediately]
+Entities: [Comma-separated tools, repos, books, websites, or techniques mentioned. Write "None" if absent]
+Tags: [3-4 lowercase hashtag-style keywords like #ai, #python, #finance]
+---
+
+`;
+
+  // Custom prompt: wrap user text with invisible metadata envelope
+  if (customPrompt && customPrompt.trim()) {
+    let userPrompt = customPrompt.trim()
+      .replace(/\{url\}/g, reelData.url || "")
+      .replace(/\{author\}/g, reelData.author || "Unknown")
+      .replace(/\{audio\}/g, reelData.audioTitle || "Original Audio")
+      .replace(/\{caption\}/g, reelData.caption || "");
+
+    return `${metadataBlock}${userPrompt}`;
+  }
+
+  // Default prompts with metadata envelope prepended
   if (provider === "meta") {
     const captionSnippet = reelData.caption ? reelData.caption.substring(0, 350) : "";
-    return `Summarize and extract key actionable insights from this Instagram Reel: ${reelData.url}
+    return `${metadataBlock}Summarize and extract key actionable insights from this Instagram Reel: ${reelData.url}
 
-🎯 INSTRUCTIONS:
+INSTRUCTIONS:
 1. Core Breakdown: Summarize what this Reel is teaching/demonstrating in 2-3 concise sentences.
-2. Tools & Tech Mentioned: List all libraries, tools, repositories, extensions, prompts, or methods with exact names.
+2. Tools & Resources: List all libraries, tools, repositories, extensions, or methods with exact names.
 3. Step-by-Step Actionables: Extract the exact workflow, code snippet, or implementation steps shown.
-4. Key Takeaway: Why is this valuable and how can a developer/creator apply it immediately?
+4. Key Takeaway: Why is this valuable and how can someone apply it immediately?
 
-Format with clean markdown bullet points, bold keywords, and section headers.${captionSnippet ? `\n\n(Post context: ${captionSnippet})` : ''}`;
-  } else {
-    // Gemini & ChatGPT Prompt
-    return `Analyze and extract actionable knowledge from the following Instagram Reel:
+Format with clean markdown bullet points, bold keywords, and section headers.${captionSnippet ? `\n\n(Post context: ${captionSnippet})` : ""}`;
+  }
 
-📌 Author: @${reelData.author}
-🎵 Audio Track: ${reelData.audioTitle || 'Original Audio'}
-🔗 Reel URL: ${reelData.url}
+  // Gemini & ChatGPT
+  return `${metadataBlock}Analyze and extract actionable knowledge from the following Instagram Reel:
 
---- EXTRACTED POST SCRIPT, CAPTION & TEXT ---
+Author: @${reelData.author}
+Audio Track: ${reelData.audioTitle || "Original Audio"}
+Reel URL: ${reelData.url}
+
+--- CAPTION & CONTENT ---
 ${reelData.caption}
-----------------------------------------------
+-------------------------
 
-🎯 INSTRUCTIONS:
+INSTRUCTIONS:
 1. Core Summary: Explain what is being demonstrated or taught in 2-3 concise sentences.
-2. Tools, Tech & Resources: List every library, tool, extension, repository, prompt, or technique referenced.
-3. Actionable Breakdown: Detail the step-by-step method, architecture, or code shown in the reel.
+2. Tools, Tech & Resources: List every library, tool, extension, repository, or technique referenced.
+3. Actionable Breakdown: Detail the step-by-step method, workflow, or code shown in the reel.
 4. Key Takeaways: Provide high-yield bullet points for immediate practical application.
 
 Format cleanly with markdown section headers, bold terms, and structured lists.`;
-  }
 }
+
 
 /**
  * Formats prompt and dispatches to the selected AI Web Tab (Meta AI, Gemini, or ChatGPT)
  */
 async function handleSendAI(reelData, provider = "meta", customPrompt = "") {
-  const promptText = buildPromptForReel(reelData, provider, customPrompt);
+  const promptText = await buildPromptForReel(reelData, provider, customPrompt);
 
   // Dispatch to specific provider tab
   if (provider === "chatgpt") {
@@ -716,24 +850,180 @@ async function handleStepOnce(autoUnsave = false, provider = "gemini") {
 }
 
 /**
- * Saves item to chrome.storage.local
+ * Saves reel item to chrome.storage.local with enriched categorized metadata
  */
 async function saveReelData(data) {
+  // Parse YAML metadata block from AI response
+  const summaryText = data.summary || data.geminiResponse || "";
+  const meta = parseMetadataFromResponse(summaryText);
+
+  // Load existing categories
+  const existingCategories = await new Promise(resolve => {
+    chrome.storage.local.get({ categoriesRegistry: [] }, res => resolve(res.categoriesRegistry || []));
+  });
+
+  // Normalize or fallback categorize
+  let category = meta.category
+    ? normalizeCategory(meta.category, existingCategories)
+    : fallbackCategorizer(data.caption || "", summaryText, existingCategories);
+
+  // Update categories registry
+  if (!existingCategories.includes(category)) {
+    existingCategories.push(category);
+    await new Promise(resolve => chrome.storage.local.set({ categoriesRegistry: existingCategories }, resolve));
+  }
+
+  // Strip the YAML metadata block from the summary for clean display
+  const cleanSummary = summaryText.replace(/---[\s\S]*?---\n?/, "").trim();
+
+  const enrichedItem = {
+    ...data,
+    category: category,
+    subject: meta.subject || (data.author ? `Reel by @${data.author}` : "Untitled Reel"),
+    personalUtility: meta.personalUtility || "",
+    entities: meta.entities && meta.entities.toLowerCase() !== "none" ? meta.entities : "",
+    tags: meta.tags || "",
+    summary: cleanSummary,
+    geminiResponse: cleanSummary
+  };
+
   return new Promise((resolve) => {
     chrome.storage.local.get({ reelsData: [] }, (result) => {
       const reelsData = result.reelsData || [];
       const existingIdx = reelsData.findIndex(item => item.url === data.url);
       if (existingIdx >= 0) {
-        reelsData[existingIdx] = data;
+        reelsData[existingIdx] = enrichedItem;
       } else {
-        reelsData.push(data);
+        reelsData.push(enrichedItem);
       }
       chrome.storage.local.set({ reelsData }, () => {
-        resolve({ success: true, totalCount: reelsData.length });
+        resolve({ success: true, totalCount: reelsData.length, category: category });
       });
     });
   });
 }
+
+/**
+ * Exports a single consolidated Markdown Playbook for a given category
+ */
+async function exportCategoryPlaybook(category) {
+  return new Promise((resolve) => {
+    chrome.storage.local.get({ reelsData: [] }, (result) => {
+      const all = result.reelsData || [];
+      const reels = category === "All"
+        ? all
+        : all.filter(r => r.category === category);
+
+      if (!reels.length) {
+        resolve({ success: false, error: `No reels found for category: ${category}` });
+        return;
+      }
+
+      const safeName = (category === "All" ? "All_Reels" : category.replace(/[^a-zA-Z0-9]/g, "_"));
+      const dateStr = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+
+      let md = `# ${category === "All" ? "Complete Reel Knowledge Base" : category + " Playbook"}\n`;
+      md += `> Total Reels: ${reels.length} | Exported: ${dateStr}\n\n`;
+
+      // Table of Contents
+      md += `## Table of Contents\n`;
+      reels.forEach((r, i) => {
+        const anchor = (r.subject || `Reel ${i + 1}`).toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, "-");
+        md += `- [${i + 1}. ${r.subject || `Reel by @${r.author}`}](#${anchor}) — @${r.author}\n`;
+      });
+      md += `\n---\n\n`;
+
+      reels.forEach((r, i) => {
+        md += `## ${i + 1}. ${r.subject || `Reel by @${r.author}`}\n\n`;
+        if (r.personalUtility) md += `> **Why it matters:** ${r.personalUtility}\n\n`;
+        md += `- **Category:** ${r.category || "General"}\n`;
+        md += `- **Author:** [@${r.author}](https://www.instagram.com/${r.author}/)\n`;
+        md += `- **Source:** [Original Reel](${r.url})\n`;
+        if (r.entities && r.entities.toLowerCase() !== "none") md += `- **Tools & Entities:** ${r.entities}\n`;
+        if (r.tags) md += `- **Tags:** ${r.tags}\n`;
+        md += `- **Date:** ${r.timestamp ? new Date(r.timestamp).toLocaleDateString() : "Unknown"}\n\n`;
+        if (r.caption && r.caption !== "No text caption found in reel post.") {
+          md += `### Caption\n> ${r.caption.replace(/\n/g, "\n> ").substring(0, 500)}${r.caption.length > 500 ? "..." : ""}\n\n`;
+        }
+        md += `### Summary & Takeaways\n${r.summary || r.geminiResponse || "_No summary extracted_"}\n\n`;
+        md += `---\n\n`;
+      });
+
+      resolve({ success: true, content: md, filename: `${safeName}_Playbook.md`, category: category, count: reels.length });
+    });
+  });
+}
+
+/**
+ * Exports all category playbooks as individual named files in a structured ZIP-like package
+ * (Returns array of {filename, content} for popup to handle downloads)
+ */
+async function exportAllPlaybooksAsZip() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get({ reelsData: [], categoriesRegistry: [] }, async (result) => {
+      const all = result.reelsData || [];
+      const categories = result.categoriesRegistry || [];
+
+      if (!all.length) {
+        resolve({ success: false, error: "No reels saved yet." });
+        return;
+      }
+
+      const files = [];
+
+      // Generate each category playbook
+      for (const cat of categories) {
+        const reels = all.filter(r => r.category === cat);
+        if (!reels.length) continue;
+        const res = await exportCategoryPlaybook(cat);
+        if (res.success) files.push({ filename: res.filename, content: res.content });
+      }
+
+      // Handle uncategorized reels
+      const uncategorized = all.filter(r => !r.category || !categories.includes(r.category));
+      if (uncategorized.length) {
+        const res = await exportCategoryPlaybook("General Insights");
+        if (res.success) files.push({ filename: "General_Insights_Playbook.md", content: res.content });
+      }
+
+      // Generate INDEX.md master table
+      const dateStr = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+      let idx = `# Reel Analyzer Knowledge Base\n> Exported: ${dateStr} | Total Reels: ${all.length}\n\n`;
+      idx += `## Categories\n`;
+      for (const cat of categories) {
+        const count = all.filter(r => r.category === cat).length;
+        if (count > 0) idx += `- **[${cat}]** — ${count} reels → \`${cat.replace(/[^a-zA-Z0-9]/g, "_")}_Playbook.md\`\n`;
+      }
+      idx += `\n---\n\n## All Reels\n\n`;
+      idx += `| # | Subject | Category | Author | Tags |\n|---|---------|----------|--------|------|\n`;
+      all.forEach((r, i) => {
+        idx += `| ${i + 1} | ${r.subject || "Untitled"} | ${r.category || "General"} | @${r.author} | ${r.tags || ""} |\n`;
+      });
+
+      // Tools & Repos Stack
+      const allEntities = all
+        .flatMap(r => (r.entities || "").split(",").map(e => e.trim()))
+        .filter(e => e && e.toLowerCase() !== "none" && e.length > 1);
+      const uniqueEntities = [...new Set(allEntities)];
+      if (uniqueEntities.length) {
+        let toolsMd = `# Tools & Resources Stack\n> Auto-extracted from ${all.length} reels | ${dateStr}\n\n`;
+        toolsMd += `| Tool / Resource | Mentioned In | Category |\n|-----------------|--------------|----------|\n`;
+        uniqueEntities.forEach(entity => {
+          const mentions = all.filter(r => (r.entities || "").includes(entity));
+          const firstMention = mentions[0];
+          toolsMd += `| **${entity}** | [${firstMention?.subject || "Reel"}](${firstMention?.url || ""}) | ${firstMention?.category || "General"} |\n`;
+        });
+        files.push({ filename: "TOOLS_STACK.md", content: toolsMd });
+      }
+
+      files.push({ filename: "INDEX.md", content: idx });
+
+      resolve({ success: true, files: files, totalFiles: files.length, totalReels: all.length });
+    });
+  });
+}
+
+
 
 /**
  * Exports saved data as CSV or Markdown string
