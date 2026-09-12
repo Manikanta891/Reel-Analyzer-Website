@@ -109,21 +109,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "CLEAR_DATA") {
-    chrome.storage.local.set({ reelsData: [], categoriesRegistry: [] }, () => {
+    chrome.storage.local.set({ reelsData: [], categoriesRegistry: [], knowledgeTaxonomy: {} }, () => {
       sendResponse({ success: true, message: "Storage cleared." });
     });
     return true;
   }
 
-  if (request.action === "GET_CATEGORIES") {
-    chrome.storage.local.get({ categoriesRegistry: [] }, (res) => {
-      sendResponse({ success: true, categories: res.categoriesRegistry });
+  if (request.action === "GET_CATEGORIES" || request.action === "GET_TAXONOMY") {
+    getLivingTaxonomy().then(taxonomy => {
+      sendResponse({ success: true, taxonomy: taxonomy, categories: Object.keys(taxonomy) });
     });
     return true;
   }
 
   if (request.action === "EXPORT_CATEGORY_PLAYBOOK") {
-    exportCategoryPlaybook(request.category).then(res => sendResponse(res));
+    exportCategoryPlaybook(request.category, request.subdomain).then(res => sendResponse(res));
     return true;
   }
 
@@ -547,7 +547,12 @@ async function handleNextIG() {
  * using token overlap against BASE_CATEGORIES and known keyword clusters.
  */
 const BASE_CATEGORIES = [
-  "Technology & AI",
+/**
+ * Base Starter Domains (Universal high-level anchors — NO hardcoded subdomains)
+ * Subdomains are 100% emergent, dynamic, and discovered from the user's reels.
+ */
+const BASE_DOMAINS = [
+  "Technology",
   "Finance & Business",
   "Fitness & Health",
   "Career & Education",
@@ -557,75 +562,150 @@ const BASE_CATEGORIES = [
   "General Insights"
 ];
 
-const CLUSTER_MAP = {
-  "Technology & AI":     ["tech","ai","llm","code","coding","software","python","developer","web","cloud","github","app","programming","machine","learning","data","model","api","framework"],
-  "Finance & Business":  ["finance","money","invest","investing","stock","crypto","tax","business","revenue","profit","marketing","sales","startup","estate","wealth","accounting","budget"],
-  "Fitness & Health":    ["fitness","workout","gym","diet","nutrition","health","exercise","muscle","training","yoga","run","cardio","weight","body","sleep","recovery","protein"],
-  "Career & Education":  ["career","job","interview","resume","study","learn","skill","course","degree","college","university","leadership","work","salary","networking"],
-  "Design & Creative":   ["design","ui","ux","figma","css","animation","video","photo","creative","art","color","typography","brand","logo","graphic","illustration"],
-  "Productivity & Habits":["productivity","habit","focus","routine","mindset","goal","time","manage","system","discipline","morning","evening","journal","planning"],
-  "Lifestyle & Hobbies": ["food","cook","recipe","travel","fashion","music","game","gaming","sport","diy","craft","garden","pet","hobby","decor","culture"],
-  "General Insights":    ["quote","motivation","inspire","philosophy","mindfulness","life","general","advice","tip","lesson"]
-};
-
-function normalizeCategory(raw, existingCategories = []) {
-  if (!raw) return "General Insights";
-  const allKnown = [...new Set([...BASE_CATEGORIES, ...existingCategories])];
-
-  // 1. Exact match first
-  for (const known of allKnown) {
-    if (known.toLowerCase() === raw.toLowerCase()) return known;
-  }
-
-  // 2. Token overlap against all known categories
-  const rawTokens = raw.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter(t => t.length > 2);
-  for (const known of allKnown) {
-    const knownTokens = known.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/);
-    if (rawTokens.some(t => knownTokens.includes(t))) return known;
-  }
-
-  // 3. Keyword cluster match
-  for (const [cat, keywords] of Object.entries(CLUSTER_MAP)) {
-    if (rawTokens.some(t => keywords.includes(t))) return cat;
-  }
-
-  // 4. Completely new topic — format and accept dynamically
-  return raw.trim().replace(/^\w/, c => c.toUpperCase());
-}
-
 /**
- * Hashtag & keyword-based fallback categorizer (runs when AI skips YAML block)
+ * Loads the Living Knowledge Taxonomy Tree from storage, seeded with saved reels
  */
-function fallbackCategorizer(caption, summaryText, existingCategories = []) {
-  const combined = `${caption} ${summaryText}`.toLowerCase();
-  const hashtags = (combined.match(/#(\w+)/g) || []).map(h => h.replace("#", ""));
+async function getLivingTaxonomy() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get({ knowledgeTaxonomy: null, reelsData: [] }, (res) => {
+      let tax = res.knowledgeTaxonomy;
+      if (!tax || typeof tax !== "object" || Object.keys(tax).length === 0) {
+        tax = {};
+        BASE_DOMAINS.forEach((d) => {
+          tax[d] = [];
+        });
+      }
 
-  // Check hashtags against cluster map first
-  for (const [cat, keywords] of Object.entries(CLUSTER_MAP)) {
-    if (hashtags.some(tag => keywords.includes(tag))) return cat;
-  }
+      // Rebuild and ensure all saved reels' domains and subdomains are included
+      (res.reelsData || []).forEach((r) => {
+        const d = r.domain || r.category || "General Insights";
+        const s = r.subdomain || "General";
+        if (!tax[d]) tax[d] = [];
+        if (s && s !== "General" && !tax[d].includes(s)) {
+          tax[d].push(s);
+        }
+      });
 
-  // Check full text for cluster keywords
-  for (const [cat, keywords] of Object.entries(CLUSTER_MAP)) {
-    if (keywords.some(kw => combined.includes(kw))) return cat;
-  }
-
-  return "General Insights";
+      resolve(tax);
+    });
+  });
 }
 
 /**
- * Parse YAML-like metadata block from AI response
+ * Dynamic Fuzzy Snapper: snaps raw domain & subdomain against living taxonomy
+ * without rigid hardcoding. If new, registers them dynamically.
+ */
+function snapToTaxonomy(rawDomain, rawSubdomain, taxonomy) {
+  let domain = (rawDomain || "").trim();
+  let subdomain = (rawSubdomain || "").trim();
+
+  if (!domain) domain = "General Insights";
+  if (!subdomain) subdomain = "General";
+
+  const domainKeys = Object.keys(taxonomy);
+
+  // 1. Match Domain (exact or case-insensitive)
+  let matchedDomain = domainKeys.find(
+    (d) => d.toLowerCase() === domain.toLowerCase()
+  );
+
+  // 2. Token overlap match for Domain
+  if (!matchedDomain) {
+    const domainTokens = domain.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter((t) => t.length > 2);
+    matchedDomain = domainKeys.find((d) => {
+      const dTokens = d.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/);
+      return domainTokens.some((t) => dTokens.includes(t));
+    });
+  }
+
+  // If brand new domain, format with Title Case and initialize
+  if (!matchedDomain) {
+    matchedDomain = domain.replace(/^\w/, (c) => c.toUpperCase());
+    if (!taxonomy[matchedDomain]) {
+      taxonomy[matchedDomain] = [];
+    }
+  }
+
+  const existingSubdomains = taxonomy[matchedDomain] || [];
+
+  // 3. Match Subdomain (exact or case-insensitive)
+  let matchedSubdomain = existingSubdomains.find(
+    (s) => s.toLowerCase() === subdomain.toLowerCase()
+  );
+
+  // 4. Token overlap match for Subdomain within this specific Domain
+  if (!matchedSubdomain) {
+    const subTokens = subdomain.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter((t) => t.length > 2);
+    matchedSubdomain = existingSubdomains.find((s) => {
+      const sTokens = s.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/);
+      return subTokens.some((t) => sTokens.includes(t));
+    });
+  }
+
+  // If brand new subdomain, format cleanly and add to domain
+  if (!matchedSubdomain) {
+    matchedSubdomain = subdomain.replace(/^\w/, (c) => c.toUpperCase());
+    if (!existingSubdomains.includes(matchedSubdomain)) {
+      existingSubdomains.push(matchedSubdomain);
+    }
+  }
+
+  return { domain: matchedDomain, subdomain: matchedSubdomain };
+}
+
+/**
+ * Fallback categorizer if AI omits YAML block completely
+ */
+function fallbackCategorizer(caption, summaryText) {
+  const combined = `${caption} ${summaryText}`.toLowerCase();
+  
+  // High-level fallback domain detection
+  if (/code|coding|devops|docker|kubernetes|python|javascript|react|api|backend|frontend|ai|llm|software|github/.test(combined)) {
+    return { domain: "Technology", subdomain: "General Tech" };
+  }
+  if (/fitness|workout|gym|diet|nutrition|health|exercise|muscle|training|yoga/.test(combined)) {
+    return { domain: "Fitness & Health", subdomain: "Training & Health" };
+  }
+  if (/money|invest|stock|crypto|finance|business|revenue|profit|startup|sales/.test(combined)) {
+    return { domain: "Finance & Business", subdomain: "Finance & Business" };
+  }
+  if (/career|job|interview|resume|study|learn|degree|college|salary/.test(combined)) {
+    return { domain: "Career & Education", subdomain: "Career Growth" };
+  }
+  if (/design|ui|ux|figma|css|animation|video|photo|creative|art|logo/.test(combined)) {
+    return { domain: "Design & Creative", subdomain: "Creative Design" };
+  }
+  if (/habit|focus|routine|mindset|productivity|goal|time management|discipline/.test(combined)) {
+    return { domain: "Productivity & Habits", subdomain: "Habits & Focus" };
+  }
+
+  return { domain: "General Insights", subdomain: "General" };
+}
+
+/**
+ * Parse YAML-like metadata block from AI response supporting Domain and Subdomain
  */
 function parseMetadataFromResponse(responseText) {
   const yamlMatch = responseText.match(/---\s*([\s\S]*?)\s*---/);
-  const meta = { category: null, subject: null, personalUtility: null, entities: null, tags: null };
+  const meta = {
+    domain: null,
+    subdomain: null,
+    category: null,
+    subject: null,
+    personalUtility: null,
+    entities: null,
+    tags: null
+  };
+
   if (!yamlMatch) return meta;
   const block = yamlMatch[1];
   const get = (key) => {
     const m = block.match(new RegExp(`${key}:\\s*([^\\n]+)`, "i"));
     return m ? m[1].trim() : null;
   };
-  meta.category = get("Category");
+
+  meta.domain = get("Domain") || get("Category");
+  meta.subdomain = get("Subdomain") || get("Sub-domain") || get("Topic") || get("Subcategory");
   meta.subject = get("Subject");
   meta.personalUtility = get("Personal Utility");
   meta.entities = get("Entities");
@@ -634,35 +714,39 @@ function parseMetadataFromResponse(responseText) {
 }
 
 /**
- * Loads all active categories by combining BASE_CATEGORIES + dynamic registry + existing reels
- */
-async function getAllActiveCategories() {
-  return new Promise((resolve) => {
-    chrome.storage.local.get({ categoriesRegistry: [], reelsData: [] }, (res) => {
-      const fromRegistry = res.categoriesRegistry || [];
-      const fromReels = (res.reelsData || []).map((r) => r.category).filter(Boolean);
-      const combined = [...new Set([...BASE_CATEGORIES, ...fromRegistry, ...fromReels])];
-      resolve(combined);
-    });
-  });
-}
-
-/**
- * Builds either custom or default high-impact prompt with Universal YAML metadata envelope
+ * Builds high-impact prompt with Living Taxonomy Knowledge Tree injection
  */
 async function buildPromptForReel(reelData, provider = "meta", customPrompt = "") {
-  // Load all existing & base categories from storage
-  const allCategories = await getAllActiveCategories();
+  const taxonomy = await getLivingTaxonomy();
 
-  const categoryListStr = `Available Categories:\n[${allCategories.map((c) => `"${c}"`).join(", ")}]\nRule: If this Reel fits an existing category above, use that EXACT category name. Only create a new 2-3 word category name if the topic is genuinely different.\n\n`;
+  // Format existing living knowledge tree
+  const treeLines = [];
+  for (const [dom, subs] of Object.entries(taxonomy)) {
+    if (subs && subs.length > 0) {
+      treeLines.push(`- ${dom}: [${subs.map((s) => `"${s}"`).join(", ")}]`);
+    } else {
+      treeLines.push(`- ${dom}`);
+    }
+  }
 
-  const metadataBlock = `${categoryListStr}At the very top of your response, output this exact metadata block between --- markers:
+  const taxonomyStr = `CURRENT KNOWLEDGE TAXONOMY (DOMAINS & SUBDOMAINS):
+${treeLines.join("\n")}
+
+CLASSIFICATION RULES:
+1. Domain: The broad life/work field (e.g., Technology, Finance & Business, Fitness & Health, Culinary & Food, Design & Creative, Career & Education, Productivity & Habits, Lifestyle & Hobbies, General Insights, or a clean new domain).
+2. Subdomain: The exact specialization or sub-topic (e.g. under Technology: "DevOps & Cloud", "Frontend & UI", "AI & LLMs", "Backend & APIs", "Mobile Dev"; under Fitness: "Strength Training", "Nutrition").
+3. Rule: If this Reel fits an existing Domain & Subdomain above, use the EXACT names. If it's a new specialization under an existing Domain, keep that Domain and define a concise 2-3 word Subdomain. Only create a new Domain if it represents a completely separate field.
+
+`;
+
+  const metadataBlock = `${taxonomyStr}At the very top of your response, output this exact metadata block between --- markers:
 ---
-Category: [Choose the best matching category from Available Categories above, or define a new concise category]
+Domain: [Broad domain name]
+Subdomain: [Precise specialization/sub-topic]
 Subject: [3-7 word punchy title for this specific reel]
-Personal Utility: [1-2 sentences: exactly how this helps the reader and how to apply it immediately]
-Entities: [Comma-separated tools, repos, books, websites, or techniques mentioned. Write "None" if absent]
-Tags: [3-4 lowercase hashtag-style keywords like #ai, #python, #finance]
+Personal Utility: [1-2 sentences: why it matters and how to apply it immediately]
+Entities: [Comma-separated tools, repos, books, websites, or techniques mentioned, or "None"]
+Tags: [3-4 lowercase hashtag-style keywords like #ai, #python, #docker]
 ---
 
 `;
@@ -860,36 +944,40 @@ async function handleStepOnce(autoUnsave = false, provider = "gemini") {
 }
 
 /**
- * Saves reel item to chrome.storage.local with enriched categorized metadata
+ * Saves reel item to chrome.storage.local with enriched Domain & Subdomain metadata
  */
 async function saveReelData(data) {
-  // Parse YAML metadata block from AI response
   const summaryText = data.summary || data.geminiResponse || "";
   const meta = parseMetadataFromResponse(summaryText);
+  const taxonomy = await getLivingTaxonomy();
 
-  // Load all existing & base categories
-  const existingCategories = await getAllActiveCategories();
+  let domain = meta.domain;
+  let subdomain = meta.subdomain;
 
-  // Normalize or fallback categorize
-  let category = meta.category
-    ? normalizeCategory(meta.category, existingCategories)
-    : fallbackCategorizer(data.caption || "", summaryText, existingCategories);
+  if (!domain || !subdomain) {
+    const fallback = fallbackCategorizer(data.caption || "", summaryText);
+    domain = domain || fallback.domain;
+    subdomain = subdomain || fallback.subdomain;
+  }
 
-  // Update categories registry if not present
-  chrome.storage.local.get({ categoriesRegistry: [] }, (res) => {
-    const reg = res.categoriesRegistry || [];
-    if (!reg.includes(category)) {
-      reg.push(category);
-      chrome.storage.local.set({ categoriesRegistry: reg });
-    }
+  // Snap to taxonomy or dynamically register
+  const snapped = snapToTaxonomy(domain, subdomain, taxonomy);
+  domain = snapped.domain;
+  subdomain = snapped.subdomain;
+
+  // Persist updated living taxonomy to storage
+  await new Promise((resolve) => {
+    chrome.storage.local.set({ knowledgeTaxonomy: taxonomy }, resolve);
   });
 
-  // Strip the YAML metadata block from the summary for clean display
+  // Strip YAML metadata block from summary for clean display
   const cleanSummary = summaryText.replace(/---[\s\S]*?---\n?/, "").trim();
 
   const enrichedItem = {
     ...data,
-    category: category,
+    domain: domain,
+    subdomain: subdomain,
+    category: `${domain} - ${subdomain}`,
     subject: meta.subject || (data.author ? `Reel by @${data.author}` : "Untitled Reel"),
     personalUtility: meta.personalUtility || "",
     entities: meta.entities && meta.entities.toLowerCase() !== "none" ? meta.entities : "",
@@ -901,128 +989,163 @@ async function saveReelData(data) {
   return new Promise((resolve) => {
     chrome.storage.local.get({ reelsData: [] }, (result) => {
       const reelsData = result.reelsData || [];
-      const existingIdx = reelsData.findIndex(item => item.url === data.url);
+      const existingIdx = reelsData.findIndex((item) => item.url === data.url);
       if (existingIdx >= 0) {
         reelsData[existingIdx] = enrichedItem;
       } else {
         reelsData.push(enrichedItem);
       }
       chrome.storage.local.set({ reelsData }, () => {
-        resolve({ success: true, totalCount: reelsData.length, category: category });
+        resolve({
+          success: true,
+          totalCount: reelsData.length,
+          domain: domain,
+          subdomain: subdomain,
+          category: enrichedItem.category
+        });
       });
     });
   });
 }
 
 /**
- * Exports a single consolidated Markdown Playbook for a given category
+ * Exports a consolidated Markdown Playbook for a specific Domain or Subdomain
  */
-async function exportCategoryPlaybook(category) {
+async function exportCategoryPlaybook(domainOrCategory, optionalSubdomain = null) {
   return new Promise((resolve) => {
     chrome.storage.local.get({ reelsData: [] }, (result) => {
       const all = result.reelsData || [];
-      const reels = category === "All"
-        ? all
-        : all.filter(r => r.category === category);
+      
+      let reels = all;
+      let title = "Complete Knowledge Base";
+      let safeFilename = "All_Reels_Playbook";
+
+      if (domainOrCategory && domainOrCategory !== "All") {
+        if (optionalSubdomain) {
+          reels = all.filter(r => (r.domain === domainOrCategory || r.category === domainOrCategory) && r.subdomain === optionalSubdomain);
+          title = `${domainOrCategory} - ${optionalSubdomain} Playbook`;
+          safeFilename = `${domainOrCategory}_${optionalSubdomain}`.replace(/[^a-zA-Z0-9]/g, "_");
+        } else {
+          reels = all.filter(r => (r.domain === domainOrCategory || r.category === domainOrCategory || (r.category && r.category.startsWith(domainOrCategory))));
+          title = `${domainOrCategory} Playbook`;
+          safeFilename = `${domainOrCategory}`.replace(/[^a-zA-Z0-9]/g, "_");
+        }
+      }
 
       if (!reels.length) {
-        resolve({ success: false, error: `No reels found for category: ${category}` });
+        resolve({ success: false, error: `No reels found for ${domainOrCategory}` });
         return;
       }
 
-      const safeName = (category === "All" ? "All_Reels" : category.replace(/[^a-zA-Z0-9]/g, "_"));
       const dateStr = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-
-      let md = `# ${category === "All" ? "Complete Reel Knowledge Base" : category + " Playbook"}\n`;
-      md += `> Total Reels: ${reels.length} | Exported: ${dateStr}\n\n`;
-
-      // Table of Contents
-      md += `## Table of Contents\n`;
-      reels.forEach((r, i) => {
-        const anchor = (r.subject || `Reel ${i + 1}`).toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, "-");
-        md += `- [${i + 1}. ${r.subject || `Reel by @${r.author}`}](#${anchor}) — @${r.author}\n`;
+      
+      // Group reels by Subdomain
+      const grouped = {};
+      reels.forEach(r => {
+        const sub = r.subdomain || "General";
+        if (!grouped[sub]) grouped[sub] = [];
+        grouped[sub].push(r);
       });
+
+      let md = `# ${title}\n`;
+      md += `> Total Reels: ${reels.length} | Subdomains: ${Object.keys(grouped).join(", ")} | Exported: ${dateStr}\n\n`;
+
+      // Table of Contents Grouped by Subdomain
+      md += `## Table of Contents\n`;
+      for (const [sub, subReels] of Object.entries(grouped)) {
+        md += `### ${sub} (${subReels.length})\n`;
+        subReels.forEach((r, i) => {
+          const anchor = (r.subject || `Reel ${i + 1}`).toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, "-");
+          md += `- [${r.subject || `Reel by @${r.author}`}](#${anchor}) — @${r.author}\n`;
+        });
+      }
       md += `\n---\n\n`;
 
-      reels.forEach((r, i) => {
-        md += `## ${i + 1}. ${r.subject || `Reel by @${r.author}`}\n\n`;
-        if (r.personalUtility) md += `> **Why it matters:** ${r.personalUtility}\n\n`;
-        md += `- **Category:** ${r.category || "General"}\n`;
-        md += `- **Author:** [@${r.author}](https://www.instagram.com/${r.author}/)\n`;
-        md += `- **Source:** [Original Reel](${r.url})\n`;
-        if (r.entities && r.entities.toLowerCase() !== "none") md += `- **Tools & Entities:** ${r.entities}\n`;
-        if (r.tags) md += `- **Tags:** ${r.tags}\n`;
-        md += `- **Date:** ${r.timestamp ? new Date(r.timestamp).toLocaleDateString() : "Unknown"}\n\n`;
-        if (r.caption && r.caption !== "No text caption found in reel post.") {
-          md += `### Caption\n> ${r.caption.replace(/\n/g, "\n> ").substring(0, 500)}${r.caption.length > 500 ? "..." : ""}\n\n`;
-        }
-        md += `### Summary & Takeaways\n${r.summary || r.geminiResponse || "_No summary extracted_"}\n\n`;
-        md += `---\n\n`;
-      });
+      // Content grouped by Subdomain
+      for (const [sub, subReels] of Object.entries(grouped)) {
+        md += `## 📁 Subdomain: ${sub}\n\n`;
+        subReels.forEach((r, i) => {
+          md += `### ${r.subject || `Reel by @${r.author}`}\n\n`;
+          if (r.personalUtility) md += `> **Why it matters:** ${r.personalUtility}\n\n`;
+          md += `- **Domain:** ${r.domain || "General"}\n`;
+          md += `- **Subdomain:** ${r.subdomain || "General"}\n`;
+          md += `- **Author:** [@${r.author}](https://www.instagram.com/${r.author}/)\n`;
+          md += `- **Source:** [Original Reel](${r.url})\n`;
+          if (r.entities && r.entities.toLowerCase() !== "none") md += `- **Entities & Tools:** ${r.entities}\n`;
+          if (r.tags) md += `- **Tags:** ${r.tags}\n`;
+          md += `- **Date:** ${r.timestamp ? new Date(r.timestamp).toLocaleDateString() : "Unknown"}\n\n`;
+          if (r.caption && r.caption !== "No text caption found in reel post.") {
+            md += `#### Caption\n> ${r.caption.replace(/\n/g, "\n> ").substring(0, 500)}${r.caption.length > 500 ? "..." : ""}\n\n`;
+          }
+          md += `#### Summary & Key Takeaways\n${r.summary || r.geminiResponse || "_No summary extracted_"}\n\n`;
+          md += `---\n\n`;
+        });
+      }
 
-      resolve({ success: true, content: md, filename: `${safeName}_Playbook.md`, category: category, count: reels.length });
+      resolve({ success: true, content: md, filename: `${safeFilename}_Playbook.md`, count: reels.length });
     });
   });
 }
 
 /**
- * Exports all category playbooks as individual named files in a structured ZIP-like package
- * (Returns array of {filename, content} for popup to handle downloads)
+ * Exports all Domain playbooks in a structured ZIP-ready package
  */
 async function exportAllPlaybooksAsZip() {
   return new Promise((resolve) => {
-    chrome.storage.local.get({ reelsData: [], categoriesRegistry: [] }, async (result) => {
+    chrome.storage.local.get({ reelsData: [] }, async (result) => {
       const all = result.reelsData || [];
-      const categories = result.categoriesRegistry || [];
-
       if (!all.length) {
         resolve({ success: false, error: "No reels saved yet." });
         return;
       }
 
+      const taxonomy = await getLivingTaxonomy();
       const files = [];
 
-      // Generate each category playbook
-      for (const cat of categories) {
-        const reels = all.filter(r => r.category === cat);
-        if (!reels.length) continue;
-        const res = await exportCategoryPlaybook(cat);
-        if (res.success) files.push({ filename: res.filename, content: res.content });
+      // Find all distinct domains in saved data
+      const distinctDomains = [...new Set(all.map(r => r.domain || "General Insights"))];
+
+      for (const dom of distinctDomains) {
+        const res = await exportCategoryPlaybook(dom);
+        if (res.success) {
+          files.push({ filename: res.filename, content: res.content });
+        }
       }
 
-      // Handle uncategorized reels
-      const uncategorized = all.filter(r => !r.category || !categories.includes(r.category));
-      if (uncategorized.length) {
-        const res = await exportCategoryPlaybook("General Insights");
-        if (res.success) files.push({ filename: "General_Insights_Playbook.md", content: res.content });
-      }
-
-      // Generate INDEX.md master table
+      // Generate Master INDEX.md
       const dateStr = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-      let idx = `# Reel Analyzer Knowledge Base\n> Exported: ${dateStr} | Total Reels: ${all.length}\n\n`;
-      idx += `## Categories\n`;
-      for (const cat of categories) {
-        const count = all.filter(r => r.category === cat).length;
-        if (count > 0) idx += `- **[${cat}]** — ${count} reels → \`${cat.replace(/[^a-zA-Z0-9]/g, "_")}_Playbook.md\`\n`;
+      let idx = `# Reel Analyzer Knowledge Base (Master Index)\n> Exported: ${dateStr} | Total Reels: ${all.length}\n\n`;
+      idx += `## Knowledge Taxonomy & Playbooks\n\n`;
+
+      for (const dom of distinctDomains) {
+        const domReels = all.filter(r => (r.domain || "General Insights") === dom);
+        const subList = [...new Set(domReels.map(r => r.subdomain || "General"))];
+        idx += `### 📘 [${dom}](${dom.replace(/[^a-zA-Z0-9]/g, "_")}_Playbook.md) — ${domReels.length} reels\n`;
+        subList.forEach(sub => {
+          const subCount = domReels.filter(r => (r.subdomain || "General") === sub).length;
+          idx += `  - **${sub}**: ${subCount} reels\n`;
+        });
+        idx += `\n`;
       }
-      idx += `\n---\n\n## All Reels\n\n`;
-      idx += `| # | Subject | Category | Author | Tags |\n|---|---------|----------|--------|------|\n`;
+
+      idx += `---\n\n## All Saved Reels\n\n`;
+      idx += `| # | Subject | Domain | Subdomain | Author | Tags |\n|---|---------|--------|-----------|--------|------|\n`;
       all.forEach((r, i) => {
-        idx += `| ${i + 1} | ${r.subject || "Untitled"} | ${r.category || "General"} | @${r.author} | ${r.tags || ""} |\n`;
+        idx += `| ${i + 1} | ${r.subject || "Untitled"} | ${r.domain || "General"} | ${r.subdomain || "General"} | @${r.author} | ${r.tags || ""} |\n`;
       });
 
-      // Tools & Repos Stack
+      // Tools & Entities Stack
       const allEntities = all
         .flatMap(r => (r.entities || "").split(",").map(e => e.trim()))
         .filter(e => e && e.toLowerCase() !== "none" && e.length > 1);
       const uniqueEntities = [...new Set(allEntities)];
       if (uniqueEntities.length) {
         let toolsMd = `# Tools & Resources Stack\n> Auto-extracted from ${all.length} reels | ${dateStr}\n\n`;
-        toolsMd += `| Tool / Resource | Mentioned In | Category |\n|-----------------|--------------|----------|\n`;
+        toolsMd += `| Tool / Resource | Domain | Subdomain | Mentioned In |\n|-----------------|--------|-----------|--------------|\n`;
         uniqueEntities.forEach(entity => {
           const mentions = all.filter(r => (r.entities || "").includes(entity));
-          const firstMention = mentions[0];
-          toolsMd += `| **${entity}** | [${firstMention?.subject || "Reel"}](${firstMention?.url || ""}) | ${firstMention?.category || "General"} |\n`;
+          const first = mentions[0];
+          toolsMd += `| **${entity}** | ${first?.domain || "General"} | ${first?.subdomain || "General"} | [${first?.subject || "Reel"}](${first?.url || ""}) |\n`;
         });
         files.push({ filename: "TOOLS_STACK.md", content: toolsMd });
       }

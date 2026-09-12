@@ -487,3 +487,75 @@ footer {
         grid-template-columns: 1fr;
     }
 }
+
+/* Subdomain Filter Bar */
+.subdomain-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.subdomain-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 0.25rem;
+}
+
+.subdomain-pill {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.subdomain-pill:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+}
+
+.subdomain-pill.active {
+    background: var(--accent-gradient);
+    color: #ffffff;
+    border-color: transparent;
+    font-weight: 600;
+}
+
+/* Card Taxonomy Header */
+.card-tax-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.subdomain-chip {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    background-color: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+}
+
+.subdomain-chip.sm {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+}

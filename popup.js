@@ -283,10 +283,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateSavedCount() {
-    chrome.storage.local.get({ reelsData: [], categoriesRegistry: [] }, (result) => {
-      const count = result.reelsData ? result.reelsData.length : 0;
-      savedCountEl.innerText = count;
-      renderCategoryPills(result.categoriesRegistry || []);
+    chrome.storage.local.get({ reelsData: [], knowledgeTaxonomy: {} }, (result) => {
+      const reels = result.reelsData || [];
+      savedCountEl.innerText = reels.length;
+
+      // Group domains from saved reels
+      const domainCounts = {};
+      reels.forEach(r => {
+        const d = r.domain || r.category || "General";
+        domainCounts[d] = (domainCounts[d] || 0) + 1;
+      });
+
+      renderDomainPills(domainCounts);
     });
   }
 
@@ -426,28 +434,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Clear Storage with Confirmation
   function handleClearData() {
-    if (confirm("Delete all saved summaries and categories from storage?")) {
+    if (confirm("Delete all saved summaries and taxonomy from storage?")) {
       chrome.runtime.sendMessage({ action: "CLEAR_DATA" }, () => {
         updateSavedCount();
-        renderCategoryPills([]);
+        renderDomainPills({});
         setStatus("Cleared", "idle");
       });
     }
   }
 
-  // Render dynamic category filter pills
-  function renderCategoryPills(categories) {
+  // Render dynamic domain filter pills with counts
+  function renderDomainPills(domainCounts) {
     if (!categoryPillsEl) return;
-    if (!categories || categories.length === 0) {
+    const entries = Object.entries(domainCounts);
+    if (entries.length === 0) {
       categoryPillsEl.style.display = 'none';
       return;
     }
     categoryPillsEl.style.display = 'flex';
     categoryPillsEl.innerHTML = '';
-    categories.forEach(cat => {
+    entries.forEach(([dom, count]) => {
       const pill = document.createElement('span');
       pill.className = 'category-pill';
-      pill.textContent = cat;
+      pill.textContent = `${dom} (${count})`;
       categoryPillsEl.appendChild(pill);
     });
   }

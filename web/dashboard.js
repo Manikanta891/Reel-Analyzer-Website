@@ -1,50 +1,37 @@
 ﻿/**
  * Reel Analyzer - Web Knowledge Dashboard
- * Data source: chrome.storage.local (read as extension page)
- * Fallback: localStorage (for GitHub Pages / Vercel deploy)
+ * Full Domain & Subdomain Emergent Taxonomy Architecture
+ * Data Source: chrome.storage.local (Extension Page) & localStorage (Web Mirror)
  */
 
 // ─── State ─────────────────────────────────────────────────────────────────
 let allReels = [];
-let activeCategory = 'All Reels';
+let activeDomain = 'All Domains';
+let activeSubdomain = 'All';
 let currentSearch = '';
-let activeTab = 'reels';
+let activeTab = 'reels'; // 'reels' or 'tools'
 
-// ─── Category Normalizer ────────────────────────────────────────────────────
-const BASE_CATEGORIES = [
-  'Technology & AI', 'Finance & Business', 'Fitness & Health',
-  'Career & Education', 'Design & Creative', 'Productivity & Habits',
-  'Lifestyle & Hobbies', 'General Insights'
-];
+// ─── Normalizer Helper ──────────────────────────────────────────────────────
+function getNormalizedItem(r) {
+  let domain = r.domain || r.category || 'General Insights';
+  let subdomain = r.subdomain || 'General';
 
-const CLUSTER_MAP = {
-  'Technology & AI':      ['tech','ai','llm','code','coding','software','python','developer','web','cloud','github','app','programming','machine','learning','data','model','api','framework'],
-  'Finance & Business':   ['finance','money','invest','investing','stock','crypto','tax','business','revenue','profit','marketing','sales','startup','estate','wealth','accounting','budget'],
-  'Fitness & Health':     ['fitness','workout','gym','diet','nutrition','health','exercise','muscle','training','yoga','run','cardio','weight','body','sleep','recovery','protein'],
-  'Career & Education':   ['career','job','interview','resume','study','learn','skill','course','degree','college','university','leadership','work','salary','networking'],
-  'Design & Creative':    ['design','ui','ux','figma','css','animation','video','photo','creative','art','color','typography','brand','logo','graphic','illustration'],
-  'Productivity & Habits':['productivity','habit','focus','routine','mindset','goal','time','manage','system','discipline','morning','evening','journal','planning'],
-  'Lifestyle & Hobbies':  ['food','cook','recipe','travel','fashion','music','game','gaming','sport','diy','craft','garden','pet','hobby','decor','culture'],
-  'General Insights':     ['quote','motivation','inspire','philosophy','mindfulness','life','general','advice','tip','lesson']
-};
+  // If old-format category like "Technology - DevOps & Cloud", split cleanly
+  if ((!r.domain || !r.subdomain) && r.category && r.category.includes(' - ')) {
+    const parts = r.category.split(' - ');
+    domain = parts[0].trim();
+    subdomain = parts[1].trim();
+  }
 
-function normalizeCategory(raw) {
-  if (!raw) return 'General Insights';
-  const tokens = raw.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(t => t.length > 2);
-  // Exact match
-  for (const cat of BASE_CATEGORIES) {
-    if (cat.toLowerCase() === raw.toLowerCase()) return cat;
-  }
-  // Token overlap vs known
-  for (const cat of BASE_CATEGORIES) {
-    const catTokens = cat.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/);
-    if (tokens.some(t => catTokens.includes(t))) return cat;
-  }
-  // Keyword cluster
-  for (const [cat, keywords] of Object.entries(CLUSTER_MAP)) {
-    if (tokens.some(t => keywords.includes(t))) return cat;
-  }
-  return raw.trim().replace(/^\w/, c => c.toUpperCase());
+  return {
+    ...r,
+    _domain: domain.trim(),
+    _subdomain: subdomain.trim()
+  };
+}
+
+function normalizeAllReels() {
+  allReels = allReels.map(getNormalizedItem);
 }
 
 // ─── Data Loading ───────────────────────────────────────────────────────────
@@ -54,41 +41,31 @@ function loadData() {
     chrome.storage.local.get({ reelsData: [] }, (result) => {
       allReels = Array.isArray(result.reelsData) ? result.reelsData : [];
       normalizeAllReels();
-      // Also persist to localStorage as fallback mirror
-      try { localStorage.setItem('reelAnalyzerData', JSON.stringify(allReels)); } catch(e) {}
+      try { localStorage.setItem('reelAnalyzerData', JSON.stringify(allReels)); } catch (e) {}
       render();
       showSyncStatus(`Loaded ${allReels.length} reel${allReels.length !== 1 ? 's' : ''} from extension.`);
     });
     return;
   }
 
-  // Priority 2: localStorage fallback (GitHub Pages / Vercel)
+  // Priority 2: localStorage fallback (GitHub Pages / Vercel deploy)
   try {
     const raw = localStorage.getItem('reelAnalyzerData') || localStorage.getItem('reelsData');
     if (raw) {
       allReels = JSON.parse(raw) || [];
       normalizeAllReels();
     }
-  } catch(e) {
+  } catch (e) {
     console.error('[Reel Analyzer] Failed to load from localStorage:', e);
   }
   render();
 }
 
 function saveToLocalStorage() {
-  try { localStorage.setItem('reelAnalyzerData', JSON.stringify(allReels)); } catch(e) {}
+  try { localStorage.setItem('reelAnalyzerData', JSON.stringify(allReels)); } catch (e) {}
 }
 
-function normalizeAllReels() {
-  allReels = allReels.map(r => ({
-    ...r,
-    _normCat: normalizeCategory(r.category || r.normalizedCategory)
-  }));
-}
-
-// ─── Extension Sync (message listener from service worker) ──────────────────
-// The service worker sends a chrome.tabs.sendMessage — extension pages receive
-// this via chrome.runtime.onMessage (NOT window.addEventListener('message'))
+// ─── Extension Message Sync Listener ────────────────────────────────────────
 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'SYNC_DATA' && Array.isArray(request.reelsData)) {
@@ -99,7 +76,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
   });
 }
 
-// Also support postMessage for GitHub Pages embed scenario
+// postMessage fallback
 window.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'REEL_ANALYZER_SYNC' && Array.isArray(event.data.data)) {
     mergeAndSync(event.data.data);
@@ -107,8 +84,8 @@ window.addEventListener('message', (event) => {
 });
 
 function mergeAndSync(incoming) {
-  const existingUrls = new Set(allReels.map(r => r.url));
-  const newReels = incoming.filter(r => r.url && !existingUrls.has(r.url));
+  const existingUrls = new Set(allReels.map((r) => r.url));
+  const newReels = incoming.filter((r) => r.url && !existingUrls.has(r.url));
   if (newReels.length > 0) {
     allReels = [...newReels, ...allReels];
     normalizeAllReels();
@@ -116,26 +93,25 @@ function mergeAndSync(incoming) {
     render();
     showSyncStatus(`✓ Synced ${newReels.length} new reel${newReels.length !== 1 ? 's' : ''}!`);
   } else {
-    showSyncStatus('✓ Already up to date.');
+    showSyncStatus('✓ Knowledge base is up to date.');
   }
 }
 
-// ─── Event Setup ─────────────────────────────────────────────────────────────
+// ─── Initialization & Event Handlers ────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
 
-  // Sync button
+  // Sync Button
   const btnSync = document.getElementById('btnSync');
   if (btnSync) {
     btnSync.addEventListener('click', () => {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        // Re-read directly from chrome.storage.local
         chrome.storage.local.get({ reelsData: [] }, (result) => {
           allReels = Array.isArray(result.reelsData) ? result.reelsData : [];
           normalizeAllReels();
           saveToLocalStorage();
           render();
-          showSyncStatus(`✓ Synced ${allReels.length} reel${allReels.length !== 1 ? 's' : ''}.`);
+          showSyncStatus(`✓ Refreshed ${allReels.length} reel${allReels.length !== 1 ? 's' : ''}.`);
         });
       } else {
         showSyncStatus('Open this dashboard from the Reel Analyzer extension side panel to sync data.');
@@ -143,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Search
+  // Live Search Input
   const searchInput = document.getElementById('searchInput');
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
@@ -152,50 +128,60 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Tab: Reels
+  // Tabs: Reels vs Tools Directory
   const btnTabReels = document.getElementById('btnTabReels');
+  const btnTabTools = document.getElementById('btnTabTools');
+
   if (btnTabReels) {
     btnTabReels.addEventListener('click', () => {
       activeTab = 'reels';
       btnTabReels.classList.add('active');
-      const btnTabTools = document.getElementById('btnTabTools');
       if (btnTabTools) btnTabTools.classList.remove('active');
       render();
     });
   }
 
-  // Tab: Tools
-  const btnTabTools = document.getElementById('btnTabTools');
   if (btnTabTools) {
     btnTabTools.addEventListener('click', () => {
       activeTab = 'tools';
       btnTabTools.classList.add('active');
-      const btnTabReels2 = document.getElementById('btnTabReels');
-      if (btnTabReels2) btnTabReels2.classList.remove('active');
+      if (btnTabReels) btnTabReels.classList.remove('active');
       render();
     });
   }
 
-  // Download Playbook
+  // Download Playbook Button
   const btnDownloadPlaybook = document.getElementById('btnDownloadPlaybook');
   if (btnDownloadPlaybook) {
-    btnDownloadPlaybook.addEventListener('click', downloadPlaybook);
+    btnDownloadPlaybook.addEventListener('click', downloadCurrentPlaybook);
   }
 });
 
-// ─── Filtering ────────────────────────────────────────────────────────────────
+// ─── Filter Logic ────────────────────────────────────────────────────────────
 function getFilteredReels() {
-  return allReels.filter(reel => {
-    const cat = reel._normCat || 'General Insights';
-    const matchCat = activeCategory === 'All Reels' || cat === activeCategory;
-    if (!matchCat) return false;
+  return allReels.filter((reel) => {
+    // 1. Domain match
+    const matchDomain = activeDomain === 'All Domains' || reel._domain === activeDomain;
+    if (!matchDomain) return false;
+
+    // 2. Subdomain match
+    const matchSub = activeSubdomain === 'All' || reel._subdomain === activeSubdomain;
+    if (!matchSub) return false;
+
+    // 3. Search query match
     if (!currentSearch) return true;
 
     const tags = Array.isArray(reel.tags) ? reel.tags.join(' ') : (reel.tags || '');
     const entities = Array.isArray(reel.entities) ? reel.entities.join(' ') : (reel.entities || '');
     const searchable = [
-      reel.subject || '', reel.personalUtility || '', tags, entities,
-      reel.author || '', reel.summary || reel.geminiResponse || '',
+      reel.subject || '',
+      reel.personalUtility || '',
+      reel._domain || '',
+      reel._subdomain || '',
+      tags,
+      entities,
+      reel.author || '',
+      reel.summary || reel.geminiResponse || '',
       reel.caption || ''
     ].join(' ').toLowerCase();
 
@@ -203,7 +189,7 @@ function getFilteredReels() {
   });
 }
 
-// ─── Render ───────────────────────────────────────────────────────────────────
+// ─── Main Render ─────────────────────────────────────────────────────────────
 function render() {
   renderSidebar();
   const container = document.getElementById('mainContent');
@@ -212,53 +198,84 @@ function render() {
   const filtered = getFilteredReels();
 
   if (activeTab === 'reels') {
-    renderGrid(container, filtered);
+    renderReelsView(container, filtered);
   } else {
     renderToolsDirectory(container, filtered);
   }
 }
 
+// ─── Sidebar (Domains) ───────────────────────────────────────────────────────
 function renderSidebar() {
   const sidebar = document.getElementById('categorySidebar');
   if (!sidebar) return;
 
-  const counts = { 'All Reels': allReels.length };
-  allReels.forEach(r => {
-    const c = r._normCat || 'General Insights';
-    counts[c] = (counts[c] || 0) + 1;
+  // Aggregate domain counts
+  const domainCounts = { 'All Domains': allReels.length };
+  allReels.forEach((r) => {
+    const d = r._domain || 'General Insights';
+    domainCounts[d] = (domainCounts[d] || 0) + 1;
   });
 
-  const categories = Object.keys(counts)
-    .filter(c => c !== 'All Reels')
-    .sort((a, b) => counts[b] - counts[a]);
+  const domains = Object.keys(domainCounts)
+    .filter((d) => d !== 'All Domains')
+    .sort((a, b) => domainCounts[b] - domainCounts[a]);
 
   sidebar.innerHTML = '';
-  [['All Reels', counts['All Reels']], ...categories.map(c => [c, counts[c]])].forEach(([name, count]) => {
+  [['All Domains', domainCounts['All Domains']], ...domains.map((d) => [d, domainCounts[d]])].forEach(([name, count]) => {
     const div = document.createElement('div');
-    div.className = 'category-item' + (activeCategory === name ? ' active' : '');
+    div.className = 'category-item' + (activeDomain === name ? ' active' : '');
     div.innerHTML = `<span class="cat-name">${esc(name)}</span><span class="badge">${count || 0}</span>`;
     div.addEventListener('click', () => {
-      activeCategory = name;
+      activeDomain = name;
+      activeSubdomain = 'All'; // Reset subdomain on domain switch
       render();
     });
     sidebar.appendChild(div);
   });
 }
 
-function renderGrid(container, reels) {
+// ─── Reels View with Dynamic Subdomain Filter Bar ───────────────────────────
+function renderReelsView(container, reels) {
+  // 1. Build Subdomain Filter Pills Bar
+  let subdomainsHtml = '';
+  if (activeDomain !== 'All Domains') {
+    // Find all subdomains in the active domain
+    const domainReels = allReels.filter((r) => r._domain === activeDomain);
+    const subCounts = { All: domainReels.length };
+    domainReels.forEach((r) => {
+      const s = r._subdomain || 'General';
+      subCounts[s] = (subCounts[s] || 0) + 1;
+    });
+
+    const subList = Object.keys(subCounts).filter((s) => s !== 'All');
+
+    if (subList.length > 0) {
+      let pills = `<div class="subdomain-bar"><span class="subdomain-label">Subdomains:</span>`;
+      pills += `<span class="subdomain-pill ${activeSubdomain === 'All' ? 'active' : ''}" onclick="window.__setSubdomain('All')">All (${subCounts['All']})</span>`;
+      subList.forEach((sub) => {
+        pills += `<span class="subdomain-pill ${activeSubdomain === sub ? 'active' : ''}" onclick="window.__setSubdomain('${esc(sub).replace(/'/g, "\\'")}')">${esc(sub)} (${subCounts[sub]})</span>`;
+      });
+      pills += `</div>`;
+      subdomainsHtml = pills;
+    }
+  }
+
+  // 2. Empty state check
   if (reels.length === 0) {
     const msg = allReels.length === 0
-      ? `<div class="empty-state"><div class="empty-icon">📂</div><h2>No reels synced yet</h2><p>Click <strong>Sync from Extension</strong> to load your knowledge base, or open this page from the extension's <em>Open Knowledge Dashboard</em> button.</p></div>`
-      : `<div class="empty-state"><div class="empty-icon">🔍</div><h2>No results</h2><p>No reels match your current filter or search.</p></div>`;
-    container.innerHTML = msg;
+      ? `<div class="empty-state"><div class="empty-icon">📂</div><h2>No reels synced yet</h2><p>Click <strong>Sync from Extension</strong> to load your knowledge base, or summarize a reel in the extension side panel.</p></div>`
+      : `<div class="empty-state"><div class="empty-icon">🔍</div><h2>No matching reels</h2><p>No reels found in <strong>${esc(activeDomain)}</strong> ${activeSubdomain !== 'All' ? `&rarr; <strong>${esc(activeSubdomain)}</strong>` : ''} matching your search.</p></div>`;
+    container.innerHTML = subdomainsHtml + msg;
     return;
   }
 
-  let html = '<div class="reel-grid">';
+  // 3. Grid of Cards
+  let html = subdomainsHtml + '<div class="reel-grid">';
   reels.forEach((reel, index) => {
     const tags = Array.isArray(reel.tags) ? reel.tags : (reel.tags ? String(reel.tags).split(',') : []);
-    const tagsHtml = tags.map(t => `<span class="tag-chip">${esc(t.trim())}</span>`).join('');
-    const cat = reel._normCat || 'General Insights';
+    const tagsHtml = tags.map((t) => `<span class="tag-chip">${esc(t.trim())}</span>`).join('');
+    const domain = esc(reel._domain || 'General');
+    const subdomain = esc(reel._subdomain || 'General');
     const subject = esc(reel.subject || 'Untitled Reel');
     const utility = esc(reel.personalUtility || '');
     const author = esc(reel.author || 'Unknown');
@@ -268,7 +285,10 @@ function renderGrid(container, reels) {
 
     html += `
       <div class="reel-card">
-        <span class="category-pill">${esc(cat)}</span>
+        <div class="card-tax-header">
+          <span class="category-pill">${domain}</span>
+          ${subdomain && subdomain !== 'General' ? `<span class="subdomain-chip">${subdomain}</span>` : ''}
+        </div>
         <h3>${subject}</h3>
         ${utility ? `<p class="personal-utility"><em>${utility}</em></p>` : ''}
         <div class="tags-row">${tagsHtml}</div>
@@ -283,8 +303,12 @@ function renderGrid(container, reels) {
   html += '</div>';
   container.innerHTML = html;
 
-  // Attach global helpers scoped to current filtered list
+  // Window helper bindings
   const snapshot = reels;
+  window.__setSubdomain = (sub) => {
+    activeSubdomain = sub;
+    render();
+  };
   window.__toggleSummary = (i) => {
     const el = document.getElementById(`summary-${i}`);
     if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
@@ -296,18 +320,26 @@ function renderGrid(container, reels) {
   };
 }
 
+// ─── Tools & Entities Directory Tab ─────────────────────────────────────────
 function renderToolsDirectory(container, reels) {
   const toolMap = {};
-  reels.forEach(reel => {
+  reels.forEach((reel) => {
     const rawEntities = Array.isArray(reel.entities)
       ? reel.entities
       : (reel.entities ? String(reel.entities).split(',') : []);
 
     rawEntities
-      .map(e => e.trim())
-      .filter(e => e && e.toLowerCase() !== 'none' && e.length > 1)
-      .forEach(ent => {
-        if (!toolMap[ent]) toolMap[ent] = { count: 0, category: reel._normCat || 'General Insights', mentions: [] };
+      .map((e) => e.trim())
+      .filter((e) => e && e.toLowerCase() !== 'none' && e.length > 1)
+      .forEach((ent) => {
+        if (!toolMap[ent]) {
+          toolMap[ent] = {
+            count: 0,
+            domain: reel._domain || 'General',
+            subdomain: reel._subdomain || 'General',
+            mentions: []
+          };
+        }
         toolMap[ent].count++;
         toolMap[ent].mentions.push(`${reel.subject || 'Reel'} (@${reel.author || '?'})`);
       });
@@ -316,20 +348,21 @@ function renderToolsDirectory(container, reels) {
   const sorted = Object.entries(toolMap).sort((a, b) => b[1].count - a[1].count);
 
   if (sorted.length === 0) {
-    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🛠</div><h2>No tools or entities found</h2><p>Entities are auto-extracted from AI summaries. Process some reels first.</p></div>';
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🛠</div><h2>No tools or entities found</h2><p>Tools and entities are auto-extracted from AI summaries. Process some reels first.</p></div>';
     return;
   }
 
   let html = `<div class="tools-directory"><table class="tools-table"><thead><tr>
-    <th>Tool / Entity</th><th>Category</th><th>Mentioned In</th><th>Action</th>
+    <th>Tool / Entity</th><th>Domain</th><th>Subdomain</th><th>Mentioned In</th><th>Action</th>
   </tr></thead><tbody>`;
 
   sorted.forEach(([tool, data]) => {
-    const mentionsHtml = data.mentions.slice(0, 3).map(m => `<div class="mention-item">${esc(m)}</div>`).join('');
+    const mentionsHtml = data.mentions.slice(0, 3).map((m) => `<div class="mention-item">${esc(m)}</div>`).join('');
     const moreCount = data.mentions.length > 3 ? ` <span class="muted">+${data.mentions.length - 3} more</span>` : '';
     html += `<tr>
       <td><strong>${esc(tool)}</strong></td>
-      <td><span class="category-pill sm">${esc(data.category)}</span></td>
+      <td><span class="category-pill sm">${esc(data.domain)}</span></td>
+      <td><span class="subdomain-chip sm">${esc(data.subdomain)}</span></td>
       <td class="mentions-cell">${mentionsHtml}${moreCount}</td>
       <td><button class="btn btn-sm" onclick="window.__copyTool('${esc(tool).replace(/'/g, "\\'")}')">Copy</button></td>
     </tr>`;
@@ -341,15 +374,16 @@ function renderToolsDirectory(container, reels) {
   window.__copyTool = (text) => copyToClipboard(text);
 }
 
-// ─── Markdown Generator ───────────────────────────────────────────────────────
+// ─── Markdown Generators ─────────────────────────────────────────────────────
 function generateMarkdown(reel) {
   const tags = Array.isArray(reel.tags) ? reel.tags.join(', ') : (reel.tags || '');
   const entities = Array.isArray(reel.entities) ? reel.entities.join(', ') : (reel.entities || '');
   let md = `## ${reel.subject || 'Untitled Reel'}\n\n`;
-  md += `**Category:** ${reel._normCat || reel.category || 'General Insights'}\n`;
+  md += `**Domain:** ${reel._domain || 'General'}\n`;
+  md += `**Subdomain:** ${reel._subdomain || 'General'}\n`;
   md += `**Author:** @${reel.author || 'Unknown'}\n`;
   md += `**Source:** ${reel.url || ''}\n\n`;
-  if (reel.personalUtility) md += `> ${reel.personalUtility}\n\n`;
+  if (reel.personalUtility) md += `> **Why it matters:** ${reel.personalUtility}\n\n`;
   if (tags) md += `**Tags:** ${tags}\n`;
   if (entities) md += `**Tools & Entities:** ${entities}\n`;
   md += `\n### Summary\n\n${reel.summary || reel.geminiResponse || 'No summary.'}\n\n---\n`;
@@ -357,26 +391,58 @@ function generateMarkdown(reel) {
 }
 
 // ─── Download Playbook ────────────────────────────────────────────────────────
-function downloadPlaybook() {
+function downloadCurrentPlaybook() {
   const reels = getFilteredReels();
   if (reels.length === 0) {
     alert('No reels to download in the current view.');
     return;
   }
-  let md = `# ${activeCategory} Playbook\n> ${reels.length} reels | Exported ${new Date().toLocaleDateString()}\n\n`;
-  reels.forEach(r => { md += generateMarkdown(r); });
+
+  const title = activeDomain === 'All Domains'
+    ? 'Complete Knowledge Base'
+    : (activeSubdomain === 'All' ? `${activeDomain} Playbook` : `${activeDomain} - ${activeSubdomain} Playbook`);
+
+  // Group by subdomain
+  const grouped = {};
+  reels.forEach((r) => {
+    const sub = r._subdomain || 'General';
+    if (!grouped[sub]) grouped[sub] = [];
+    grouped[sub].push(r);
+  });
+
+  let md = `# ${title}\n> Total Reels: ${reels.length} | Exported: ${new Date().toLocaleDateString()}\n\n`;
+
+  // Table of Contents
+  md += `## Table of Contents\n`;
+  for (const [sub, subReels] of Object.entries(grouped)) {
+    md += `### ${sub} (${subReels.length})\n`;
+    subReels.forEach((r, i) => {
+      const anchor = (r.subject || `Reel ${i + 1}`).toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-');
+      md += `- [${r.subject || `Reel by @${r.author}`}](#${anchor}) — @${r.author}\n`;
+    });
+  }
+  md += `\n---\n\n`;
+
+  // Content
+  for (const [sub, subReels] of Object.entries(grouped)) {
+    md += `## 📁 Subdomain: ${sub}\n\n`;
+    subReels.forEach((r) => {
+      md += generateMarkdown(r) + '\n';
+    });
+  }
+
   const blob = new Blob([md], { type: 'text/markdown' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${activeCategory.replace(/\s+/g, '_')}_Playbook.md`;
+  a.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.md`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
-// ─── Clipboard ────────────────────────────────────────────────────────────────
+// ─── Clipboard Helper ─────────────────────────────────────────────────────────
 function copyToClipboard(text) {
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard.writeText(text)
@@ -393,7 +459,7 @@ function legacyCopy(text) {
   ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
   document.body.appendChild(ta);
   ta.select();
-  try { document.execCommand('copy'); showSyncStatus('✓ Copied!'); } catch(e) {}
+  try { document.execCommand('copy'); showSyncStatus('✓ Copied!'); } catch (e) {}
   document.body.removeChild(ta);
 }
 
@@ -414,5 +480,5 @@ function showSyncStatus(msg) {
 
 // ─── HTML Escape Helper ───────────────────────────────────────────────────────
 function esc(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
