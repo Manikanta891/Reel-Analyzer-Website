@@ -1,0 +1,13 @@
+﻿# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Chrome Extension build archives
+*.zip
+*.crx
+
+# Logs and environment
+*.log
+.env
+.env.local

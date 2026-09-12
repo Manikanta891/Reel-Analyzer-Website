@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reel Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header Bar -->
+  <header class="header">
+    <div class="brand">
+      <div class="brand-avatar">
+        <img src="logos/logo.png" alt="Reel Analyzer" class="brand-logo-img">
+      </div>
+      <div class="brand-text">
+        <h1 class="brand-title">Reel Analyzer</h1>
+        <span class="brand-version">v1.0</span>
+      </div>
+    </div>
+    <div id="statusBadge" class="status-pill status-idle">
+      <span class="status-dot"></span>
+      <span class="status-text">Idle</span>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <!-- Instagram Auto-Connect & Source Selector Card -->
+    <section class="card ig-source-card">
+      <div class="card-header">
+        <span class="card-title">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          Instagram Source
+        </span>
+      </div>
+
+      <div class="ig-user-field">
+        <div class="input-with-prefix">
+          <span class="input-prefix">@</span>
+          <input type="text" id="igUsername" class="form-input form-input-user" placeholder="username" spellcheck="false" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="button-row" style="margin-top: 8px;">
+        <button type="button" id="btnGoSaved" class="btn btn-secondary btn-source" title="Open saved reels for this user">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          <span>Saved Reels ↗</span>
+        </button>
+        <button type="button" id="btnGoFeed" class="btn btn-secondary btn-source" title="Open Instagram live reels feed">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          <span>Reels Feed ↗</span>
+        </button>
+      </div>
+
+      <div class="ig-tip-box">
+        <span>💡 <strong>Tip:</strong> In Saved Posts, click any reel to start processing from it.</span>
+      </div>
+    </section>
+
+    <!-- Card 1: AI Model Selector with Logos -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+          AI Model
+        </span>
+      </div>
+
+      <div class="model-cards-grid">
+        <!-- Meta AI -->
+        <button type="button" class="model-card active" data-provider="meta" id="modelBtnMeta">
+          <div class="model-icon meta-icon">
+            <img src="logos/meta-logo.png" class="model-logo-img" alt="Meta AI">
+          </div>
+          <div class="model-meta">
+            <div class="model-title-row">
+              <span class="model-name">Meta AI</span>
+              <span class="badge-recommended">Recommended</span>
+            </div>
+            <span class="model-sub">Direct link extraction</span>
+          </div>
+        </button>
+
+        <!-- Gemini & ChatGPT 2-Col -->
+        <div class="model-subgrid">
+          <!-- Gemini -->
+          <button type="button" class="model-card" data-provider="gemini" id="modelBtnGemini">
+            <div class="model-icon gemini-icon">
+              <img src="logos/gemini-logo.png" class="model-logo-img" alt="Gemini">
+            </div>
+            <div class="model-meta">
+              <span class="model-name">Gemini</span>
+            </div>
+          </button>
+
+          <!-- ChatGPT -->
+          <button type="button" class="model-card" data-provider="chatgpt" id="modelBtnChatgpt">
+            <div class="model-icon chatgpt-icon">
+              <img src="logos/ChatGPT-Logo.png" class="model-logo-img" alt="ChatGPT">
+            </div>
+            <div class="model-meta">
+              <span class="model-name">ChatGPT</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 2: Custom Prompt Toggle & Editor -->
+    <section class="card">
+      <div class="card-header">
+        <label class="checkbox-container" for="chkCustomPrompt">
+          <input type="checkbox" id="chkCustomPrompt">
+          <span class="checkbox-custom"></span>
+          <span class="checkbox-label">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Customize Prompt
+          </span>
+        </label>
+        <button id="btnResetPrompt" class="btn-link" style="display: none;">Reset</button>
+      </div>
+
+      <!-- Expandable Prompt Editor -->
+      <div id="promptEditorContainer" class="prompt-editor-wrap" style="display: none;">
+        <textarea 
+          id="customPromptInput" 
+          class="form-textarea" 
+          rows="4" 
+          placeholder="Enter custom prompt..."></textarea>
+        <div class="prompt-meta">
+          <span class="prompt-tags">Tags: <code class="tag-pill">{url}</code> <code class="tag-pill">{caption}</code> <code class="tag-pill">{author}</code></span>
+          <span id="promptCharCount" class="char-count">0 chars</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 3: Summarizer Controller -->
+    <section class="card card-highlight">
+      <div class="card-header">
+        <span class="card-title">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Summarizer
+        </span>
+      </div>
+
+      <div class="single-input-row">
+        <label for="batchCount" class="input-label">Reels to summarize</label>
+        <input type="number" id="batchCount" min="1" max="200" value="5" class="form-input-number">
+      </div>
+
+      <!-- Auto-Unsave Toggle -->
+      <label class="toggle-container" for="chkAutoUnsave">
+        <input type="checkbox" id="chkAutoUnsave">
+        <span class="toggle-slider"></span>
+        <span class="toggle-label">Auto-unsave after summarizing</span>
+      </label>
+
+      <!-- Real-Time Progress Bar -->
+      <div id="batchProgressContainer" class="progress-section" style="display: none;">
+        <div class="progress-header">
+          <span id="progressText" class="progress-title">Reel 0 of 0</span>
+          <span id="progressPercent" class="progress-badge">0%</span>
+        </div>
+        <div class="progress-track">
+          <div id="progressBarFill" class="progress-fill"></div>
+        </div>
+        <div id="batchStatusMsg" class="live-activity-msg">
+          <span class="activity-pulse"></span>
+          <span id="batchStatusText">Starting...</span>
+        </div>
+      </div>
+
+      <!-- Primary Action Buttons -->
+      <div class="button-row">
+        <button id="btnStartBatch" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span>Start</span>
+        </button>
+        <button id="btnStopBatch" class="btn btn-danger" disabled>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+          <span>Stop</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Card 4: Clean-Up Unsaver Tool (Collapsible) -->
+    <section class="card card-subtle">
+      <details class="accordion">
+        <summary class="accordion-summary">
+          <span class="card-title">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Unsave Reels
+          </span>
+          <svg class="accordion-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </summary>
+        <div class="accordion-content">
+          <div class="single-input-row" style="margin-top: 8px;">
+            <label for="unsaveCount" class="input-label">Reels to unsave</label>
+            <input type="number" id="unsaveCount" min="1" max="200" value="10" class="form-input-number">
+          </div>
+          <button id="btnStartUnsaveBatch" class="btn btn-warning btn-full" style="margin-top: 10px;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span>Unsave</span>
+          </button>
+        </div>
+      </details>
+    </section>
+
+    <!-- Card 5: Knowledge Vault & Exports -->
+    <section class="card">
+      <div class="vault-header">
+        <div class="vault-info">
+          <span class="vault-title">Saved Summaries</span>
+        </div>
+        <div class="vault-counter">
+          <span id="savedCount" class="counter-num">0</span>
+        </div>
+      </div>
+
+      <div class="button-row" style="margin-top: 10px;">
+        <button id="btnExportMd" class="btn btn-secondary">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span>Markdown</span>
+        </button>
+        <button id="btnExportCsv" class="btn btn-secondary">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+          <span>CSV</span>
+        </button>
+      </div>
+      
+      <div style="margin-top: 8px;">
+        <button id="btnClearData" class="btn btn-ghost-danger btn-full">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+          <span>Clear All</span>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>Reel Analyzer</span>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
