@@ -543,41 +543,27 @@ async function handleNextIG() {
 }
 
 /**
- * Base Starter Domains (Universal high-level anchors — NO hardcoded subdomains)
- * Subdomains are 100% emergent, dynamic, and discovered from the user's reels.
- */
-const BASE_DOMAINS = [
-  "Technology",
-  "Finance & Business",
-  "Fitness & Health",
-  "Career & Education",
-  "Design & Creative",
-  "Productivity & Habits",
-  "Lifestyle & Hobbies",
-  "General Insights"
-];
-
-/**
- * Loads the Living Knowledge Taxonomy Tree from storage, seeded with saved reels
+ * Loads the Living Knowledge Taxonomy Tree from storage.
+ * 100% Dynamic & Emergent: Starts empty and grows exclusively from the user's actual reels.
+ * Zero hardcoded domains or subdomains.
  */
 async function getLivingTaxonomy() {
   return new Promise((resolve) => {
-    chrome.storage.local.get({ knowledgeTaxonomy: null, reelsData: [] }, (res) => {
+    chrome.storage.local.get({ knowledgeTaxonomy: {}, reelsData: [] }, (res) => {
       let tax = res.knowledgeTaxonomy;
-      if (!tax || typeof tax !== "object" || Object.keys(tax).length === 0) {
+      if (!tax || typeof tax !== "object") {
         tax = {};
-        BASE_DOMAINS.forEach((d) => {
-          tax[d] = [];
-        });
       }
 
-      // Rebuild and ensure all saved reels' domains and subdomains are included
+      // Ensure any saved reels' domains and subdomains are included
       (res.reelsData || []).forEach((r) => {
-        const d = r.domain || r.category || "General Insights";
-        const s = r.subdomain || "General";
-        if (!tax[d]) tax[d] = [];
-        if (s && s !== "General" && !tax[d].includes(s)) {
-          tax[d].push(s);
+        const d = r.domain || (r.category && r.category.includes(" - ") ? r.category.split(" - ")[0].trim() : r.category);
+        const s = r.subdomain || (r.category && r.category.includes(" - ") ? r.category.split(" - ")[1].trim() : null);
+        if (d) {
+          if (!tax[d]) tax[d] = [];
+          if (s && !tax[d].includes(s)) {
+            tax[d].push(s);
+          }
         }
       });
 
@@ -587,15 +573,15 @@ async function getLivingTaxonomy() {
 }
 
 /**
- * Dynamic Fuzzy Snapper: snaps raw domain & subdomain against living taxonomy
- * without rigid hardcoding. If new, registers them dynamically.
+ * Dynamic Fuzzy Snapper: snaps raw domain & subdomain against living taxonomy.
+ * If new, registers them dynamically.
  */
 function snapToTaxonomy(rawDomain, rawSubdomain, taxonomy) {
-  let domain = (rawDomain || "").trim();
-  let subdomain = (rawSubdomain || "").trim();
+  let domain = (rawDomain || "").replace(/^\[|\]$/g, "").trim();
+  let subdomain = (rawSubdomain || "").replace(/^\[|\]$/g, "").trim();
 
   if (!domain) domain = "General Insights";
-  if (!subdomain) subdomain = "General";
+  if (!subdomain) subdomain = "Overview";
 
   const domainKeys = Object.keys(taxonomy);
 
@@ -607,13 +593,15 @@ function snapToTaxonomy(rawDomain, rawSubdomain, taxonomy) {
   // 2. Token overlap match for Domain
   if (!matchedDomain) {
     const domainTokens = domain.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter((t) => t.length > 2);
-    matchedDomain = domainKeys.find((d) => {
-      const dTokens = d.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/);
-      return domainTokens.some((t) => dTokens.includes(t));
-    });
+    if (domainTokens.length > 0) {
+      matchedDomain = domainKeys.find((d) => {
+        const dTokens = d.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/);
+        return domainTokens.some((t) => dTokens.includes(t));
+      });
+    }
   }
 
-  // If brand new domain, format with Title Case and initialize
+  // If brand new domain, format cleanly
   if (!matchedDomain) {
     matchedDomain = domain.replace(/^\w/, (c) => c.toUpperCase());
     if (!taxonomy[matchedDomain]) {
@@ -631,10 +619,12 @@ function snapToTaxonomy(rawDomain, rawSubdomain, taxonomy) {
   // 4. Token overlap match for Subdomain within this specific Domain
   if (!matchedSubdomain) {
     const subTokens = subdomain.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter((t) => t.length > 2);
-    matchedSubdomain = existingSubdomains.find((s) => {
-      const sTokens = s.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/);
-      return subTokens.some((t) => sTokens.includes(t));
-    });
+    if (subTokens.length > 0) {
+      matchedSubdomain = existingSubdomains.find((s) => {
+        const sTokens = s.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/);
+        return subTokens.some((t) => sTokens.includes(t));
+      });
+    }
   }
 
   // If brand new subdomain, format cleanly and add to domain
@@ -649,95 +639,114 @@ function snapToTaxonomy(rawDomain, rawSubdomain, taxonomy) {
 }
 
 /**
- * Fallback categorizer if AI omits YAML block completely
- */
-function fallbackCategorizer(caption, summaryText) {
-  const combined = `${caption} ${summaryText}`.toLowerCase();
-  
-  // High-level fallback domain detection
-  if (/code|coding|devops|docker|kubernetes|python|javascript|react|api|backend|frontend|ai|llm|software|github/.test(combined)) {
-    return { domain: "Technology", subdomain: "General Tech" };
-  }
-  if (/fitness|workout|gym|diet|nutrition|health|exercise|muscle|training|yoga/.test(combined)) {
-    return { domain: "Fitness & Health", subdomain: "Training & Health" };
-  }
-  if (/money|invest|stock|crypto|finance|business|revenue|profit|startup|sales/.test(combined)) {
-    return { domain: "Finance & Business", subdomain: "Finance & Business" };
-  }
-  if (/career|job|interview|resume|study|learn|degree|college|salary/.test(combined)) {
-    return { domain: "Career & Education", subdomain: "Career Growth" };
-  }
-  if (/design|ui|ux|figma|css|animation|video|photo|creative|art|logo/.test(combined)) {
-    return { domain: "Design & Creative", subdomain: "Creative Design" };
-  }
-  if (/habit|focus|routine|mindset|productivity|goal|time management|discipline/.test(combined)) {
-    return { domain: "Productivity & Habits", subdomain: "Habits & Focus" };
-  }
-
-  return { domain: "General Insights", subdomain: "General" };
-}
-
-/**
- * Parse YAML-like metadata block from AI response supporting Domain and Subdomain
+ * Super-Robust Metadata Parser:
+ * Extracts Domain, Subdomain, Subject, Personal Utility, Entities, and Tags
+ * Handles markdown bold (**Domain:**), italics (*Domain:*), headers (### Domain:), brackets, and raw text.
  */
 function parseMetadataFromResponse(responseText) {
-  const yamlMatch = responseText.match(/---\s*([\s\S]*?)\s*---/);
   const meta = {
     domain: null,
     subdomain: null,
-    category: null,
     subject: null,
     personalUtility: null,
     entities: null,
     tags: null
   };
 
-  if (!yamlMatch) return meta;
-  const block = yamlMatch[1];
-  const get = (key) => {
-    const m = block.match(new RegExp(`${key}:\\s*([^\\n]+)`, "i"));
-    return m ? m[1].trim() : null;
+  if (!responseText) return meta;
+
+  const extract = (fieldNames) => {
+    for (const name of fieldNames) {
+      // Regex matches: "Domain: XYZ", "**Domain:** XYZ", "### Domain: XYZ", "*Domain*: XYZ"
+      const regex = new RegExp(`(?:^|[\\n#*\\s])\\*?\\*?${name}\\*?\\*?:?\\s*\\*?\\*?([^\\n*#]+?)(?:\\*?\\*?\\s*(?:\\n|$))`, "i");
+      const m = responseText.match(regex);
+      if (m && m[1]) {
+        let clean = m[1].replace(/^\[|\]$/g, "").trim();
+        // Remove trailing asterisks or formatting junk
+        clean = clean.replace(/^\*+|\*+$/g, "").trim();
+        if (clean && clean.toLowerCase() !== "none" && !clean.includes("---") && clean.length > 1) {
+          return clean;
+        }
+      }
+    }
+    return null;
   };
 
-  meta.domain = get("Domain") || get("Category");
-  meta.subdomain = get("Subdomain") || get("Sub-domain") || get("Topic") || get("Subcategory");
-  meta.subject = get("Subject");
-  meta.personalUtility = get("Personal Utility");
-  meta.entities = get("Entities");
-  meta.tags = get("Tags");
+  meta.domain = extract(["Domain", "Category", "Super-Category", "SuperCategory"]);
+  meta.subdomain = extract(["Subdomain", "Sub-domain", "Topic", "Subcategory", "Specialization"]);
+  meta.subject = extract(["Subject", "Title", "Topic Title"]);
+  meta.personalUtility = extract(["Personal Utility", "Utility", "Why it matters", "Key Value"]);
+  meta.entities = extract(["Entities", "Tools", "Tech", "Tools & Tech", "Resources"]);
+  meta.tags = extract(["Tags", "Hashtags"]);
+
   return meta;
 }
 
 /**
- * Builds high-impact prompt with Living Taxonomy Knowledge Tree injection
+ * Fallback categorizer when AI completely skips all metadata headers
+ */
+function fallbackCategorizer(caption, summaryText) {
+  const combined = `${caption} ${summaryText}`.toLowerCase();
+  
+  if (/code|coding|devops|docker|kubernetes|python|javascript|react|api|backend|frontend|ai|llm|software|github/.test(combined)) {
+    return { domain: "Technology", subdomain: "Software & Tools" };
+  }
+  if (/fitness|workout|gym|diet|nutrition|health|exercise|muscle|training|yoga/.test(combined)) {
+    return { domain: "Fitness & Health", subdomain: "Workouts & Nutrition" };
+  }
+  if (/money|invest|stock|crypto|finance|business|revenue|profit|startup|sales/.test(combined)) {
+    return { domain: "Finance & Business", subdomain: "Business & Growth" };
+  }
+  if (/career|job|interview|resume|study|learn|degree|college|salary/.test(combined)) {
+    return { domain: "Career & Education", subdomain: "Career & Learning" };
+  }
+  if (/design|ui|ux|figma|css|animation|video|photo|creative|art|logo/.test(combined)) {
+    return { domain: "Design & Creative", subdomain: "Visual & UI Design" };
+  }
+  if (/habit|focus|routine|mindset|productivity|goal|time management|discipline/.test(combined)) {
+    return { domain: "Productivity & Habits", subdomain: "Habits & Systems" };
+  }
+
+  return { domain: "General Insights", subdomain: "Insights" };
+}
+
+/**
+ * Builds high-impact prompt with Living Taxonomy Knowledge Tree injection.
+ * Only injects the tree if the user actually has saved taxonomy.
  */
 async function buildPromptForReel(reelData, provider = "meta", customPrompt = "") {
   const taxonomy = await getLivingTaxonomy();
+  const domainKeys = Object.keys(taxonomy).filter((d) => taxonomy[d] && taxonomy[d].length > 0);
 
-  // Format existing living knowledge tree
-  const treeLines = [];
-  for (const [dom, subs] of Object.entries(taxonomy)) {
-    if (subs && subs.length > 0) {
+  let taxonomyStr = "";
+  if (domainKeys.length > 0) {
+    const treeLines = [];
+    for (const dom of domainKeys) {
+      const subs = taxonomy[dom];
       treeLines.push(`- ${dom}: [${subs.map((s) => `"${s}"`).join(", ")}]`);
-    } else {
-      treeLines.push(`- ${dom}`);
     }
-  }
 
-  const taxonomyStr = `CURRENT KNOWLEDGE TAXONOMY (DOMAINS & SUBDOMAINS):
+    taxonomyStr = `YOUR CURRENT KNOWLEDGE TAXONOMY (FROM PREVIOUS REELS):
 ${treeLines.join("\n")}
 
 CLASSIFICATION RULES:
-1. Domain: The broad life/work field (e.g., Technology, Finance & Business, Fitness & Health, Culinary & Food, Design & Creative, Career & Education, Productivity & Habits, Lifestyle & Hobbies, General Insights, or a clean new domain).
-2. Subdomain: The exact specialization or sub-topic (e.g. under Technology: "DevOps & Cloud", "Frontend & UI", "AI & LLMs", "Backend & APIs", "Mobile Dev"; under Fitness: "Strength Training", "Nutrition").
-3. Rule: If this Reel fits an existing Domain & Subdomain above, use the EXACT names. If it's a new specialization under an existing Domain, keep that Domain and define a concise 2-3 word Subdomain. Only create a new Domain if it represents a completely separate field.
+1. If this Reel belongs to an existing Domain & Subdomain above, reuse the EXACT names.
+2. If this Reel is in an existing Domain but introduces a new specialization, keep the Domain and create a concise 2-3 word Subdomain.
+3. Only create a brand new Domain if the topic belongs to a completely distinct field.
 
 `;
+  } else {
+    taxonomyStr = `CLASSIFICATION INSTRUCTIONS:
+- Domain: Identify the broad field (e.g., Technology, Fitness, Finance, Culinary, Design, Music, Career, etc.).
+- Subdomain: Identify the specific specialization or topic (e.g. under Technology: "DevOps & Cloud", "Frontend & UI", "AI & LLMs"; under Fitness: "Strength Training", "Nutrition").
+
+`;
+  }
 
   const metadataBlock = `${taxonomyStr}At the very top of your response, output this exact metadata block between --- markers:
 ---
 Domain: [Broad domain name]
-Subdomain: [Precise specialization/sub-topic]
+Subdomain: [Specific specialization/sub-topic]
 Subject: [3-7 word punchy title for this specific reel]
 Personal Utility: [1-2 sentences: why it matters and how to apply it immediately]
 Entities: [Comma-separated tools, repos, books, websites, or techniques mentioned, or "None"]
