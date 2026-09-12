@@ -634,21 +634,31 @@ function parseMetadataFromResponse(responseText) {
 }
 
 /**
+ * Loads all active categories by combining BASE_CATEGORIES + dynamic registry + existing reels
+ */
+async function getAllActiveCategories() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get({ categoriesRegistry: [], reelsData: [] }, (res) => {
+      const fromRegistry = res.categoriesRegistry || [];
+      const fromReels = (res.reelsData || []).map((r) => r.category).filter(Boolean);
+      const combined = [...new Set([...BASE_CATEGORIES, ...fromRegistry, ...fromReels])];
+      resolve(combined);
+    });
+  });
+}
+
+/**
  * Builds either custom or default high-impact prompt with Universal YAML metadata envelope
  */
 async function buildPromptForReel(reelData, provider = "meta", customPrompt = "") {
-  // Load existing categories from storage
-  const existingCategories = await new Promise(resolve => {
-    chrome.storage.local.get({ categoriesRegistry: [] }, res => resolve(res.categoriesRegistry || []));
-  });
+  // Load all existing & base categories from storage
+  const allCategories = await getAllActiveCategories();
 
-  const categoryListStr = existingCategories.length > 0
-    ? `Existing Categories: [${existingCategories.map(c => `"${c}"`).join(", ")}]\nRule: If this Reel fits an existing category above, use that EXACT name. Only create a new category name if the topic is genuinely different.\n\n`
-    : "";
+  const categoryListStr = `Available Categories:\n[${allCategories.map((c) => `"${c}"`).join(", ")}]\nRule: If this Reel fits an existing category above, use that EXACT category name. Only create a new 2-3 word category name if the topic is genuinely different.\n\n`;
 
   const metadataBlock = `${categoryListStr}At the very top of your response, output this exact metadata block between --- markers:
 ---
-Category: [Choose from existing categories above, OR one of: Technology & AI, Finance & Business, Fitness & Health, Career & Education, Design & Creative, Productivity & Habits, Lifestyle & Hobbies, General Insights, OR a concise new 2-3 word category]
+Category: [Choose the best matching category from Available Categories above, or define a new concise category]
 Subject: [3-7 word punchy title for this specific reel]
 Personal Utility: [1-2 sentences: exactly how this helps the reader and how to apply it immediately]
 Entities: [Comma-separated tools, repos, books, websites, or techniques mentioned. Write "None" if absent]
@@ -857,21 +867,22 @@ async function saveReelData(data) {
   const summaryText = data.summary || data.geminiResponse || "";
   const meta = parseMetadataFromResponse(summaryText);
 
-  // Load existing categories
-  const existingCategories = await new Promise(resolve => {
-    chrome.storage.local.get({ categoriesRegistry: [] }, res => resolve(res.categoriesRegistry || []));
-  });
+  // Load all existing & base categories
+  const existingCategories = await getAllActiveCategories();
 
   // Normalize or fallback categorize
   let category = meta.category
     ? normalizeCategory(meta.category, existingCategories)
     : fallbackCategorizer(data.caption || "", summaryText, existingCategories);
 
-  // Update categories registry
-  if (!existingCategories.includes(category)) {
-    existingCategories.push(category);
-    await new Promise(resolve => chrome.storage.local.set({ categoriesRegistry: existingCategories }, resolve));
-  }
+  // Update categories registry if not present
+  chrome.storage.local.get({ categoriesRegistry: [] }, (res) => {
+    const reg = res.categoriesRegistry || [];
+    if (!reg.includes(category)) {
+      reg.push(category);
+      chrome.storage.local.set({ categoriesRegistry: reg });
+    }
+  });
 
   // Strip the YAML metadata block from the summary for clean display
   const cleanSummary = summaryText.replace(/---[\s\S]*?---\n?/, "").trim();
