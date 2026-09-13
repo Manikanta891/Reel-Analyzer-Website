@@ -2,6 +2,7 @@ export interface ReelItem {
   id?: string;
   url: string;
   author: string;
+  creator?: string;
   domain: string;
   subdomain: string;
   category?: string;
@@ -11,7 +12,9 @@ export interface ReelItem {
   tags?: string;
   summary: string;
   caption?: string;
-  timestamp: number;
+  date?: string;
+  postedDate?: string;
+  timestamp?: number | string;
 }
 
 export interface TaxonomyTree {

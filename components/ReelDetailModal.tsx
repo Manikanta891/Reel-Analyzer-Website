@@ -19,6 +19,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ReelItem } from '@/types';
 import { parseStructuredSections } from '@/lib/summaryParser';
+import { formatDisplayDate } from '@/lib/utils';
 import { ErrorBoundary } from './ErrorBoundary';
 
 interface ReelDetailModalProps {
@@ -184,11 +185,7 @@ ${cleanedFull || reel.summary || ''}
               <div className="flex items-center gap-1.5 font-mono text-zinc-400">
                 <Calendar className="w-3.5 h-3.5 text-zinc-400" strokeWidth={1.5} />
                 <span>
-                  {new Date(reel.timestamp || Date.now()).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
+                  {formatDisplayDate(reel.postedDate || reel.date || reel.timestamp)}
                 </span>
               </div>
             </div>

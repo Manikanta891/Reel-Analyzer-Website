@@ -1,4 +1,5 @@
 import { ReelItem } from '@/types';
+import { formatDisplayDate } from './utils';
 
 export function generatePlaybookMarkdown(
   reels: ReelItem[],
@@ -52,7 +53,7 @@ export function generatePlaybookMarkdown(
       items.forEach((item) => {
         md += `### ⚡ ${item.subject || 'Actionable Insight'}\n`;
         md += `- **Creator:** [@${item.author || 'unknown'}](${item.url})\n`;
-        md += `- **Saved Date:** ${new Date(item.timestamp).toLocaleDateString()}\n`;
+        md += `- **Date:** ${formatDisplayDate(item.postedDate || item.date || item.timestamp)}\n`;
         if (item.personalUtility) {
           md += `- **💡 High-Value Utility:** ${item.personalUtility}\n`;
         }

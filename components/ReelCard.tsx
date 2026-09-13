@@ -10,6 +10,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { ReelItem } from '@/types';
+import { formatDisplayDate } from '@/lib/utils';
 
 interface ReelCardProps {
   item: ReelItem;
@@ -125,10 +126,7 @@ ${item.summary}
           </button>
           <span>•</span>
           <span className="font-mono text-zinc-400">
-            {new Date(item.timestamp).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-            })}
+            {formatDisplayDate(item.postedDate || item.date || item.timestamp)}
           </span>
         </div>
 

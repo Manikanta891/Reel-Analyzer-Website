@@ -19,8 +19,8 @@ interface NavbarProps {
   onOpenExport: () => void;
   uniqueVisitors: number;
   isExtensionConnected: boolean;
-  activeTab: 'reels' | 'tools' | 'flashcards';
-  onTabChange: (tab: 'reels' | 'tools' | 'flashcards') => void;
+  activeTab: 'reels' | 'flashcards';
+  onTabChange: (tab: 'reels' | 'flashcards') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -60,11 +60,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </Link>
 
-        {/* Center Static Tabs: Reels | Tools | Flashcards (Never Shifts) */}
+        {/* Center Static Tabs: Reels | Flashcards (Never Shifts) */}
         <nav className="flex items-center p-1 rounded-xl bg-zinc-900/90 border border-white/[0.08]">
           <button
             onClick={() => onTabChange('reels')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 ${
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 ${
               activeTab === 'reels'
                 ? 'bg-zinc-800 text-white font-semibold shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
@@ -74,19 +74,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>Reels</span>
           </button>
           <button
-            onClick={() => onTabChange('tools')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 ${
-              activeTab === 'tools'
-                ? 'bg-zinc-800 text-white font-semibold shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <Wrench className="w-3.5 h-3.5" strokeWidth={1.5} />
-            <span>Tools</span>
-          </button>
-          <button
             onClick={() => onTabChange('flashcards')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 ${
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 ${
               activeTab === 'flashcards'
                 ? 'bg-zinc-800 text-white font-semibold shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'

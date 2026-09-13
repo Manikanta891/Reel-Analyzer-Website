@@ -17,7 +17,6 @@ import { SubdomainPills } from '@/components/SubdomainPills';
 import { ReelCard } from '@/components/ReelCard';
 import { ReelTableView } from '@/components/ReelTableView';
 import { FlashcardViewer } from '@/components/FlashcardViewer';
-import { ToolsDirectory } from '@/components/ToolsDirectory';
 import { SyncModal } from '@/components/SyncModal';
 import { PlaybookExportModal } from '@/components/PlaybookExportModal';
 import { ReelDetailModal } from '@/components/ReelDetailModal';
@@ -33,7 +32,7 @@ export default function VaultPage() {
   const [selectedCreator, setSelectedCreator] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [feedViewMode, setFeedViewMode] = useState<'grid' | 'table'>('grid');
-  const [activeTab, setActiveTab] = useState<'reels' | 'tools' | 'flashcards'>('reels');
+  const [activeTab, setActiveTab] = useState<'reels' | 'flashcards'>('reels');
 
   const [selectedReelForModal, setSelectedReelForModal] = useState<ReelItem | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -469,17 +468,7 @@ export default function VaultPage() {
             </div>
           </div>
 
-          {/* 2. Tools Directory Tab */}
-          <div className={activeTab === 'tools' ? 'block flex-1' : 'hidden'}>
-            <ToolsDirectory
-              reels={reels}
-              onSelectReel={(reel) => {
-                setSelectedReelForModal(reel);
-              }}
-            />
-          </div>
-
-          {/* 3. Flashcards Focus Study Tab */}
+          {/* 2. Flashcards Focus Study Tab */}
           <div className={activeTab === 'flashcards' ? 'block flex-1' : 'hidden'}>
             <FlashcardViewer
               reels={filteredReels}
