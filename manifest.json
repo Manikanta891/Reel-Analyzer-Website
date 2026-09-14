@@ -2,24 +2,25 @@
   "manifest_version": 3,
   "name": "Reel Analyzer",
   "version": "1.1",
-  "description": "Extract Instagram Reels, auto-categorize insights into knowledge playbooks, and analyze with Meta AI, Gemini, or ChatGPT.",
+  "description": "Extract Instagram Reels, auto-categorize insights into knowledge playbooks, and analyze with Meta AI.",
+
   "permissions": [
     "activeTab",
     "tabs",
     "storage",
+    "unlimitedStorage",
     "scripting",
     "sidePanel"
   ],
   "host_permissions": [
     "https://www.instagram.com/*",
-    "https://gemini.google.com/*",
-    "https://chatgpt.com/*",
-    "https://chat.openai.com/*",
+    "https://instagram.com/*",
     "https://www.meta.ai/*",
     "https://meta.ai/*"
   ],
   "background": {
-    "service_worker": "service_worker.js"
+    "service_worker": "service_worker.js",
+    "type": "module"
   },
   "side_panel": {
     "default_path": "popup.html"
@@ -41,30 +42,24 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.instagram.com/*"],
+      "matches": ["https://www.instagram.com/*", "https://instagram.com/*"],
       "js": ["content_ig.js"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": ["https://gemini.google.com/*"],
-      "js": ["content_gemini.js"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
-      "js": ["content_chatgpt.js"],
       "run_at": "document_idle"
     },
     {
       "matches": ["https://www.meta.ai/*", "https://meta.ai/*"],
       "js": ["content_meta.js"],
       "run_at": "document_idle"
-    }
-  ],
-  "web_accessible_resources": [
+    },
     {
-      "resources": ["web/index.html", "web/dashboard.css", "web/dashboard.js"],
-      "matches": ["<all_urls>"]
+      "matches": [
+        "http://localhost/*",
+        "http://127.0.0.1/*",
+        "https://reelanalyzer.manikanta.co.in/*",
+        "https://reels.manikanta.co.in/*"
+      ],
+      "js": ["content_bridge.js"],
+      "run_at": "document_idle"
     }
   ]
 }

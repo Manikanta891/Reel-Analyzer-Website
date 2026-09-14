@@ -1,41 +1,43 @@
-/**
- * InstaReel Gemini Summarizer - Instagram Content Script
- * Extracts Reel data, unsaves reels, and navigates to the next reel.
- */
-
-console.log("[InstaReel-AI] Instagram Content Script loaded.");
-
-// Auto-detect logged-in Instagram username if not already stored
-try {
-  setTimeout(() => {
-    const profileLink = document.querySelector('a[href*="/saved/"]') ||
-                        document.querySelector('a[href^="/"][role="link"] img[alt*="profile" i]')?.closest('a') ||
-                        document.querySelector('svg[aria-label="Profile" i]')?.closest('a');
-    if (profileLink && profileLink.getAttribute('href')) {
-      const match = profileLink.getAttribute('href').match(/^\/([a-zA-Z0-9._]+)\/?/);
-      if (match && match[1] && !['explore', 'reels', 'direct', 'stories', 'your_activity', 'accounts'].includes(match[1])) {
-        chrome.storage.local.get({ igUsername: '' }, (res) => {
-          if (!res.igUsername) {
-            chrome.storage.local.set({ igUsername: match[1] });
-          }
-        });
-      }
-    }
-  }, 1200);
-} catch (e) {}
-
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "PING") {
-    sendResponse({ status: "ok", url: window.location.href });
-    return true;
+(() => {
+  if (window.__instaReelIgLoaded) {
+    console.log("[InstaReel-IG] Instagram Content Script already loaded. Skipping.");
+    return;
   }
+  window.__instaReelIgLoaded = true;
+
+  console.log("[InstaReel-IG] Instagram Content Script loaded.");
+
+  // Auto-detect logged-in Instagram username if not already stored
+  try {
+    setTimeout(() => {
+      const profileLink = document.querySelector('a[href*="/saved/"]') ||
+                          document.querySelector('a[href^="/"][role="link"] img[alt*="profile" i]')?.closest('a') ||
+                          document.querySelector('svg[aria-label="Profile" i]')?.closest('a');
+      if (profileLink && profileLink.getAttribute('href')) {
+        const match = profileLink.getAttribute('href').match(/^\/([a-zA-Z0-9._]+)\/?/);
+        if (match && match[1] && !['explore', 'reels', 'direct', 'stories', 'your_activity', 'accounts'].includes(match[1])) {
+          chrome.storage.local.get({ igUsername: '' }, (res) => {
+            if (!res.igUsername) {
+              chrome.storage.local.set({ igUsername: match[1] });
+            }
+          });
+        }
+      }
+    }, 1200);
+  } catch (e) {}
+
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "PING") {
+      sendResponse({ status: "ok", url: window.location.href });
+      return true;
+    }
 
   if (request.action === "SCRAPE_REEL") {
     try {
       const data = extractReelData();
       sendResponse({ success: true, data });
     } catch (err) {
-      console.error("[InstaReel-Gemini] Scrape error:", err);
+      console.error("[InstaReel-IG] Scrape error:", err);
       sendResponse({ success: false, error: err.message });
     }
     return true;
@@ -46,7 +48,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const result = unsaveCurrentReel();
       sendResponse(result);
     } catch (err) {
-      console.error("[InstaReel-Gemini] Unsave error:", err);
+      console.error("[InstaReel-IG] Unsave error:", err);
       sendResponse({ success: false, error: err.message });
     }
     return true;
@@ -57,7 +59,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const result = clickNextReel();
       sendResponse(result);
     } catch (err) {
-      console.error("[InstaReel-Gemini] Next button error:", err);
+      console.error("[InstaReel-IG] Next button error:", err);
       sendResponse({ success: false, error: err.message });
     }
     return true;
@@ -65,7 +67,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 /**
- * Extracts comprehensive Reel Data across both Saved Posts (/p/) and Reels Feed (/reels/)
+ * Extracts Reel URL across both Saved Posts (/p/) and Reels Feed (/reels/)
  */
 function extractReelData() {
   // Check for Instagram unavailable / broken / deleted page
@@ -78,241 +80,88 @@ function extractReelData() {
     throw new Error("This Instagram post or reel is unavailable or has been deleted.");
   }
 
-  let reelUrl = window.location.href;
-  
-  // Find modal container, article element, or active video card in Reels feed
-  let container = document.querySelector('div[role="dialog"]') || 
-                  document.querySelector('article');
-
-  if (!container) {
-    // In /reels/ feed: find the active reel card closest to viewport center
-    const videos = Array.from(document.querySelectorAll('video'));
-    for (const v of videos) {
-      const rect = v.getBoundingClientRect();
-      if (rect.top < window.innerHeight * 0.7 && rect.bottom > window.innerHeight * 0.3) {
-        container = v.closest('div[class*="x1qjc9v5"]') || v.closest('div[style*="height"]') || v.parentElement?.parentElement || document.body;
-        break;
-      }
-    }
-  }
-
-  // Fallback to document.body if currently on a reel page or /reels/ feed
-  if (!container && (window.location.href.includes('/reel') || window.location.href.includes('/p/'))) {
-    container = document.body;
-  }
-
-  if (!container && !window.location.href.includes('/reel') && !window.location.href.includes('/p/')) {
-    throw new Error("Please click on any Reel in Instagram to open it first.");
-  }
-
-  const activeContainer = container || document.body;
-
-  // Auto-expand "... more" if caption is collapsed in Reels feed
-  try {
-    const moreBtn = activeContainer.querySelector('span[role="button"]') ||
-                    Array.from(activeContainer.querySelectorAll('div[role="button"], span')).find(el => {
-                      const t = el.textContent.trim().toLowerCase();
-                      return t === 'more' || t === '... more' || t === '… more' || t.endsWith('more');
-                    });
-    if (moreBtn && typeof moreBtn.click === 'function') {
-      moreBtn.click();
-    }
-  } catch (e) {}
-
-  // Find the true, exact Reel permalink (excluding audio pages and profile tabs)
-  reelUrl = findTrueReelUrl(activeContainer);
-
-  // Extract author username (strictly from post header/author element, ignoring comments)
-  let author = "Unknown";
-  const headerEl = activeContainer.querySelector('header') ||
-                   activeContainer.querySelector('div[role="dialog"] header') ||
-                   document.querySelector('div[role="dialog"] header');
-
-  const systemKeywords = ['explore', 'reels', 'direct', 'stories', 'your_activity', 'accounts', 'audio', 'p', 'reel', 'follow', 'following', 'tagged', 'saved', 'posts', 'more'];
-
-  if (headerEl) {
-    const authorLinks = Array.from(headerEl.querySelectorAll('h2 a, h3 a, a[role="link"], a[href^="/"]'));
-    const authors = [];
-    for (const link of authorLinks) {
-      const href = link.getAttribute('href') || '';
-      const match = href.match(/^\/([a-zA-Z0-9._]+)\/?(?:\?.*)?$/);
-      if (match && match[1]) {
-        const uname = match[1];
-        if (!systemKeywords.includes(uname.toLowerCase()) && !authors.includes(uname)) {
-          const text = link.textContent.trim().replace(/^@/, '');
-          if (text && !systemKeywords.includes(text.toLowerCase())) {
-            authors.push(uname);
-          }
-        }
-      }
-    }
-    if (authors.length > 0) {
-      // Co-authors: max 3 genuine collaborator accounts
-      author = authors.slice(0, 3).join(', ');
-    }
-  }
-
-  // Fallback for Reels feed view (/reels/) or standalone post
-  if (author === "Unknown") {
-    const feedAuthorCandidates = Array.from(activeContainer.querySelectorAll(
-      'div[class*="_aa06"] a, div[class*="_ab9o"] a, div[class*="_aa2t"] a, span._ap3a a, div.x1rg5ohu a, header a, span[class*="x1lliihq"] a'
-    ));
-
-    for (const link of feedAuthorCandidates) {
-      // Ignore comments
-      if (link.closest('ul._a9z6') || link.closest('div[class*="comment"]')) continue;
-
-      const href = link.getAttribute('href') || '';
-      const match = href.match(/^\/([a-zA-Z0-9._]+)\/?(?:\?.*)?$/);
-      if (match && match[1]) {
-        const uname = match[1];
-        if (!systemKeywords.includes(uname.toLowerCase())) {
-          author = uname;
-          break;
-        }
-      }
-      const raw = link.textContent.trim().replace(/^@/, '');
-      if (raw && !systemKeywords.includes(raw.toLowerCase()) && !/^\d+/.test(raw) && raw.length < 35) {
-        author = raw;
-        break;
-      }
-    }
-  }
-
-  // Fallback from URL pathname if pattern is instagram.com/username/reel/shortcode or similar
-  if (author === "Unknown" && window.location.pathname) {
-    const pathMatch = window.location.pathname.match(/^\/([a-zA-Z0-9._]+)\/(?:reel|reels|p)\//);
-    if (pathMatch && pathMatch[1] && !systemKeywords.includes(pathMatch[1].toLowerCase())) {
-      author = pathMatch[1];
-    }
-  }
-
-  // Extract audio name if present
-  let audioTitle = "";
-  const audioEl = (headerEl || activeContainer).querySelector('a[href*="/audio/"]') ||
-                  activeContainer.querySelector('header span');
-  if (audioEl) {
-    audioTitle = audioEl.textContent.trim();
-  }
-
-  // Deep extract clean caption text (avoiding UI status tokens)
-  let fullText = [];
-  
-  // Priority 1: Primary caption container (_a9zs or h1)
-  const primaryCaption = activeContainer.querySelector('div._a9zs') ||
-                         activeContainer.querySelector('h1') || 
-                         activeContainer.querySelector('ul li h1');
-  if (primaryCaption && primaryCaption.textContent.trim()) {
-    fullText.push(primaryCaption.textContent.trim());
-  } else {
-    // Priority 2: Text spans excluding UI labels and metrics
-    const textSpans = Array.from(activeContainer.querySelectorAll('span[dir="auto"], div._a9zs'));
-    textSpans.forEach(span => {
-      // Exclude comment text if inside comment list
-      if (span.closest('ul._a9z6') || span.closest('div[class*="comment"]')) return;
-
-      const text = span.textContent.trim();
-      const lower = text.toLowerCase();
-      if (
-        text.length > 3 &&
-        !fullText.includes(text) &&
-        !lower.includes('audio is muted') &&
-        !lower.includes('audio is playing') &&
-        !lower.includes('verified') &&
-        !lower.includes('play button') &&
-        !['follow', 'following', 'more', '... more', '… more', 'view more', 'original audio'].includes(lower) &&
-        !/^\d+[\d,\.kKmM]*$/.test(text) // Exclude pure like/view counts
-      ) {
-        fullText.push(text);
-      }
-    });
-  }
-
-  // Detect genuine multi-slide carousel posts (must have slide counter or carousel track)
-  let isCarousel = false;
-  let carouselInfo = "";
-  const slideCounter = activeContainer.querySelector('div._aack, span._aack') ||
-                       Array.from(activeContainer.querySelectorAll('div, span')).find(el => {
-                         const t = el.textContent.trim();
-                         return /^\d+\s*[\/|of]\s*\d+$/i.test(t) && t.length <= 8 && !el.closest('header') && !el.closest('ul');
-                       });
-  const carouselTrack = activeContainer.querySelector('ul._acay');
-
-  if (slideCounter || carouselTrack) {
-    isCarousel = true;
-    const countText = slideCounter ? slideCounter.textContent.trim() : "Multi-Slide";
-    carouselInfo = `[Multi-Slide Carousel: ${countText}]`;
-  }
-
-  const combinedCaption = fullText.join("\n\n");
-
-  // Extract video source URL if available in DOM
-  let videoSrc = "";
-  const videoEl = activeContainer.querySelector('video');
-  if (videoEl && videoEl.src) {
-    videoSrc = videoEl.src;
-  }
-
-  // Extract true published timestamp directly from Instagram's <time> tag
-  let postedDate = "";
-  const timeEl = activeContainer.querySelector('time[datetime]') ||
-                 document.querySelector('div[role="dialog"] time[datetime]') ||
-                 activeContainer.querySelector('time');
-  if (timeEl) {
-    postedDate = timeEl.getAttribute('datetime') || timeEl.getAttribute('title') || timeEl.textContent.trim();
+  const reelUrl = findTrueReelUrl();
+  if (!reelUrl) {
+    throw new Error("Please open any Reel in Instagram first.");
   }
 
   return {
     url: reelUrl,
-    author: author,
-    audioTitle: audioTitle,
-    caption: combinedCaption || "No text caption found in reel post.",
-    isCarousel: isCarousel,
-    carouselInfo: carouselInfo,
-    videoSrc: videoSrc,
-    postedDate: postedDate,
-    timestamp: postedDate || new Date().toISOString()
+    author: "Unknown"
   };
 }
 
 /**
- * Robustly finds the true Instagram Reel URL, eliminating audio links and profile tabs
+ * Finds the currently visible/active article or dialog element in the viewport
  */
-function findTrueReelUrl(container) {
-  // Regex matching Instagram shortcodes across /p/, /reel/, and /reels/
-  const shortcodeRegex = /\/(?:p|reel|reels)\/([A-Za-z0-9_-]{7,25})(?:\/|\?|$)/;
+function getActiveScope() {
+  // 1. If in a modal dialog, scope to that dialog
+  const dialog = document.querySelector('div[role="dialog"]');
+  if (dialog) return dialog;
 
-  // 1. Check window.location.href first if user is directly on a reel or post permalink
-  if (window.location.href) {
-    const locMatch = window.location.href.match(shortcodeRegex);
-    if (locMatch && locMatch[1] && locMatch[1].toLowerCase() !== 'audio' && locMatch[1].toLowerCase() !== 'videos') {
-      return `https://www.instagram.com/reel/${locMatch[1]}/`;
-    }
-  }
+  // 2. If multiple articles exist (Reels feed), find the one centered in the viewport
+  const articles = Array.from(document.querySelectorAll('article'));
+  if (articles.length === 1) return articles[0];
+  if (articles.length > 1) {
+    const midY = window.innerHeight / 2;
+    const centerArticle = articles.find(art => {
+      const rect = art.getBoundingClientRect();
+      return rect.top <= midY && rect.bottom >= midY;
+    });
+    if (centerArticle) return centerArticle;
 
-  // 2. Scan all links inside the container
-  const allLinks = Array.from((container || document).querySelectorAll('a[href]'));
-
-  // Prioritize timestamp links (<time>)
-  for (const link of allLinks) {
-    if (link.querySelector('time') || link.closest('time')) {
-      const href = link.getAttribute('href') || '';
-      const match = href.match(shortcodeRegex);
-      if (match && match[1] && match[1].toLowerCase() !== 'audio' && match[1].toLowerCase() !== 'videos') {
-        return `https://www.instagram.com/reel/${match[1]}/`;
+    // Fallback: find article with largest visible area in viewport
+    let maxVisible = articles[0];
+    let maxArea = 0;
+    for (const art of articles) {
+      const r = art.getBoundingClientRect();
+      const visibleHeight = Math.max(0, Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0));
+      if (visibleHeight > maxArea) {
+        maxArea = visibleHeight;
+        maxVisible = art;
       }
     }
+    return maxVisible;
   }
 
-  // 3. Scan all valid anchor hrefs, excluding audio & profile tabs
+  return document;
+}
+
+/**
+ * Robustly finds the true Instagram Reel URL for the currently visible reel
+ */
+function findTrueReelUrl(container) {
+  const shortcodeRegex = /\/(?:p|reel|reels)\/([A-Za-z0-9_-]{7,25})(?:\/|\?|$)/;
+  const scope = container || getActiveScope();
+
+  // 1. Scan links inside active visible scope first (prioritizing <time> permalinks)
+  const timeLink = scope.querySelector('time')?.closest('a[href]');
+  if (timeLink) {
+    const href = timeLink.getAttribute('href') || '';
+    const match = href.match(shortcodeRegex);
+    if (match && match[1] && !['audio', 'videos', 'saved', 'tagged', 'explore', 'reels'].includes(match[1].toLowerCase())) {
+      return `https://www.instagram.com/reels/${match[1]}/`;
+    }
+  }
+
+  // 2. Scan all links inside active visible scope
+  const allLinks = Array.from(scope.querySelectorAll('a[href]'));
   for (const link of allLinks) {
     const href = link.getAttribute('href') || '';
-    if (href.includes('/audio/') || href.includes('/reels/audio/')) continue;
-    if (href.match(/^\/[A-Za-z0-9._]+\/(?:reels|saved|tagged)\/?$/)) continue; // e.g. /imzache/reels/
+    if (href.includes('/audio/') || href.includes('/reels/audio/') || href.includes('/saved/')) continue;
+    if (href.match(/^\/[A-Za-z0-9._]+\/(?:reels|saved|tagged)\/?$/)) continue;
 
     const match = href.match(shortcodeRegex);
-    if (match && match[1] && match[1].toLowerCase() !== 'audio' && match[1].toLowerCase() !== 'videos') {
-      return `https://www.instagram.com/reel/${match[1]}/`;
+    if (match && match[1] && !['audio', 'videos', 'saved', 'tagged', 'explore', 'reels'].includes(match[1].toLowerCase())) {
+      return `https://www.instagram.com/reels/${match[1]}/`;
+    }
+  }
+
+  // 3. Fallback: check window.location.href if directly on a permalink
+  if (window.location.href) {
+    const locMatch = window.location.href.match(shortcodeRegex);
+    if (locMatch && locMatch[1] && !['audio', 'videos', 'saved', 'tagged', 'explore', 'reels'].includes(locMatch[1].toLowerCase())) {
+      return `https://www.instagram.com/reels/${locMatch[1]}/`;
     }
   }
 
@@ -323,7 +172,7 @@ function findTrueReelUrl(container) {
  * Removes (unsaves) the current reel from Saved collection
  */
 function unsaveCurrentReel() {
-  console.log("[InstaReel-Gemini] Searching for Instagram Remove/Saved bookmark button...");
+  console.log("[InstaReel-IG] Searching for Instagram Remove/Saved bookmark button...");
 
   // 1. Target the exact SVG matching Instagram's Bookmark Remove icon:
   // <svg aria-label="Remove" ...><title>Remove</title><path d="M20 22a.999..."></path></svg>
@@ -372,7 +221,7 @@ function unsaveCurrentReel() {
   }
 
   // 2. Dispatch full pointer/mouse/click event sequence to SVG AND all ancestor containers
-  console.log("[InstaReel-Gemini] Found Remove SVG! Triggering full ancestor click cascade...", removeSvg);
+  console.log("[InstaReel-IG] Found Remove SVG! Triggering full ancestor click cascade...", removeSvg);
   simulateInstagramClick(removeSvg);
 
   return {
@@ -440,98 +289,106 @@ function simulateInstagramClick(startEl) {
         el.click();
       }
     } catch (err) {
-      console.warn("[InstaReel-Gemini] Error dispatching on node:", el, err);
+      console.warn("[InstaReel-IG] Error dispatching on node:", el, err);
     }
   });
 }
 
 /**
  * Clicks the Next arrow button or dispatches navigation events (ArrowDown / ArrowRight / Scroll)
+ * Uses a clean waterfall strategy to avoid skipping multiple reels.
  */
 function clickNextReel() {
-  const container = document.querySelector('div[role="dialog"]') || 
-                    document.querySelector('article') || 
-                    document.body;
+  const isModal = !!document.querySelector('div[role="dialog"]');
 
-  let clicked = false;
+  // Strategy 1: Modal View (Saved Posts modal dialog)
+  if (isModal) {
+    const dialog = document.querySelector('div[role="dialog"]');
+    const article = dialog ? dialog.querySelector('article') : null;
 
-  // Strategy 1: Modal Next Post Button (Right Arrow icon)
-  const nextButtons = Array.from(document.querySelectorAll('button, div[role="button"], a')).filter(el => {
-    const aria = el.getAttribute('aria-label') || '';
-    const svg = el.querySelector('svg');
-    const svgAria = svg ? svg.getAttribute('aria-label') || '' : '';
-    return (
-      (aria.includes('Next') || aria.includes('Right') || aria.includes('Down') || svgAria.includes('Next') || svgAria.includes('Down chevron') || svgAria.includes('Right chevron')) &&
-      !aria.includes('slide') && !svgAria.includes('slide')
-    );
-  });
+    let nextPostBtn = null;
 
-  for (const btn of nextButtons) {
-    try {
-      simulateInstagramClick(btn);
-      clicked = true;
-    } catch (e) {}
+    // 1. Look for Next Post button OUTSIDE the article (to avoid carousel next slide inside article)
+    if (dialog) {
+      const allControls = Array.from(dialog.querySelectorAll('button, div[role="button"], a[role="link"], a[href*="/p/"], a[href*="/reel/"]'));
+      const outsideControls = allControls.filter(el => {
+        if (article && article.contains(el)) return false; // Exclude carousel slide arrows inside article
+        return true;
+      });
+
+      for (const el of outsideControls) {
+        const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+        const title = (el.querySelector('title')?.textContent || '').toLowerCase();
+        const svgAria = (el.querySelector('svg')?.getAttribute('aria-label') || '').toLowerCase();
+
+        if (aria.includes('next') || aria.includes('right') || title.includes('next') || title.includes('right') || svgAria.includes('next') || svgAria.includes('right')) {
+          nextPostBtn = el;
+          break;
+        }
+      }
+    }
+
+    // 2. Fallback: Instagram modal floating navigation wrappers (_aaqg, _aaqh, _a6wv)
+    if (!nextPostBtn) {
+      const candidates = Array.from(document.querySelectorAll('div[class*="_aaqg"] button, div[class*="_aaqh"] button, a._a6wv, a[class*="_a6wv"], div._aaqg, div._aaqh'))
+        .filter(el => !(article && article.contains(el)));
+
+      if (candidates.length > 0) {
+        nextPostBtn = candidates[0].closest('button') || candidates[0].closest('a') || candidates[0];
+      }
+    }
+
+    // 3. Fallback: Any button positioned on the right edge outside the article
+    if (!nextPostBtn && dialog) {
+      const rightEdgeBtns = Array.from(dialog.querySelectorAll('button, div[role="button"], a')).filter(el => {
+        if (article && article.contains(el)) return false;
+        const rect = el.getBoundingClientRect();
+        return rect.left > window.innerWidth / 2 && rect.width > 20 && rect.height > 20;
+      });
+      if (rightEdgeBtns.length > 0) {
+        nextPostBtn = rightEdgeBtns[0];
+      }
+    }
+
+    if (nextPostBtn) {
+      console.log("[InstaReel-IG] Modal view detected. Clicking Next Post button (outside article):", nextPostBtn);
+      simulateInstagramClick(nextPostBtn);
+      return { success: true, method: "modal_next_post_button" };
+    }
+
+    // Modal fallback: click on the right side of the screen
+    console.log("[InstaReel-IG] Modal button not found — dispatching ArrowRight on dialog container.");
+    const modalTarget = dialog || document.body;
+    const arrowRightEvent = { key: "ArrowRight", code: "ArrowRight", keyCode: 39, which: 39, bubbles: true, cancelable: true };
+    modalTarget.dispatchEvent(new KeyboardEvent("keydown", arrowRightEvent));
+    modalTarget.dispatchEvent(new KeyboardEvent("keyup", arrowRightEvent));
+    return { success: true, method: "modal_arrow_right" };
   }
 
-  // Strategy 2: Next Link / Button specific class targets
-  const specificNext = document.querySelector('div._aa2m button, a._a6wv, div[class*="_aa2m"] button');
-  if (specificNext) {
-    try {
-      simulateInstagramClick(specificNext);
-      clicked = true;
-    } catch (e) {}
+  // Strategy 2: Reels Feed View (/reels/)
+  // Check for Next / Down Chevron button in reels feed
+  const feedNextBtn =
+    document.querySelector('button[aria-label*="Down" i]') ||
+    document.querySelector('svg[aria-label*="Down" i]')?.closest('button') ||
+    document.querySelector('div[role="button"][aria-label*="Down" i]');
+
+  if (feedNextBtn) {
+    console.log("[InstaReel-IG] Feed Down button found. Clicking it.");
+    simulateInstagramClick(feedNextBtn);
+    return { success: true, method: "feed_button" };
   }
 
-  // Strategy 3: Keyboard Navigation across all focus targets
-  const targets = [
-    document.activeElement,
-    document.querySelector('video'),
-    document.querySelector('div[role="dialog"]'),
-    document.querySelector('article'),
-    document.body,
-    document,
-    window
-  ].filter(Boolean);
+  // Single clean ArrowDown keyboard event
+  console.log("[InstaReel-IG] Feed navigation — dispatching single ArrowDown and smooth scroll.");
+  const target = document.activeElement || document.querySelector('video') || document.body;
+  const arrowDownEvent = { key: "ArrowDown", code: "ArrowDown", keyCode: 40, which: 40, bubbles: true, cancelable: true };
+  target.dispatchEvent(new KeyboardEvent("keydown", arrowDownEvent));
+  target.dispatchEvent(new KeyboardEvent("keyup", arrowDownEvent));
 
-  const keys = [
-    { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40, which: 40 },
-    { key: 'PageDown', code: 'PageDown', keyCode: 34, which: 34 },
-    { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39, which: 39 },
-    { key: 'j', code: 'KeyJ', keyCode: 74, which: 74 }
-  ];
-
-  targets.forEach(target => {
-    keys.forEach(k => {
-      try {
-        target.dispatchEvent(new KeyboardEvent('keydown', { ...k, bubbles: true, cancelable: true }));
-        target.dispatchEvent(new KeyboardEvent('keypress', { ...k, bubbles: true, cancelable: true }));
-        target.dispatchEvent(new KeyboardEvent('keyup', { ...k, bubbles: true, cancelable: true }));
-      } catch (e) {}
-    });
-
-    // Wheel Event for vertical feeds
-    try {
-      target.dispatchEvent(new WheelEvent('wheel', {
-        deltaY: window.innerHeight || 800,
-        deltaMode: 0,
-        bubbles: true,
-        cancelable: true
-      }));
-    } catch (e) {}
-  });
-
-  // Strategy 4: Vertical Scroll for Reels Feeds and containers
+  // Smooth scroll fallback
   const scrollDistance = window.innerHeight || 800;
-  window.scrollBy({ top: scrollDistance, behavior: 'smooth' });
-  document.documentElement.scrollTop += scrollDistance;
-  document.body.scrollTop += scrollDistance;
+  window.scrollBy({ top: scrollDistance, behavior: "smooth" });
 
-  const scrollableContainers = Array.from(document.querySelectorAll('div[class*="x1qjc9v5"], div[style*="overflow"], main'));
-  scrollableContainers.forEach(c => {
-    try {
-      c.scrollTop += scrollDistance;
-    } catch (e) {}
-  });
-
-  return { success: true, method: clicked ? "button_and_scroll" : "keyboard_and_scroll" };
+  return { success: true, method: "feed_arrow_scroll" };
 }
+})();

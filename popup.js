@@ -1,117 +1,38 @@
 /**
- * Reel Analyzer - Side Panel Script (Option B: All-in-One Compact UI)
- * Dedicated to Meta AI automated extraction, live tab connection checks, and instant downloads.
+ * Reel Analyzer - Side Panel / Popup Entry Point
  */
 
-const FLUID_PROMPT_TEMPLATE = `Analyze the attached Instagram Reel and convert it into a reusable knowledge note: {url}
-
-At the very top, ALWAYS output this exact YAML:
-
----
-creator: "[creator name or Unknown]"
-domain: "[Domain]"
-subdomain: "[Subdomain]"
-subject: "[3–7 word title]"
-personal_utility: "[Why this could be useful to me]"
-entities: ["[tools/resources/etc]"]
-tags: ["#tag1", "#tag2", "#tag3"]
----
-
-Then extract the Reel's knowledge.
-
-Do NOT use a fixed structure. Choose the best structure based on the Reel.
-
-Preserve all high-value information: exact names, numbers, steps, examples, code, commands, tools, frameworks, and important details.
-
-Remove hooks, filler, repetition, and hype.
-
-Separate facts from opinions or recommendations.
-
-The goal is not to summarize the Reel. The goal is to create a permanent knowledge note that I can search and reuse later without watching the Reel again.
-
-Never invent information that is not present in the Reel.`;
+import { ACTIONS } from './src/shared/constants.js';
+import {
+  elements,
+  showWelcome,
+  hideWelcome,
+  setStatus,
+  setConnStatus,
+  togglePromptEditor,
+  updatePromptCharCount,
+  updateSavedCount,
+  renderDomainPills,
+  applyBatchState
+} from './src/popup/ui.js';
+import { createZipBlob } from './src/popup/zipPackager.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // ─── Welcome Overlay ──────────────────────────────────────────────────────
-  const welcomeCard = document.getElementById('welcomeCard');
-  const btnDismissWelcome = document.getElementById('btnDismissWelcome');
-  const btnGotIt = document.getElementById('btnGotIt');
-  const btnShowHelp = document.getElementById('btnShowHelp');
-  const btnFooterHelp = document.getElementById('btnFooterHelp');
-
-  function showWelcome() {
-    if (!welcomeCard) return;
-    welcomeCard.style.display = 'flex';
-    welcomeCard.classList.add('welcome-card-enter');
-  }
-  function hideWelcome() {
-    if (!welcomeCard) return;
-    welcomeCard.classList.remove('welcome-card-enter');
-    welcomeCard.classList.add('welcome-card-exit');
-    setTimeout(() => {
-      welcomeCard.style.display = 'none';
-      welcomeCard.classList.remove('welcome-card-exit');
-    }, 220);
-  }
-
   chrome.storage.local.get({ welcomeSeen: false }, (r) => {
     if (!r.welcomeSeen) showWelcome();
   });
 
-  btnDismissWelcome?.addEventListener('click', () => {
+  elements.btnDismissWelcome?.addEventListener('click', () => {
     chrome.storage.local.set({ welcomeSeen: true });
     hideWelcome();
   });
-  btnGotIt?.addEventListener('click', () => {
+  elements.btnGotIt?.addEventListener('click', () => {
     chrome.storage.local.set({ welcomeSeen: true });
     hideWelcome();
   });
-  btnShowHelp?.addEventListener('click', showWelcome);
-  btnFooterHelp?.addEventListener('click', showWelcome);
-
-  // ─── Status Elements ──────────────────────────────────────────────────────
-  const statusBadge = document.getElementById('statusBadge');
-  const statusText = statusBadge.querySelector('.status-text');
-
-  const igStatusDot = document.getElementById('igStatusDot');
-  const igStatusText = document.getElementById('igStatusText');
-  const btnOpenIg = document.getElementById('btnOpenIg');
-
-  const metaStatusDot = document.getElementById('metaStatusDot');
-  const metaStatusText = document.getElementById('metaStatusText');
-  const btnOpenMeta = document.getElementById('btnOpenMeta');
-
-  // ─── Batch Controls ───────────────────────────────────────────────────────
-  const batchCountInput = document.getElementById('batchCount');
-  const chkAutoUnsave = document.getElementById('chkAutoUnsave');
-  const btnStartBatch = document.getElementById('btnStartBatch');
-  const btnStopBatch = document.getElementById('btnStopBatch');
-
-  const batchProgressContainer = document.getElementById('batchProgressContainer');
-  const progressText = document.getElementById('progressText');
-  const progressPercent = document.getElementById('progressPercent');
-  const progressBarFill = document.getElementById('progressBarFill');
-  const batchStatusText = document.getElementById('batchStatusText');
-
-  // ─── Downloads & Vault ────────────────────────────────────────────────────
-  const savedCountEl = document.getElementById('savedCount');
-  const categoryPillsEl = document.getElementById('categoryPills');
-  const btnOpenDashboard = document.getElementById('btnOpenDashboard');
-  const btnExportMd = document.getElementById('btnExportMd');
-  const btnExportCsv = document.getElementById('btnExportCsv');
-  const btnExportPlaybookZip = document.getElementById('btnExportPlaybookZip');
-  const btnClearData = document.getElementById('btnClearData');
-
-  // ─── Custom Prompt ────────────────────────────────────────────────────────
-  const chkCustomPrompt = document.getElementById('chkCustomPrompt');
-  const promptEditorContainer = document.getElementById('promptEditorContainer');
-  const customPromptInput = document.getElementById('customPromptInput');
-  const btnResetPrompt = document.getElementById('btnResetPrompt');
-  const promptCharCount = document.getElementById('promptCharCount');
-
-  // ─── Bulk Unsave ──────────────────────────────────────────────────────────
-  const unsaveCountInput = document.getElementById('unsaveCount');
-  const btnStartUnsaveBatch = document.getElementById('btnStartUnsaveBatch');
+  elements.btnShowHelp?.addEventListener('click', showWelcome);
+  elements.btnFooterHelp?.addEventListener('click', showWelcome);
 
   // ─── Load Saved Configurations ───────────────────────────────────────────
   chrome.storage.local.get({
@@ -121,21 +42,28 @@ document.addEventListener('DOMContentLoaded', () => {
     autoUnsave: false,
     unsaveCount: 10
   }, (result) => {
-    chkCustomPrompt.checked = !!result.customPromptEnabled;
-    
-    // Auto-migrate legacy prompt templates
-    let promptVal = result.customPrompt || '';
-    if (!promptVal || promptVal.includes('ADAPTIVE PLAYBOOK EXTRACTION') || promptVal.includes('Posted Date:') || promptVal.includes('1. The Hook') || promptVal.includes('CORE PLAYBOOK') || promptVal.includes('### 1.')) {
-      promptVal = FLUID_PROMPT_TEMPLATE;
-      chrome.storage.local.set({ customPrompt: FLUID_PROMPT_TEMPLATE });
-    }
-    
-    customPromptInput.value = promptVal;
-    togglePromptEditor(chkCustomPrompt.checked);
+    let promptVal = (result.customPrompt || '').trim();
+    let isEnabled = !!result.customPromptEnabled;
 
-    batchCountInput.value = result.batchCount || 5;
-    chkAutoUnsave.checked = !!result.autoUnsave;
-    unsaveCountInput.value = result.unsaveCount || 10;
+    // Purge legacy system prompt text if previously saved in storage
+    if (
+      promptVal.includes('Analyze the attached') ||
+      promptVal.includes('TAXONOMY:') ||
+      promptVal.includes('KNOWLEDGE EXTRACTION:') ||
+      promptVal.includes('CURRENT KNOWLEDGE TAXONOMY') ||
+      promptVal.includes('personal_utility')
+    ) {
+      promptVal = '';
+      isEnabled = false;
+      chrome.storage.local.set({ customPrompt: '', customPromptEnabled: false });
+    }
+
+    if (elements.chkCustomPrompt) elements.chkCustomPrompt.checked = isEnabled;
+    if (elements.customPromptInput) elements.customPromptInput.value = promptVal;
+    togglePromptEditor(isEnabled);
+
+    if (elements.batchCountInput) elements.batchCountInput.value = result.batchCount || 5;
+    if (elements.unsaveCountInput) elements.unsaveCountInput.value = result.unsaveCount || 10;
 
     updateSavedCount();
     checkCurrentBatchState();
@@ -150,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // 1. Check Instagram
       const igTabs = await chrome.tabs.query({ url: '*://www.instagram.com/*' });
       const igOpen = igTabs.length > 0;
-      const reelOpen = igTabs.some(t => t.url && (/\/(?:reel|reels|p)\/[A-Za-z0-9_-]+/.test(t.url)));
+      const reelOpen = igTabs.some((t) => t.url && (/\/(?:reel|reels|p)\/[A-Za-z0-9_-]+/.test(t.url)));
 
       if (reelOpen) {
         setConnStatus('ig', 'ready', 'Reel detected', false);
@@ -164,26 +92,27 @@ document.addEventListener('DOMContentLoaded', () => {
       const metaTabs = await chrome.tabs.query({ url: ['*://www.meta.ai/*', '*://meta.ai/*'] });
       const metaOpen = metaTabs.length > 0;
 
-      if (metaOpen) {
-        setConnStatus('meta', 'ready', 'Connected', false);
+      if (!metaOpen) {
+        setConnStatus('meta', 'offline', 'Not open', true, 'Open meta.ai ↗');
       } else {
-        setConnStatus('meta', 'offline', 'Not open', true);
+        const activeMetaTab = metaTabs[0];
+        try {
+          chrome.tabs.sendMessage(activeMetaTab.id, { action: 'PING' }, (resp) => {
+            if (chrome.runtime.lastError || !resp) {
+              setConnStatus('meta', 'pending', 'Open tab', true, 'Focus tab ↗');
+            } else if (resp.isLoggedIn) {
+              setConnStatus('meta', 'ready', 'Logged In', false);
+            } else {
+              setConnStatus('meta', 'pending', 'Login required', true, 'Log in ↗');
+            }
+          });
+        } catch (e) {
+          setConnStatus('meta', 'pending', 'Checking...', false);
+        }
       }
     } catch (e) {
       console.warn('Connection check error:', e);
     }
-  }
-
-  function setConnStatus(type, state, text, showOpenBtn) {
-    const dot = type === 'ig' ? igStatusDot : metaStatusDot;
-    const desc = type === 'ig' ? igStatusText : metaStatusText;
-    const btn = type === 'ig' ? btnOpenIg : btnOpenMeta;
-
-    if (!dot || !desc) return;
-
-    dot.className = `status-dot-mini dot-${state}`;
-    desc.textContent = text;
-    if (btn) btn.style.display = showOpenBtn ? 'inline-block' : 'none';
   }
 
   function startConnectionPolling() {
@@ -193,89 +122,91 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 1-Click Open Links
-  btnOpenIg?.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'https://www.instagram.com/reels/' });
-  });
-  btnOpenMeta?.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'https://www.meta.ai/' });
-  });
-
-  // ─── Custom Prompt Event Handlers ─────────────────────────────────────────
-  chkCustomPrompt.addEventListener('change', () => {
-    const isEnabled = chkCustomPrompt.checked;
-    chrome.storage.local.set({ customPromptEnabled: isEnabled });
-    togglePromptEditor(isEnabled);
-    if (isEnabled && !customPromptInput.value.trim()) {
-      customPromptInput.value = FLUID_PROMPT_TEMPLATE;
-      chrome.storage.local.set({ customPrompt: FLUID_PROMPT_TEMPLATE });
-      updatePromptCharCount();
+  elements.btnOpenIg?.addEventListener('click', async () => {
+    const igTabs = await chrome.tabs.query({ url: '*://www.instagram.com/*' });
+    if (igTabs.length > 0) {
+      const tab = igTabs[0];
+      chrome.tabs.update(tab.id, { active: true });
+      if (tab.windowId) chrome.windows.update(tab.windowId, { focused: true });
+    } else {
+      chrome.tabs.create({ url: 'https://www.instagram.com/reels/' });
     }
   });
 
-  function togglePromptEditor(show) {
-    promptEditorContainer.style.display = show ? 'block' : 'none';
-    btnResetPrompt.style.display = show ? 'inline' : 'none';
-    if (show) updatePromptCharCount();
-  }
+  elements.btnOpenMeta?.addEventListener('click', async () => {
+    const metaTabs = await chrome.tabs.query({ url: ['*://www.meta.ai/*', '*://meta.ai/*'] });
+    if (metaTabs.length > 0) {
+      const tab = metaTabs[0];
+      chrome.tabs.update(tab.id, { active: true });
+      if (tab.windowId) chrome.windows.update(tab.windowId, { focused: true });
+    } else {
+      chrome.tabs.create({ url: 'https://www.meta.ai/' });
+    }
+  });
 
-  customPromptInput.addEventListener('input', () => {
-    const val = customPromptInput.value;
+  // ─── Custom Prompt Event Handlers ─────────────────────────────────────────
+  elements.chkCustomPrompt?.addEventListener('change', () => {
+    const isEnabled = elements.chkCustomPrompt.checked;
+    chrome.storage.local.set({ customPromptEnabled: isEnabled });
+    togglePromptEditor(isEnabled);
+  });
+
+  elements.customPromptInput?.addEventListener('input', () => {
+    const val = elements.customPromptInput.value;
     chrome.storage.local.set({ customPrompt: val });
     updatePromptCharCount();
   });
 
-  btnResetPrompt.addEventListener('click', () => {
-    customPromptInput.value = FLUID_PROMPT_TEMPLATE;
-    chrome.storage.local.set({ customPrompt: FLUID_PROMPT_TEMPLATE });
+  elements.btnResetPrompt?.addEventListener('click', () => {
+    elements.customPromptInput.value = '';
+    chrome.storage.local.set({ customPrompt: '' });
     updatePromptCharCount();
   });
 
-  function updatePromptCharCount() {
-    const len = customPromptInput.value.trim().length;
-    promptCharCount.innerText = `${len} chars`;
-  }
-
   // ─── Batch Settings Sync ──────────────────────────────────────────────────
-  batchCountInput.addEventListener('change', () => {
-    chrome.storage.local.set({ batchCount: parseInt(batchCountInput.value, 10) || 5 });
+  elements.batchCountInput?.addEventListener('change', () => {
+    chrome.storage.local.set({ batchCount: parseInt(elements.batchCountInput.value, 10) || 5 });
   });
-  chkAutoUnsave.addEventListener('change', () => {
-    chrome.storage.local.set({ autoUnsave: chkAutoUnsave.checked });
-  });
-  unsaveCountInput.addEventListener('change', () => {
-    chrome.storage.local.set({ unsaveCount: parseInt(unsaveCountInput.value, 10) || 10 });
+  elements.unsaveCountInput?.addEventListener('change', () => {
+    chrome.storage.local.set({ unsaveCount: parseInt(elements.unsaveCountInput.value, 10) || 10 });
   });
 
   // ─── Background State & Storage Listeners ─────────────────────────────────
   chrome.runtime.onMessage.addListener((message) => {
-    if (message.action === 'BATCH_STATE_UPDATED' && message.state) {
+    if (message.action === ACTIONS.BATCH_STATE_UPDATED && message.state) {
       applyBatchState(message.state);
     }
   });
 
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && (changes.reelsData || changes.categoriesRegistry)) {
+    if (area === 'local' && (changes.reelsData || changes.knowledgeTaxonomy)) {
       updateSavedCount();
     }
   });
 
   // ─── Batch Action Handlers ────────────────────────────────────────────────
-  btnStartBatch.addEventListener('click', handleStartBatch);
-  btnStopBatch.addEventListener('click', handleStopBatch);
-  btnStartUnsaveBatch.addEventListener('click', handleStartBatchUnsave);
+  elements.btnStartBatch?.addEventListener('click', handleStartBatch);
+  elements.btnStopBatch?.addEventListener('click', handleStopBatch);
+  elements.btnStartUnsaveBatch?.addEventListener('click', handleStartBatchUnsave);
 
-  function handleStartBatch() {
-    const targetCount = parseInt(batchCountInput.value, 10) || 1;
-    const autoUnsave = chkAutoUnsave.checked;
-    const isCustomPromptActive = chkCustomPrompt.checked;
-    const customPromptText = isCustomPromptActive ? customPromptInput.value.trim() : '';
+  async function handleStartBatch() {
+    const targetCount = parseInt(elements.batchCountInput.value, 10) || 1;
+    const isCustomPromptActive = elements.chkCustomPrompt.checked;
+    const customPromptText = isCustomPromptActive ? elements.customPromptInput.value.trim() : '';
+
+    const metaTabs = await chrome.tabs.query({ url: ['*://www.meta.ai/*', '*://meta.ai/*'] });
+    if (metaTabs.length === 0) {
+      alert('Please open meta.ai and ensure you are logged in before starting.');
+      chrome.tabs.create({ url: 'https://www.meta.ai/' });
+      return;
+    }
 
     setStatus('Starting...', 'active');
 
     chrome.runtime.sendMessage({
-      action: 'START_BATCH',
+      action: ACTIONS.START_BATCH,
       targetCount,
-      autoUnsave,
+      autoUnsave: false,
       provider: 'meta',
       customPrompt: customPromptText
     }, (response) => {
@@ -286,80 +217,37 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function handleStopBatch() {
-    btnStopBatch.disabled = true;
-    chrome.runtime.sendMessage({ action: 'STOP_BATCH' });
+    if (elements.btnStopBatch) elements.btnStopBatch.disabled = true;
+    chrome.runtime.sendMessage({ action: ACTIONS.STOP_BATCH });
   }
 
   function handleStartBatchUnsave() {
-    const count = parseInt(unsaveCountInput.value, 10) || 10;
+    const count = parseInt(elements.unsaveCountInput.value, 10) || 10;
     if (!confirm(`Are you sure you want to remove ${count} reels from your Saved collection?`)) return;
     setStatus('Unsaving...', 'active');
-    chrome.runtime.sendMessage({ action: 'START_BATCH_UNSAVE', count }, (response) => {
+    chrome.runtime.sendMessage({ action: ACTIONS.START_BATCH_UNSAVE, count }, (response) => {
       if (!response || !response.success) setStatus('Error', 'error');
     });
   }
 
   // ─── Batch State Applicator ───────────────────────────────────────────────
   function checkCurrentBatchState() {
-    chrome.runtime.sendMessage({ action: 'GET_BATCH_STATE' }, (response) => {
+    chrome.runtime.sendMessage({ action: ACTIONS.GET_BATCH_STATE }, (response) => {
       if (response && response.success && response.state) {
         applyBatchState(response.state);
       }
     });
   }
 
-  function applyBatchState(state) {
-    updateSavedCount();
-
-    if (state.isRunning) {
-      btnStartBatch.disabled = true;
-      btnStartUnsaveBatch.disabled = true;
-      btnStopBatch.disabled = false;
-      batchProgressContainer.style.display = 'block';
-      setStatus(state.mode === 'unsave' ? 'Unsaving' : 'Summarizing', 'active');
-
-      const percent = state.targetCount > 0 ? Math.round((state.processedCount / state.targetCount) * 100) : 0;
-      progressText.innerText = `${state.mode === 'unsave' ? 'Unsaved' : 'Reel'} ${state.processedCount} of ${state.targetCount}`;
-      progressPercent.innerText = `${percent}%`;
-      progressBarFill.style.width = `${percent}%`;
-      batchStatusText.innerText = state.statusMessage || 'Processing...';
-    } else {
-      btnStartBatch.disabled = false;
-      btnStartUnsaveBatch.disabled = false;
-      btnStopBatch.disabled = true;
-
-      if (state.currentStep === 'done') {
-        batchProgressContainer.style.display = 'block';
-        progressBarFill.style.width = '100%';
-        progressPercent.innerText = '100%';
-        progressText.innerText = `Completed ${state.processedCount} of ${state.targetCount}`;
-        batchStatusText.innerText = state.statusMessage || 'Completed.';
-        setStatus('Done', 'active');
-      } else if (state.currentStep === 'error') {
-        batchProgressContainer.style.display = 'block';
-        batchStatusText.innerText = state.statusMessage;
-        setStatus('Error', 'error');
-      } else {
-        batchProgressContainer.style.display = 'none';
-        setStatus('Idle', 'idle');
-      }
-    }
-  }
-
-  function setStatus(text, mode = 'idle') {
-    statusText.innerText = text;
-    statusBadge.className = `status-pill status-${mode}`;
-  }
-
   // ─── Downloads & Dashboard ────────────────────────────────────────────────
-  btnExportMd.addEventListener('click', () => handleExport('md'));
-  btnExportCsv.addEventListener('click', () => handleExport('csv'));
-  btnExportPlaybookZip.addEventListener('click', handleExportPlaybookZip);
-  btnOpenDashboard.addEventListener('click', handleOpenDashboard);
-  btnClearData.addEventListener('click', handleClearData);
+  elements.btnExportMd?.addEventListener('click', () => handleExport('md'));
+  elements.btnExportCsv?.addEventListener('click', () => handleExport('csv'));
+  elements.btnExportPlaybookZip?.addEventListener('click', handleExportPlaybookZip);
+  elements.btnOpenDashboard?.addEventListener('click', handleOpenDashboard);
+  elements.btnClearData?.addEventListener('click', handleClearData);
 
   function handleExport(format) {
-    chrome.runtime.sendMessage({ action: 'EXPORT_DATA', format }, (response) => {
+    chrome.runtime.sendMessage({ action: ACTIONS.EXPORT_DATA, format }, (response) => {
       if (!response || !response.success) return;
       const blob = new Blob([response.content], { type: format === 'csv' ? 'text/csv' : 'text/markdown' });
       const url = URL.createObjectURL(blob);
@@ -372,67 +260,47 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function handleExportPlaybookZip() {
-    chrome.runtime.sendMessage({ action: 'EXPORT_ALL_PLAYBOOKS_ZIP' }, (response) => {
-      if (!response || !response.success) {
+    chrome.runtime.sendMessage({ action: ACTIONS.EXPORT_ALL_PLAYBOOKS_ZIP }, (response) => {
+      if (!response || !response.success || !response.files || !response.files.length) {
         alert(response?.error || 'No reels saved yet.');
         return;
       }
-      response.files.forEach((file, i) => {
-        setTimeout(() => {
-          const blob = new Blob([file.content], { type: 'text/markdown' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = file.filename;
-          a.click();
-          URL.revokeObjectURL(url);
-        }, i * 300);
-      });
+      const zipBlob = createZipBlob(response.files);
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ReelAnalyzer_Obsidian_Vault_${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
     });
   }
 
   function handleOpenDashboard() {
-    chrome.runtime.sendMessage({ action: 'OPEN_WEB_DASHBOARD' });
+    chrome.runtime.sendMessage({ action: ACTIONS.OPEN_WEB_DASHBOARD });
   }
 
   function handleClearData() {
-    if (confirm('Delete all saved summaries and taxonomy from storage?')) {
-      chrome.runtime.sendMessage({ action: 'CLEAR_DATA' }, () => {
-        updateSavedCount();
-        renderDomainPills({});
-        setStatus('Cleared', 'idle');
-      });
-    }
-  }
+    chrome.storage.local.get({ reelsData: [] }, (r) => {
+      const count = (r.reelsData || []).length;
+      if (count === 0) {
+        alert('Your Knowledge Vault is already empty.');
+        return;
+      }
 
-  function updateSavedCount() {
-    chrome.storage.local.get({ reelsData: [] }, (result) => {
-      const reels = result.reelsData || [];
-      if (savedCountEl) savedCountEl.innerText = reels.length;
+      const warningMsg =
+        `⚠️ WARNING: Permanent Data Deletion\n\n` +
+        `This will permanently delete all ${count} saved reel note(s) and your entire knowledge taxonomy from this browser.\n\n` +
+        `• This action CANNOT be undone.\n` +
+        `• If you want to keep your notes, click 'Cancel' and download your Obsidian Vault (.zip) first.\n\n` +
+        `Are you sure you want to delete everything?`;
 
-      const domainCounts = {};
-      reels.forEach(r => {
-        const d = r.domain || r.category || 'General';
-        domainCounts[d] = (domainCounts[d] || 0) + 1;
-      });
-      renderDomainPills(domainCounts);
-    });
-  }
-
-  function renderDomainPills(domainCounts) {
-    if (!categoryPillsEl) return;
-    const entries = Object.entries(domainCounts);
-    if (entries.length === 0) {
-      categoryPillsEl.style.display = 'none';
-      return;
-    }
-    categoryPillsEl.style.display = 'flex';
-    categoryPillsEl.innerHTML = '';
-    entries.forEach(([dom, count]) => {
-      const pill = document.createElement('span');
-      pill.className = 'category-pill';
-      pill.textContent = `${dom} (${count})`;
-      categoryPillsEl.appendChild(pill);
+      if (confirm(warningMsg)) {
+        chrome.runtime.sendMessage({ action: ACTIONS.CLEAR_DATA }, () => {
+          updateSavedCount();
+          renderDomainPills({});
+          setStatus('Cleared', 'idle');
+        });
+      }
     });
   }
 });
