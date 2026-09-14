@@ -10,7 +10,6 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { ReelItem } from '@/types';
-import { formatDisplayDate } from '@/lib/utils';
 
 interface ReelCardProps {
   item: ReelItem;
@@ -115,7 +114,7 @@ ${item.summary}
           {item.subject || 'Actionable Video Insight'}
         </h3>
 
-        {/* Creator & Date */}
+        {/* Creator */}
         <div className="flex items-center gap-2 text-xs text-zinc-400 mb-3.5">
           <button
             onClick={handleAuthorClick}
@@ -124,10 +123,6 @@ ${item.summary}
           >
             @{item.author || 'creator'}
           </button>
-          <span>•</span>
-          <span className="font-mono text-zinc-400">
-            {formatDisplayDate(item.postedDate || item.date || item.timestamp)}
-          </span>
         </div>
 
         {/* Key Takeaway Box */}

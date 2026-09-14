@@ -9,17 +9,11 @@ import {
   Lightbulb,
   Wrench,
   Tag,
-  Calendar,
   User,
-  Sparkles,
-  ListOrdered,
-  Gem,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ReelItem } from '@/types';
-import { parseStructuredSections } from '@/lib/summaryParser';
-import { formatDisplayDate } from '@/lib/utils';
 import { ErrorBoundary } from './ErrorBoundary';
 
 interface ReelDetailModalProps {
@@ -53,9 +47,6 @@ export const ReelDetailModal: React.FC<ReelDetailModalProps> = ({
 
   if (!reel) return null;
 
-  const { isStructured, cleanedFull, premise, breakdown, goldenNugget } =
-    parseStructuredSections(reel.summary || '');
-
   const handleCopyMarkdown = () => {
     try {
       const text = `### ${reel.subject || 'Actionable Video Insight'}
@@ -65,7 +56,7 @@ ${reel.personalUtility ? `**Key Takeaway:** ${reel.personalUtility}\n` : ''}
 ${reel.entities ? `**Tools & Frameworks:** ${reel.entities}\n` : ''}
 
 #### Summary
-${cleanedFull || reel.summary || ''}
+${reel.summary || ''}
 
 [View Original Reel](${reel.url})
 `;
@@ -157,7 +148,7 @@ ${cleanedFull || reel.summary || ''}
 
           {/* Scrollable Content Body */}
           <div className="p-4 sm:p-6 overflow-y-auto space-y-4">
-            {/* Creator & Date */}
+            {/* Creator */}
             <div className="flex items-center justify-between text-xs text-zinc-400 pb-3 border-b border-white/[0.06]">
               <div className="flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5 text-zinc-400" strokeWidth={1.5} />
@@ -182,12 +173,6 @@ ${cleanedFull || reel.summary || ''}
                   </button>
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 font-mono text-zinc-400">
-                <Calendar className="w-3.5 h-3.5 text-zinc-400" strokeWidth={1.5} />
-                <span>
-                  {formatDisplayDate(reel.postedDate || reel.date || reel.timestamp)}
-                </span>
-              </div>
             </div>
 
             {/* Key Takeaway */}
@@ -203,62 +188,12 @@ ${cleanedFull || reel.summary || ''}
               </div>
             )}
 
-            {/* Structured Summary Rendering */}
-            {isStructured ? (
-              <div className="space-y-4">
-                {/* 1. Core Premise Card */}
-                {premise && (
-                  <div className="p-4 rounded-xl bg-zinc-950/60 border border-white/[0.06] space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200 uppercase tracking-wide">
-                      <Sparkles className="w-3.5 h-3.5 text-brand-400" strokeWidth={1.5} />
-                      <span>Core Premise & Mechanism</span>
-                    </div>
-                    <div className="prose prose-invert prose-xs max-w-none text-zinc-300 leading-relaxed">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {premise}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                )}
-
-                {/* 2. Step-by-Step Breakdown Timeline */}
-                {breakdown && (
-                  <div className="p-4 rounded-xl bg-zinc-950/60 border border-white/[0.06] space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200 uppercase tracking-wide">
-                      <ListOrdered className="w-3.5 h-3.5 text-zinc-300" strokeWidth={1.5} />
-                      <span>Step-by-Step Breakdown</span>
-                    </div>
-                    <div className="prose prose-invert prose-xs max-w-none text-zinc-300 leading-relaxed">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {breakdown}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                )}
-
-                {/* 3. Golden Takeaway */}
-                {goldenNugget && (
-                  <div className="p-4 rounded-xl bg-brand-950/30 border border-brand-500/20 space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-brand-300 uppercase tracking-wide">
-                      <Gem className="w-3.5 h-3.5 text-brand-400" strokeWidth={1.5} />
-                      <span>Golden Nugget & Action Step</span>
-                    </div>
-                    <div className="prose prose-invert prose-xs max-w-none text-zinc-200 leading-relaxed">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {goldenNugget}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Rich Markdown Fallback */
-              <div className="p-4 rounded-xl bg-zinc-950/60 border border-white/[0.06] prose prose-invert prose-xs sm:prose-sm max-w-none text-zinc-300 leading-relaxed overflow-x-auto">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {cleanedFull || '*No detailed summary provided.*'}
-                </ReactMarkdown>
-              </div>
-            )}
+            {/* Fluid Rich Markdown Body */}
+            <div className="p-4 rounded-xl bg-zinc-950/60 border border-white/[0.06] prose prose-invert prose-xs sm:prose-sm max-w-none text-zinc-300 leading-relaxed overflow-x-auto">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {reel.summary || '*No detailed summary provided.*'}
+              </ReactMarkdown>
+            </div>
 
             {/* Tools & Frameworks */}
             {entityList.length > 0 && (

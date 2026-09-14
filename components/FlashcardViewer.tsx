@@ -7,9 +7,6 @@ import {
   RotateCw,
   ExternalLink,
   Bookmark,
-  Sparkles,
-  ListOrdered,
-  Gem,
   Lightbulb,
   Wrench,
   Folder,
@@ -22,7 +19,6 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ReelItem } from '@/types';
-import { parseStructuredSections } from '@/lib/summaryParser';
 import { ErrorBoundary } from './ErrorBoundary';
 import { FlashcardIntermissionAd } from './ads/FlashcardIntermissionAd';
 
@@ -326,10 +322,7 @@ export const FlashcardViewer: React.FC<FlashcardViewerProps> = ({
     );
   }
 
-  const { isStructured, cleanedFull, premise, breakdown, goldenNugget } =
-    parseStructuredSections(current.summary || '');
-
-  const entityList = current.entities
+  const entityList = current?.entities
     ? current.entities
         .split(',')
         .map((e) => e.trim())
@@ -436,63 +429,13 @@ export const FlashcardViewer: React.FC<FlashcardViewerProps> = ({
                 </div>
               </div>
             ) : (
-              /* BACK: Structured Solution Rendering (Scrollable inside fixed frame) */
+              /* BACK: Fluid Solution Rendering (Scrollable inside fixed frame) */
               <div className="space-y-3 text-left" onClick={(e) => e.stopPropagation()}>
-                {isStructured ? (
-                  <>
-                    {/* 1. Core Premise */}
-                    {premise && (
-                      <div className="p-3.5 rounded-xl bg-zinc-950/60 border border-white/[0.06] space-y-1.5">
-                        <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-200 uppercase tracking-wide">
-                          <Sparkles className="w-3.5 h-3.5 text-brand-400" strokeWidth={1.5} />
-                          <span>Core Premise & Mechanism</span>
-                        </div>
-                        <div className="prose prose-invert prose-xs max-w-none text-zinc-300 leading-relaxed">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {premise}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 2. Step Breakdown */}
-                    {breakdown && (
-                      <div className="p-3.5 rounded-xl bg-zinc-950/60 border border-white/[0.06] space-y-1.5">
-                        <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-200 uppercase tracking-wide">
-                          <ListOrdered className="w-3.5 h-3.5 text-zinc-300" strokeWidth={1.5} />
-                          <span>Step-by-Step Breakdown</span>
-                        </div>
-                        <div className="prose prose-invert prose-xs max-w-none text-zinc-300 leading-relaxed">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {breakdown}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 3. Golden Takeaway */}
-                    {goldenNugget && (
-                      <div className="p-3.5 rounded-xl bg-brand-950/30 border border-brand-500/20 space-y-1.5">
-                        <div className="flex items-center gap-1.5 text-xs font-semibold text-brand-300 uppercase tracking-wide">
-                          <Gem className="w-3.5 h-3.5 text-brand-400" strokeWidth={1.5} />
-                          <span>Golden Nugget</span>
-                        </div>
-                        <div className="prose prose-invert prose-xs max-w-none text-zinc-200 leading-relaxed">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {goldenNugget}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  /* Fallback Markdown */
-                  <div className="p-4 rounded-xl bg-zinc-950/60 border border-white/[0.06] prose prose-invert prose-xs max-w-none text-zinc-300 leading-relaxed overflow-x-auto">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {cleanedFull || '*No summary available.*'}
-                    </ReactMarkdown>
-                  </div>
-                )}
+                <div className="p-4 rounded-xl bg-zinc-950/60 border border-white/[0.06] prose prose-invert prose-xs max-w-none text-zinc-300 leading-relaxed overflow-x-auto">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {current.summary || '*No summary available.*'}
+                  </ReactMarkdown>
+                </div>
 
                 {/* Tools & Tags */}
                 {entityList.length > 0 && (
