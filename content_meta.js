@@ -101,35 +101,21 @@ function doInjectAndSubmit(inputEl, promptText) {
       document.execCommand('delete', false, null);
     } catch (e) {}
 
-    // 2. Dispatch native beforeinput & paste for Lexical
-    let injectedOk = false;
+    // 2. Insert text cleanly using execCommand
+    let success = false;
     try {
-      const dt = new DataTransfer();
-      dt.setData('text/plain', promptText);
-      inputEl.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
-      if (inputEl.innerText && inputEl.innerText.trim().length > 0) {
-        injectedOk = true;
-      }
-    } catch (e) {}
-
-    // Only fallback to insertText if paste was ignored
-    if (!injectedOk) {
-      try {
-        document.execCommand('insertText', false, promptText);
-        if (inputEl.innerText && inputEl.innerText.trim().length > 0) {
-          injectedOk = true;
-        }
-      } catch (e) {}
+      success = document.execCommand('insertText', false, promptText);
+    } catch (e) {
+      success = false;
     }
 
-    // 3. Fallback: Direct DOM node insertion if Lexical still didn't capture
-    if (!inputEl.innerText || inputEl.innerText.trim().length === 0) {
-      let p = inputEl.querySelector('p');
-      if (!p) {
-        p = document.createElement('p');
-        inputEl.appendChild(p);
-      }
-      p.textContent = promptText;
+    // 3. Fallback only if execCommand was not supported
+    if (!success) {
+      try {
+        const dt = new DataTransfer();
+        dt.setData('text/plain', promptText);
+        inputEl.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+      } catch (e) {}
     }
 
     // 4. Trigger reactive input events
