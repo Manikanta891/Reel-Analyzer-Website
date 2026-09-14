@@ -855,13 +855,13 @@ function fallbackCategorizer(caption, summaryText) {
 /**
  * Builds high-impact prompt with Living Taxonomy Knowledge Tree injection.
  * Turn 0 / every 5th turn: Master Prompt (Sets full rules, YAML schema, quality expectations).
- * Turns 1..4: Lean Prompt (URL + Live Taxonomy + brief reminder).
+ * Turns 1..4: Lean Prompt (URL + Live Taxonomy ONLY, zero repeated instructions).
  */
 async function buildPromptForReel(reelData, provider = "meta", customPrompt = "", turnIndex = 0) {
   const taxonomy = await getLivingTaxonomy();
   const domainKeys = Object.keys(taxonomy).filter((d) => taxonomy[d] && taxonomy[d].length > 0);
 
-  let taxonomyStr = "";
+  let treeStr = "";
   if (domainKeys.length > 0) {
     const treeLines = [];
     for (const dom of domainKeys) {
@@ -869,21 +869,7 @@ async function buildPromptForReel(reelData, provider = "meta", customPrompt = ""
       treeLines.push(`- ${dom}: [${subs.map((s) => `"${s}"`).join(", ")}]`);
     }
 
-    taxonomyStr = `YOUR CURRENT KNOWLEDGE TAXONOMY (FROM PREVIOUS REELS):
-${treeLines.join("\n")}
-
-CLASSIFICATION RULES:
-1. Reuse an existing Domain/Subdomain when applicable.
-2. If the Domain exists but the topic is new, create a concise 2–3 word Subdomain.
-3. Create a new Domain only for a genuinely new field.
-
-`;
-  } else {
-    taxonomyStr = `CLASSIFICATION RULES:
-- Domain: Identify the broad field (e.g., Technology, Fitness, Finance, Culinary, Design, Career, etc.).
-- Subdomain: Identify the specific specialization or topic (e.g. under Technology: "DevOps & Cloud", "Frontend & UI", "AI & LLMs"; under Fitness: "Strength Training", "Nutrition").
-
-`;
+    treeStr = `YOUR CURRENT KNOWLEDGE TAXONOMY (FROM PREVIOUS REELS):\n${treeLines.join("\n")}`;
   }
 
   // Custom prompt override if user explicitly enabled custom prompt
@@ -894,22 +880,40 @@ CLASSIFICATION RULES:
       .replace(/\{audio\}/g, reelData.audioTitle || "Original Audio")
       .replace(/\{caption\}/g, reelData.caption || "");
 
-    return `${taxonomyStr}${userPrompt}`;
+    return treeStr ? `${treeStr}\n\n${userPrompt}` : userPrompt;
   }
 
-  // Lean Follow-Up Prompt for turns 2, 3, 4, 5 in the same active chat
+  // Lean Follow-Up Prompt for turns 2, 3, 4, 5 (turns 1..4 in 0-indexed loop)
+  // Sends ONLY the URL and the live taxonomy tree — ZERO repeated rule blocks.
   const isContinuationTurn = turnIndex > 0 && turnIndex % 5 !== 0;
 
   if (isContinuationTurn) {
-    return `Extract this Reel into a permanent knowledge note following the exact same rules and YAML format: ${reelData.url}
-
-${taxonomyStr}`;
+    let continuationText = `Extract this Reel into a permanent knowledge note following the exact same rules and YAML format: ${reelData.url}`;
+    if (treeStr) {
+      continuationText += `\n\n${treeStr}`;
+    }
+    return continuationText;
   }
 
   // Master Setup Prompt (Turn 0, 5, 10, etc.)
-  return `Analyze the attached Instagram Reel and convert it into a reusable knowledge note: ${reelData.url}
+  let classificationRules = `CLASSIFICATION RULES:
+1. Reuse an existing Domain/Subdomain when applicable.
+2. If the Domain exists but the topic is new, create a concise 2–3 word Subdomain.
+3. Create a new Domain only for a genuinely new field.`;
 
-${taxonomyStr}At the very top, ALWAYS output this exact YAML:
+  if (!treeStr) {
+    classificationRules = `CLASSIFICATION RULES:
+- Domain: Identify the broad field (e.g., Technology, Fitness, Finance, Culinary, Design, Career, etc.).
+- Subdomain: Identify the specific specialization or topic (e.g. under Technology: "DevOps & Cloud", "Frontend & UI", "AI & LLMs"; under Fitness: "Strength Training", "Nutrition").`;
+  }
+
+  let masterHeader = `Analyze the attached Instagram Reel and convert it into a reusable knowledge note: ${reelData.url}\n\n`;
+  if (treeStr) {
+    masterHeader += `${treeStr}\n\n`;
+  }
+  masterHeader += `${classificationRules}\n\n`;
+
+  return `${masterHeader}At the very top, ALWAYS output this exact YAML:
 
 ---
 creator: "[creator name or Unknown]"

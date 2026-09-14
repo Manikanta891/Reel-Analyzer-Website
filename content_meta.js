@@ -107,15 +107,22 @@ function doInjectAndSubmit(inputEl, promptText) {
       const dt = new DataTransfer();
       dt.setData('text/plain', promptText);
       inputEl.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
-      injectedOk = true;
+      if (inputEl.innerText && inputEl.innerText.trim().length > 0) {
+        injectedOk = true;
+      }
     } catch (e) {}
 
-    try {
-      document.execCommand('insertText', false, promptText);
-      injectedOk = true;
-    } catch (e) {}
+    // Only fallback to insertText if paste was ignored
+    if (!injectedOk) {
+      try {
+        document.execCommand('insertText', false, promptText);
+        if (inputEl.innerText && inputEl.innerText.trim().length > 0) {
+          injectedOk = true;
+        }
+      } catch (e) {}
+    }
 
-    // 3. Fallback: Direct DOM node insertion if Lexical didn't capture
+    // 3. Fallback: Direct DOM node insertion if Lexical still didn't capture
     if (!inputEl.innerText || inputEl.innerText.trim().length === 0) {
       let p = inputEl.querySelector('p');
       if (!p) {
