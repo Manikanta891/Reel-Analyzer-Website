@@ -11,6 +11,11 @@ if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
     .catch((error) => console.error("[InstaReel-AI] Error setting side panel behavior:", error));
 }
 
+// Set offboarding feedback survey URL when user removes extension
+if (chrome.runtime && chrome.runtime.setUninstallURL) {
+  chrome.runtime.setUninstallURL("https://reelanalyzer.manikanta.co.in/uninstall");
+}
+
 // Global Batch State
 let batchState = {
   isRunning: false,
@@ -133,17 +138,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "OPEN_WEB_DASHBOARD") {
-    chrome.storage.local.get({ reelsData: [] }, (res) => {
-      chrome.tabs.create({ url: chrome.runtime.getURL("web/index.html"), active: true }, (tab) => {
-        // Inject data after tab loads
-        setTimeout(() => {
-          chrome.tabs.sendMessage(tab.id, {
-            action: "SYNC_DATA",
-            reelsData: res.reelsData
-          }).catch(() => {});
-        }, 1500);
-      });
-      sendResponse({ success: true });
+    const VAULT_URL = "https://reelanalyzer.manikanta.co.in/vault";
+    chrome.tabs.create({ url: VAULT_URL, active: true }, () => {
+      sendResponse({ success: true, url: VAULT_URL });
     });
     return true;
   }
@@ -224,12 +221,28 @@ async function runSummaryBatchEngine(targetCount, autoUnsave, provider = "meta",
 
       let scrapeRes = await handleScrapeIG();
       
-      // If same URL as previous reel, wait and retry navigation
-      if (scrapeRes?.success && scrapeRes.data.url === batchState.lastProcessedUrl) {
-        console.log("[InstaReel-AI] Same URL detected. Re-triggering Next navigation...");
+      // If same URL as previous reel, retry navigation up to 3 times
+      let navRetries = 0;
+      while (scrapeRes?.success && scrapeRes.data.url === batchState.lastProcessedUrl && navRetries < 3) {
+        navRetries++;
+        console.log(`[InstaReel-AI] Same URL detected. Retrying navigation (attempt ${navRetries}/3)...`);
+        updateBatchState({
+          statusMessage: `Advancing to next reel (attempt ${navRetries}/3)...`
+        });
         await handleNextIG();
-        await sleep(1500);
+        await sleep(1800);
         scrapeRes = await handleScrapeIG();
+      }
+
+      // If STILL the same reel after 3 attempts, we have reached the end of the feed or are on a standalone reel page
+      if (scrapeRes?.success && scrapeRes.data.url === batchState.lastProcessedUrl) {
+        console.log("[InstaReel-AI] Unable to advance to a new reel. Ending batch cleanly.");
+        updateBatchState({
+          isRunning: false,
+          currentStep: "done",
+          statusMessage: `🎉 Done! Summarized ${batchState.processedCount} reels. (No further reels found.)`
+        });
+        break;
       }
 
       if (!scrapeRes || !scrapeRes.success) {
@@ -245,7 +258,7 @@ async function runSummaryBatchEngine(targetCount, autoUnsave, provider = "meta",
         statusMessage: `Sending to ${getProviderDisplayName(provider)}...`
       });
 
-      const sendRes = await handleSendAI(reelData, provider, customPrompt);
+      const sendRes = await handleSendAI(reelData, provider, customPrompt, batchState.processedCount);
       if (!sendRes || !sendRes.success) {
         throw new Error(sendRes?.error || `Failed to send to ${getProviderDisplayName(provider)}.`);
       }
@@ -449,6 +462,12 @@ async function waitForAIWebResponse(provider, currentNum, targetCount, maxTimeou
 
         // Require 1 stable check after completion flag is true
         if (stableCount >= 1 && elapsed >= 3.5) {
+          // Check for AI safety refusal canned messages
+          if (isAIRefusalMessage(checkRes.text)) {
+            console.warn(`[InstaReel-AI] AI Provider returned a refusal response: "${checkRes.text.substring(0, 80)}..."`);
+            throw new Error(`${providerName} declined to process this reel: "${checkRes.text.trim()}"`);
+          }
+
           console.log(`[InstaReel-AI] ${providerName} finished in ${elapsed.toFixed(1)}s (Length: ${currentLength} chars).`);
           return checkRes.text;
         }
@@ -464,6 +483,29 @@ async function waitForAIWebResponse(provider, currentNum, targetCount, maxTimeou
   }
 
   return "";
+}
+
+/**
+ * Checks if the AI output is a canned safety / refusal response
+ */
+function isAIRefusalMessage(text) {
+  if (!text) return false;
+  const lower = text.toLowerCase().trim();
+  const refusalPhrases = [
+    "sorry, i can't help you with this",
+    "sorry, i cannot help you with this",
+    "sorry, i can't help with",
+    "sorry, i cannot help with",
+    "i am unable to help",
+    "i'm unable to help",
+    "i cannot assist with this request",
+    "i am unable to fulfill this request",
+    "i'm unable to fulfill this request",
+    "i can't fulfill this request",
+    "i cannot generate a response for this",
+    "as an ai, i cannot"
+  ];
+  return refusalPhrases.some(phrase => lower.includes(phrase)) && text.length < 250;
 }
 
 /**
@@ -629,22 +671,49 @@ function snapToTaxonomy(rawDomain, rawSubdomain, taxonomy) {
 
   // If brand new subdomain, format cleanly and add to domain
   if (!matchedSubdomain) {
-    matchedSubdomain = subdomain.replace(/^\w/, (c) => c.toUpperCase());
-    if (!existingSubdomains.includes(matchedSubdomain)) {
+    // Sanitize: ensure subdomain is a clean 2-5 word label, not a full sentence
+    let cleanSub = subdomain.split(/[.\n;]/)[0].trim();
+    if (cleanSub.length > 35) {
+      cleanSub = cleanSub.split(/\s+/).slice(0, 4).join(" ");
+    }
+    matchedSubdomain = cleanSub.replace(/^\w/, (c) => c.toUpperCase());
+    if (matchedSubdomain && !existingSubdomains.includes(matchedSubdomain)) {
       existingSubdomains.push(matchedSubdomain);
     }
   }
 
-  return { domain: matchedDomain, subdomain: matchedSubdomain };
+  return { domain: matchedDomain, subdomain: matchedSubdomain || "Overview" };
 }
 
 /**
+ * Normalizes creator handles by extracting @username or cleaning names
+ */
+function normalizeCreatorHandle(str) {
+  if (!str) return "";
+  let clean = str.trim();
+  // Extract handle if format is "Bobby Gana (@thebobbygana)" or "@thebobbygana"
+  const handleMatch = clean.match(/@([a-zA-Z0-9._]+)/);
+  if (handleMatch && handleMatch[1]) {
+    return handleMatch[1];
+  }
+  // Strip Markdown, quotes, brackets
+  clean = clean.replace(/[*_~`"\[\]()]/g, "").trim();
+  clean = clean.replace(/^(?:instagram|creator|by|author)\s*:\s*/i, "").trim();
+  if (clean.toLowerCase() === "unknown" || clean.toLowerCase() === "none") return "";
+  return clean;
+}
+
+/**
+ * /**
  * Super-Robust Metadata Parser:
- * Extracts Domain, Subdomain, Subject, Personal Utility, Entities, and Tags
- * Handles markdown bold (**Domain:**), italics (*Domain:*), headers (### Domain:), brackets, and raw text.
+ * Extracts Creator, Domain, Subdomain, Subject, Personal Utility, Entities, and Tags.
+ * Handles both multi-line AND single-line inline responses,
+ * YAML lowercase keys (personal_utility, entities, creator, domain, etc.),
+ * markdown bold (**domain:**), italics (*domain:*), headers (### domain:), and raw text.
  */
 function parseMetadataFromResponse(responseText) {
   const meta = {
+    creator: null,
     domain: null,
     subdomain: null,
     subject: null,
@@ -655,16 +724,37 @@ function parseMetadataFromResponse(responseText) {
 
   if (!responseText) return meta;
 
-  const extract = (fieldNames) => {
-    for (const name of fieldNames) {
-      // Regex matches: "Domain: XYZ", "**Domain:** XYZ", "### Domain: XYZ", "*Domain*: XYZ"
-      const regex = new RegExp(`(?:^|[\\n#*\\s])\\*?\\*?${name}\\*?\\*?:?\\s*\\*?\\*?([^\\n*#]+?)(?:\\*?\\*?\\s*(?:\\n|$))`, "i");
-      const m = responseText.match(regex);
+  // Extracts field value stopping at the next known field header, newline, or separator
+  const extractField = (aliases) => {
+    for (const alias of aliases) {
+      // Regex looks for Alias followed by colon/space, then non-greedy capture until next known field keyword, newline, pipe, or end of text
+      const pattern = new RegExp(
+        `(?:^|[\\n#*\\s|,-])\\*?\\*?${alias}\\*?\\*?:?\\s*\\*?\\*?` +
+        `([^\\n|]+?)` +
+        `(?=(?:\\s+\\*?\\*?(?:creator|author|domain|subdomain|sub-domain|topic|subcategory|subject|title|personal_utility|personal\\s+utility|utility|entities|tools|tech|tags|hashtags)\\*?\\*?:)|\\n|---|$)`,
+        "i"
+      );
+
+      const m = responseText.match(pattern);
       if (m && m[1]) {
-        let clean = m[1].replace(/^\[|\]$/g, "").trim();
-        // Remove trailing asterisks or formatting junk
+        let clean = m[1].trim();
+        // Strip surrounding quotes
+        clean = clean.replace(/^["']|["']$/g, "").trim();
+        // If it's a JSON array representation like ["tag1", "tag2"] or ["[tools]"]
+        if (clean.startsWith("[") && clean.endsWith("]")) {
+          try {
+            const parsed = JSON.parse(clean);
+            if (Array.isArray(parsed)) {
+              clean = parsed.join(", ");
+            }
+          } catch (e) {
+            clean = clean.replace(/^\[|\]$/g, "").replace(/["']/g, "").trim();
+          }
+        }
+        clean = clean.replace(/^\[|\]$/g, "").trim();
         clean = clean.replace(/^\*+|\*+$/g, "").trim();
-        if (clean && clean.toLowerCase() !== "none" && !clean.includes("---") && clean.length > 1) {
+        clean = clean.replace(/^[|:-]+\s*/, "").trim();
+        if (clean && clean.toLowerCase() !== "none" && !clean.includes("---") && clean.length > 0) {
           return clean;
         }
       }
@@ -672,14 +762,66 @@ function parseMetadataFromResponse(responseText) {
     return null;
   };
 
-  meta.domain = extract(["Domain", "Category", "Super-Category", "SuperCategory"]);
-  meta.subdomain = extract(["Subdomain", "Sub-domain", "Topic", "Subcategory", "Specialization"]);
-  meta.subject = extract(["Subject", "Title", "Topic Title"]);
-  meta.personalUtility = extract(["Personal Utility", "Utility", "Why it matters", "Key Value"]);
-  meta.entities = extract(["Entities", "Tools", "Tech", "Tools & Tech", "Resources"]);
-  meta.tags = extract(["Tags", "Hashtags"]);
+  meta.creator = extractField(["creator", "Creator", "Author", "Creator Name", "Account", "Username", "Instagram User"]);
+  
+  // Fallback: if creator was not in top block, scan response text for "Creator: Name (@handle)" or "By: @handle"
+  if (!meta.creator) {
+    const creatorFallback = responseText.match(/(?:^|\n)\s*(?:[*_~`#\s]*)(?:creator|Creator|Author|By|Instagram)\s*:\s*([^\n\r]+)/i);
+    if (creatorFallback && creatorFallback[1]) {
+      const candidate = creatorFallback[1].trim().replace(/^["']|["']$/g, "");
+      if (!candidate.toLowerCase().includes("unknown") && !candidate.toLowerCase().includes("none") && candidate.length < 80) {
+        meta.creator = candidate;
+      }
+    }
+  }
+
+  meta.domain = extractField(["domain", "Domain", "Super-Category", "Category"]);
+  meta.subdomain = extractField(["subdomain", "Subdomain", "Sub-domain", "Topic", "Subcategory", "Specialization"]);
+  meta.subject = extractField(["subject", "Subject", "Title", "Topic Title"]);
+  meta.personalUtility = extractField(["personal_utility", "personalUtility", "Personal Utility", "Utility", "Why it matters", "Key Value"]);
+  meta.entities = extractField(["entities", "Entities", "Tools & Resources", "Tools & Tech", "Tools", "Tech"]);
+  meta.tags = extractField(["tags", "Tags", "Hashtags"]);
 
   return meta;
+}
+
+/**
+ * Super-clean metadata stripper:
+ * Safely removes fenced (`--- ... ---`), unfenced multi-line, and single-line inline
+ * metadata blocks from the summary body so only the pure summary content is saved.
+ */
+function stripMetadataBlock(text) {
+  if (!text) return "";
+  let clean = text.trim();
+
+  // Strip prompt preamble echoes if included in the turn
+  const promptPreamblePatterns = [
+    /I will be sending you Instagram Reels[\s\S]*?Never invent information[^\n]*\n?/i,
+    /Extract this Reel into a (?:permanent )?knowledge note[\s\S]*?YOUR CURRENT KNOWLEDGE TAXONOMY[^\n]*\n?/i,
+    /Analyze the attached Instagram Reel[\s\S]*?Never invent information[^\n]*\n?/i,
+    /YOUR CURRENT KNOWLEDGE TAXONOMY[\s\S]*?Never invent information[^\n]*\n?/i,
+    /CLASSIFICATION RULES[\s\S]*?Never invent information[^\n]*\n?/i,
+    /At the very top, ALWAYS output this exact YAML[\s\S]*?---\n?/i,
+    /Analyze and extract 100% of the permanent, high-yield value[^\n]*\n?/i
+  ];
+
+  for (const pat of promptPreamblePatterns) {
+    clean = clean.replace(pat, "").trim();
+  }
+
+  // Remove leading "Today" header if Meta AI added it
+  clean = clean.replace(/^Today\s*\n+/i, "").trim();
+
+  // 1. Strip standard YAML fenced block: --- ... ---
+  clean = clean.replace(/^---[\s\S]*?---\n?/, "");
+
+  // 2. Strip leading unfenced metadata block (lines starting with creator:, domain:, subdomain:, etc.)
+  clean = clean.replace(/^(?:(?:\*?\*?(?:creator|author|domain|subdomain|sub-domain|topic|subcategory|subject|title|personal_utility|personal\s+utility|utility|entities|tools|tech|tags|hashtags)\*?\*?:[^\n]*\n?)+\s*)+/i, "");
+
+  // 3. Strip single-line inline metadata block at start if any
+  clean = clean.replace(/^(?:\*?\*?(?:creator|domain)\*?\*?:[^\n]+?(?:tags|hashtags)\*?\*?:[^\n]+(?:\n|$))\s*/i, "");
+
+  return clean.trim();
 }
 
 /**
@@ -712,9 +854,10 @@ function fallbackCategorizer(caption, summaryText) {
 
 /**
  * Builds high-impact prompt with Living Taxonomy Knowledge Tree injection.
- * Only injects the tree if the user actually has saved taxonomy.
+ * Turn 0 / every 5th turn: Master Prompt (Sets full rules, YAML schema, quality expectations).
+ * Turns 1..4: Lean Prompt (URL + Live Taxonomy + brief reminder).
  */
-async function buildPromptForReel(reelData, provider = "meta", customPrompt = "") {
+async function buildPromptForReel(reelData, provider = "meta", customPrompt = "", turnIndex = 0) {
   const taxonomy = await getLivingTaxonomy();
   const domainKeys = Object.keys(taxonomy).filter((d) => taxonomy[d] && taxonomy[d].length > 0);
 
@@ -730,32 +873,20 @@ async function buildPromptForReel(reelData, provider = "meta", customPrompt = ""
 ${treeLines.join("\n")}
 
 CLASSIFICATION RULES:
-1. If this Reel belongs to an existing Domain & Subdomain above, reuse the EXACT names.
-2. If this Reel is in an existing Domain but introduces a new specialization, keep the Domain and create a concise 2-3 word Subdomain.
-3. Only create a brand new Domain if the topic belongs to a completely distinct field.
+1. Reuse an existing Domain/Subdomain when applicable.
+2. If the Domain exists but the topic is new, create a concise 2–3 word Subdomain.
+3. Create a new Domain only for a genuinely new field.
 
 `;
   } else {
-    taxonomyStr = `CLASSIFICATION INSTRUCTIONS:
-- Domain: Identify the broad field (e.g., Technology, Fitness, Finance, Culinary, Design, Music, Career, etc.).
+    taxonomyStr = `CLASSIFICATION RULES:
+- Domain: Identify the broad field (e.g., Technology, Fitness, Finance, Culinary, Design, Career, etc.).
 - Subdomain: Identify the specific specialization or topic (e.g. under Technology: "DevOps & Cloud", "Frontend & UI", "AI & LLMs"; under Fitness: "Strength Training", "Nutrition").
 
 `;
   }
 
-  const metadataBlock = `${taxonomyStr}At the very top of your response, output this exact metadata block between --- markers:
----
-Domain: [Broad domain name]
-Subdomain: [Specific specialization/sub-topic]
-Subject: [3-7 word punchy title for this specific reel]
-Personal Utility: [1-2 sentences: why it matters and how to apply it immediately]
-Entities: [Comma-separated tools, repos, books, websites, or techniques mentioned, or "None"]
-Tags: [3-4 lowercase hashtag-style keywords like #ai, #python, #docker]
----
-
-`;
-
-  // Custom prompt: wrap user text with invisible metadata envelope
+  // Custom prompt override if user explicitly enabled custom prompt
   if (customPrompt && customPrompt.trim()) {
     let userPrompt = customPrompt.trim()
       .replace(/\{url\}/g, reelData.url || "")
@@ -763,49 +894,53 @@ Tags: [3-4 lowercase hashtag-style keywords like #ai, #python, #docker]
       .replace(/\{audio\}/g, reelData.audioTitle || "Original Audio")
       .replace(/\{caption\}/g, reelData.caption || "");
 
-    return `${metadataBlock}${userPrompt}`;
+    return `${taxonomyStr}${userPrompt}`;
   }
 
-  // Default prompts with metadata envelope prepended
-  if (provider === "meta") {
-    const captionSnippet = reelData.caption ? reelData.caption.substring(0, 350) : "";
-    return `${metadataBlock}Summarize and extract key actionable insights from this Instagram Reel: ${reelData.url}
+  // Lean Follow-Up Prompt for turns 2, 3, 4, 5 in the same active chat
+  const isContinuationTurn = turnIndex > 0 && turnIndex % 5 !== 0;
 
-INSTRUCTIONS:
-1. Core Breakdown: Summarize what this Reel is teaching/demonstrating in 2-3 concise sentences.
-2. Tools & Resources: List all libraries, tools, repositories, extensions, or methods with exact names.
-3. Step-by-Step Actionables: Extract the exact workflow, code snippet, or implementation steps shown.
-4. Key Takeaway: Why is this valuable and how can someone apply it immediately?
+  if (isContinuationTurn) {
+    return `Extract this Reel into a permanent knowledge note following the exact same rules and YAML format: ${reelData.url}
 
-Format with clean markdown bullet points, bold keywords, and section headers.${captionSnippet ? `\n\n(Post context: ${captionSnippet})` : ""}`;
+${taxonomyStr}`;
   }
 
-  // Gemini & ChatGPT
-  return `${metadataBlock}Analyze and extract actionable knowledge from the following Instagram Reel:
+  // Master Setup Prompt (Turn 0, 5, 10, etc.)
+  return `Analyze the attached Instagram Reel and convert it into a reusable knowledge note: ${reelData.url}
 
-Author: @${reelData.author}
-Audio Track: ${reelData.audioTitle || "Original Audio"}
-Reel URL: ${reelData.url}
+${taxonomyStr}At the very top, ALWAYS output this exact YAML:
 
---- CAPTION & CONTENT ---
-${reelData.caption}
--------------------------
+---
+creator: "[creator name or Unknown]"
+domain: "[Domain]"
+subdomain: "[Subdomain]"
+subject: "[3–7 word title]"
+personal_utility: "[Why this could be useful to me]"
+entities: ["[tools/resources/etc]"]
+tags: ["#tag1", "#tag2", "#tag3"]
+---
 
-INSTRUCTIONS:
-1. Core Summary: Explain what is being demonstrated or taught in 2-3 concise sentences.
-2. Tools, Tech & Resources: List every library, tool, extension, repository, or technique referenced.
-3. Actionable Breakdown: Detail the step-by-step method, workflow, or code shown in the reel.
-4. Key Takeaways: Provide high-yield bullet points for immediate practical application.
+Then extract the Reel's knowledge.
 
-Format cleanly with markdown section headers, bold terms, and structured lists.`;
+Do NOT use a fixed structure. Choose the best structure based on the Reel.
+
+Preserve all high-value information: exact names, numbers, steps, examples, code, commands, tools, frameworks, and important details.
+
+Remove hooks, filler, repetition, and hype.
+
+Separate facts from opinions or recommendations.
+
+The goal is not to summarize the Reel. The goal is to create a permanent knowledge note that I can search and reuse later without watching the Reel again.
+
+Never invent information that is not present in the Reel.`;
 }
-
 
 /**
  * Formats prompt and dispatches to the selected AI Web Tab (Meta AI, Gemini, or ChatGPT)
  */
-async function handleSendAI(reelData, provider = "meta", customPrompt = "") {
-  const promptText = await buildPromptForReel(reelData, provider, customPrompt);
+async function handleSendAI(reelData, provider = "meta", customPrompt = "", turnIndex = 0) {
+  const promptText = await buildPromptForReel(reelData, provider, customPrompt, turnIndex);
 
   // Dispatch to specific provider tab
   if (provider === "chatgpt") {
@@ -974,21 +1109,31 @@ async function saveReelData(data) {
     chrome.storage.local.set({ knowledgeTaxonomy: taxonomy }, resolve);
   });
 
-  // Strip YAML metadata block from summary for clean display
-  const cleanSummary = summaryText.replace(/---[\s\S]*?---\n?/, "").trim();
+  // Strip metadata block from summary body for clean display
+  const cleanSummary = stripMetadataBlock(summaryText);
 
-  const enrichedItem = {
-    ...data,
-    domain: domain,
-    subdomain: subdomain,
-    category: `${domain} - ${subdomain}`,
-    subject: meta.subject || (data.author ? `Reel by @${data.author}` : "Untitled Reel"),
-    personalUtility: meta.personalUtility || "",
-    entities: meta.entities && meta.entities.toLowerCase() !== "none" ? meta.entities : "",
-    tags: meta.tags || "",
-    summary: cleanSummary,
-    geminiResponse: cleanSummary
-  };
+    let extractedAuthor = normalizeCreatorHandle(meta.creator);
+    if (!extractedAuthor) {
+      extractedAuthor = normalizeCreatorHandle(data.author);
+    }
+    const cleanAuthor = extractedAuthor || "Unknown";
+    const finalDate = data.postedDate || data.timestamp || new Date().toISOString();
+
+    const enrichedItem = {
+      ...data,
+      author: cleanAuthor,
+      date: finalDate,
+      postedDate: finalDate,
+      domain: domain,
+      subdomain: subdomain,
+      category: `${domain} - ${subdomain}`,
+      subject: meta.subject || (cleanAuthor && cleanAuthor !== "Unknown" ? `Reel by @${cleanAuthor}` : "Untitled Reel"),
+      personalUtility: meta.personalUtility || "",
+      entities: meta.entities && meta.entities.toLowerCase() !== "none" ? meta.entities : "",
+      tags: meta.tags || "",
+      summary: cleanSummary,
+      geminiResponse: cleanSummary
+    };
 
   return new Promise((resolve) => {
     chrome.storage.local.get({ reelsData: [] }, (result) => {

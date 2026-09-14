@@ -68,6 +68,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  * Extracts comprehensive Reel Data across both Saved Posts (/p/) and Reels Feed (/reels/)
  */
 function extractReelData() {
+  // Check for Instagram unavailable / broken / deleted page
+  const bodyText = document.body.innerText || "";
+  if (
+    bodyText.includes("Sorry, this page isn't available.") ||
+    bodyText.includes("The link you followed may be broken, or the page may have been removed.") ||
+    (document.title && document.title.includes("Page Not Found"))
+  ) {
+    throw new Error("This Instagram post or reel is unavailable or has been deleted.");
+  }
+
   let reelUrl = window.location.href;
   
   // Find modal container, article element, or active video card in Reels feed
@@ -112,22 +122,74 @@ function extractReelData() {
   // Find the true, exact Reel permalink (excluding audio pages and profile tabs)
   reelUrl = findTrueReelUrl(activeContainer);
 
-  // Extract author username
+  // Extract author username (strictly from post header/author element, ignoring comments)
   let author = "Unknown";
-  const authorEl = activeContainer.querySelector('header a[role="link"]') || 
-                   activeContainer.querySelector('header a') || 
-                   activeContainer.querySelector('a[role="link"] span')?.closest('a') ||
-                   activeContainer.querySelector('a[role="link"]');
-  if (authorEl) {
-    const rawAuthor = (authorEl.querySelector('span') || authorEl).textContent.trim().replace(/^@/, '');
-    if (rawAuthor && !['follow', 'following', 'audio'].includes(rawAuthor.toLowerCase())) {
-      author = rawAuthor;
+  const headerEl = activeContainer.querySelector('header') ||
+                   activeContainer.querySelector('div[role="dialog"] header') ||
+                   document.querySelector('div[role="dialog"] header');
+
+  const systemKeywords = ['explore', 'reels', 'direct', 'stories', 'your_activity', 'accounts', 'audio', 'p', 'reel', 'follow', 'following', 'tagged', 'saved', 'posts', 'more'];
+
+  if (headerEl) {
+    const authorLinks = Array.from(headerEl.querySelectorAll('h2 a, h3 a, a[role="link"], a[href^="/"]'));
+    const authors = [];
+    for (const link of authorLinks) {
+      const href = link.getAttribute('href') || '';
+      const match = href.match(/^\/([a-zA-Z0-9._]+)\/?(?:\?.*)?$/);
+      if (match && match[1]) {
+        const uname = match[1];
+        if (!systemKeywords.includes(uname.toLowerCase()) && !authors.includes(uname)) {
+          const text = link.textContent.trim().replace(/^@/, '');
+          if (text && !systemKeywords.includes(text.toLowerCase())) {
+            authors.push(uname);
+          }
+        }
+      }
+    }
+    if (authors.length > 0) {
+      // Co-authors: max 3 genuine collaborator accounts
+      author = authors.slice(0, 3).join(', ');
+    }
+  }
+
+  // Fallback for Reels feed view (/reels/) or standalone post
+  if (author === "Unknown") {
+    const feedAuthorCandidates = Array.from(activeContainer.querySelectorAll(
+      'div[class*="_aa06"] a, div[class*="_ab9o"] a, div[class*="_aa2t"] a, span._ap3a a, div.x1rg5ohu a, header a, span[class*="x1lliihq"] a'
+    ));
+
+    for (const link of feedAuthorCandidates) {
+      // Ignore comments
+      if (link.closest('ul._a9z6') || link.closest('div[class*="comment"]')) continue;
+
+      const href = link.getAttribute('href') || '';
+      const match = href.match(/^\/([a-zA-Z0-9._]+)\/?(?:\?.*)?$/);
+      if (match && match[1]) {
+        const uname = match[1];
+        if (!systemKeywords.includes(uname.toLowerCase())) {
+          author = uname;
+          break;
+        }
+      }
+      const raw = link.textContent.trim().replace(/^@/, '');
+      if (raw && !systemKeywords.includes(raw.toLowerCase()) && !/^\d+/.test(raw) && raw.length < 35) {
+        author = raw;
+        break;
+      }
+    }
+  }
+
+  // Fallback from URL pathname if pattern is instagram.com/username/reel/shortcode or similar
+  if (author === "Unknown" && window.location.pathname) {
+    const pathMatch = window.location.pathname.match(/^\/([a-zA-Z0-9._]+)\/(?:reel|reels|p)\//);
+    if (pathMatch && pathMatch[1] && !systemKeywords.includes(pathMatch[1].toLowerCase())) {
+      author = pathMatch[1];
     }
   }
 
   // Extract audio name if present
   let audioTitle = "";
-  const audioEl = activeContainer.querySelector('a[href*="/audio/"]') ||
+  const audioEl = (headerEl || activeContainer).querySelector('a[href*="/audio/"]') ||
                   activeContainer.querySelector('header span');
   if (audioEl) {
     audioTitle = audioEl.textContent.trim();
@@ -146,6 +208,9 @@ function extractReelData() {
     // Priority 2: Text spans excluding UI labels and metrics
     const textSpans = Array.from(activeContainer.querySelectorAll('span[dir="auto"], div._a9zs'));
     textSpans.forEach(span => {
+      // Exclude comment text if inside comment list
+      if (span.closest('ul._a9z6') || span.closest('div[class*="comment"]')) return;
+
       const text = span.textContent.trim();
       const lower = text.toLowerCase();
       if (
@@ -163,6 +228,22 @@ function extractReelData() {
     });
   }
 
+  // Detect genuine multi-slide carousel posts (must have slide counter or carousel track)
+  let isCarousel = false;
+  let carouselInfo = "";
+  const slideCounter = activeContainer.querySelector('div._aack, span._aack') ||
+                       Array.from(activeContainer.querySelectorAll('div, span')).find(el => {
+                         const t = el.textContent.trim();
+                         return /^\d+\s*[\/|of]\s*\d+$/i.test(t) && t.length <= 8 && !el.closest('header') && !el.closest('ul');
+                       });
+  const carouselTrack = activeContainer.querySelector('ul._acay');
+
+  if (slideCounter || carouselTrack) {
+    isCarousel = true;
+    const countText = slideCounter ? slideCounter.textContent.trim() : "Multi-Slide";
+    carouselInfo = `[Multi-Slide Carousel: ${countText}]`;
+  }
+
   const combinedCaption = fullText.join("\n\n");
 
   // Extract video source URL if available in DOM
@@ -172,13 +253,25 @@ function extractReelData() {
     videoSrc = videoEl.src;
   }
 
+  // Extract true published timestamp directly from Instagram's <time> tag
+  let postedDate = "";
+  const timeEl = activeContainer.querySelector('time[datetime]') ||
+                 document.querySelector('div[role="dialog"] time[datetime]') ||
+                 activeContainer.querySelector('time');
+  if (timeEl) {
+    postedDate = timeEl.getAttribute('datetime') || timeEl.getAttribute('title') || timeEl.textContent.trim();
+  }
+
   return {
     url: reelUrl,
     author: author,
     audioTitle: audioTitle,
     caption: combinedCaption || "No text caption found in reel post.",
+    isCarousel: isCarousel,
+    carouselInfo: carouselInfo,
     videoSrc: videoSrc,
-    timestamp: new Date().toISOString()
+    postedDate: postedDate,
+    timestamp: postedDate || new Date().toISOString()
   };
 }
 
@@ -186,8 +279,8 @@ function extractReelData() {
  * Robustly finds the true Instagram Reel URL, eliminating audio links and profile tabs
  */
 function findTrueReelUrl(container) {
-  // Regex strictly matching 9-15 char Instagram shortcodes (e.g., /p/DcCCPVVyt5l/ or /reel/DcCCPVVyt5l/)
-  const shortcodeRegex = /\/(?:p|reel|reels)\/([A-Za-z0-9_-]{9,15})(?:\/|\?|$)/;
+  // Regex matching Instagram shortcodes across /p/, /reel/, and /reels/
+  const shortcodeRegex = /\/(?:p|reel|reels)\/([A-Za-z0-9_-]{7,25})(?:\/|\?|$)/;
 
   // 1. Check window.location.href first if user is directly on a reel or post permalink
   if (window.location.href) {
@@ -360,64 +453,85 @@ function clickNextReel() {
                     document.querySelector('article') || 
                     document.body;
 
-  // Strategy 1: Modal Next Button (Right Arrow icon)
-  const nextSvg = container.querySelector('svg[aria-label="Next"]') || 
-                  container.querySelector('svg[aria-label="Next slide"]') ||
-                  document.querySelector('svg[aria-label="Next"]') ||
-                  document.querySelector('div[role="dialog"] svg[aria-label="Next"]');
+  let clicked = false;
 
-  if (nextSvg) {
-    const btn = nextSvg.closest('button') || nextSvg.closest('div[role="button"]');
-    if (btn) {
-      simulateInstagramClick(btn);
-      return { success: true, method: "button_click_next" };
-    }
-  }
-
-  // Strategy 2: Reels Feed Down Chevron Button
-  const downSvg = document.querySelector('svg[aria-label="Down chevron"]') ||
-                  document.querySelector('svg[aria-label*="Down" i]');
-  if (downSvg) {
-    const btn = downSvg.closest('button') || downSvg.closest('div[role="button"]');
-    if (btn) {
-      simulateInstagramClick(btn);
-      return { success: true, method: "button_click_down" };
-    }
-  }
-
-  // Strategy 3: Next Link Element
-  const nextLink = document.querySelector('a._a6wv') || document.querySelector('div._aa2m button');
-  if (nextLink) {
-    simulateInstagramClick(nextLink);
-    return { success: true, method: "link_click" };
-  }
-
-  // Strategy 4: Keyboard Navigation (Dispatches BOTH ArrowDown for Reels Feed and ArrowRight for Modal)
-  const targets = [document.activeElement, document.body, document, window].filter(Boolean);
-
-  targets.forEach(target => {
-    target.dispatchEvent(new KeyboardEvent('keydown', {
-      key: 'ArrowRight',
-      code: 'ArrowRight',
-      keyCode: 39,
-      which: 39,
-      bubbles: true,
-      cancelable: true
-    }));
-    target.dispatchEvent(new KeyboardEvent('keydown', {
-      key: 'ArrowDown',
-      code: 'ArrowDown',
-      keyCode: 40,
-      which: 40,
-      bubbles: true,
-      cancelable: true
-    }));
+  // Strategy 1: Modal Next Post Button (Right Arrow icon)
+  const nextButtons = Array.from(document.querySelectorAll('button, div[role="button"], a')).filter(el => {
+    const aria = el.getAttribute('aria-label') || '';
+    const svg = el.querySelector('svg');
+    const svgAria = svg ? svg.getAttribute('aria-label') || '' : '';
+    return (
+      (aria.includes('Next') || aria.includes('Right') || aria.includes('Down') || svgAria.includes('Next') || svgAria.includes('Down chevron') || svgAria.includes('Right chevron')) &&
+      !aria.includes('slide') && !svgAria.includes('slide')
+    );
   });
 
-  // Strategy 5: Vertical Scroll (for /reels/ feed)
-  if (window.location.pathname.includes('/reels')) {
-    window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+  for (const btn of nextButtons) {
+    try {
+      simulateInstagramClick(btn);
+      clicked = true;
+    } catch (e) {}
   }
 
-  return { success: true, method: "keyboard_navigation" };
+  // Strategy 2: Next Link / Button specific class targets
+  const specificNext = document.querySelector('div._aa2m button, a._a6wv, div[class*="_aa2m"] button');
+  if (specificNext) {
+    try {
+      simulateInstagramClick(specificNext);
+      clicked = true;
+    } catch (e) {}
+  }
+
+  // Strategy 3: Keyboard Navigation across all focus targets
+  const targets = [
+    document.activeElement,
+    document.querySelector('video'),
+    document.querySelector('div[role="dialog"]'),
+    document.querySelector('article'),
+    document.body,
+    document,
+    window
+  ].filter(Boolean);
+
+  const keys = [
+    { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40, which: 40 },
+    { key: 'PageDown', code: 'PageDown', keyCode: 34, which: 34 },
+    { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39, which: 39 },
+    { key: 'j', code: 'KeyJ', keyCode: 74, which: 74 }
+  ];
+
+  targets.forEach(target => {
+    keys.forEach(k => {
+      try {
+        target.dispatchEvent(new KeyboardEvent('keydown', { ...k, bubbles: true, cancelable: true }));
+        target.dispatchEvent(new KeyboardEvent('keypress', { ...k, bubbles: true, cancelable: true }));
+        target.dispatchEvent(new KeyboardEvent('keyup', { ...k, bubbles: true, cancelable: true }));
+      } catch (e) {}
+    });
+
+    // Wheel Event for vertical feeds
+    try {
+      target.dispatchEvent(new WheelEvent('wheel', {
+        deltaY: window.innerHeight || 800,
+        deltaMode: 0,
+        bubbles: true,
+        cancelable: true
+      }));
+    } catch (e) {}
+  });
+
+  // Strategy 4: Vertical Scroll for Reels Feeds and containers
+  const scrollDistance = window.innerHeight || 800;
+  window.scrollBy({ top: scrollDistance, behavior: 'smooth' });
+  document.documentElement.scrollTop += scrollDistance;
+  document.body.scrollTop += scrollDistance;
+
+  const scrollableContainers = Array.from(document.querySelectorAll('div[class*="x1qjc9v5"], div[style*="overflow"], main'));
+  scrollableContainers.forEach(c => {
+    try {
+      c.scrollTop += scrollDistance;
+    } catch (e) {}
+  });
+
+  return { success: true, method: clicked ? "button_and_scroll" : "keyboard_and_scroll" };
 }
