@@ -1,19 +1,21 @@
-/**
- * InstaReel Multi-AI Summarizer - Gemini Content Script
- * Injects extracted prompt into Gemini web input box and extracts response.
- */
-
-console.log("[InstaReel-AI] Gemini Content Script loaded.");
-
-let lastSubmissionTime = 0;
-let baselineResponseText = "";
-let baselineResponseCount = 0;
-
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "PING") {
-    sendResponse({ status: "ok", url: window.location.href, provider: "gemini" });
-    return true;
+(() => {
+  if (window.__instaReelGeminiLoaded) {
+    console.log("[InstaReel-AI] Gemini Content Script already loaded. Skipping.");
+    return;
   }
+  window.__instaReelGeminiLoaded = true;
+
+  console.log("[InstaReel-AI] Gemini Content Script loaded.");
+
+  let lastSubmissionTime = 0;
+  let baselineResponseText = "";
+  let baselineResponseCount = 0;
+
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "PING") {
+      sendResponse({ status: "ok", url: window.location.href, provider: "gemini" });
+      return true;
+    }
 
   if (request.action === "INJECT_PROMPT") {
     try {
@@ -181,7 +183,8 @@ function extractLatestResponse() {
   const stopBtn = document.querySelector('button[aria-label*="Stop" i]') ||
                   document.querySelector('button[aria-label*="stop" i]') ||
                   document.querySelector('button[mat-icon-button][aria-label*="stop" i]') ||
-                  document.querySelector('button .mat-icon[data-mat-icon-name="stop"]');
+                  document.querySelector('button .mat-icon[data-mat-icon-name="stop"]') ||
+                  document.querySelector('mat-icon[data-mat-icon-name="stop"]');
 
   const isStopActive = !!stopBtn;
 
@@ -192,7 +195,12 @@ function extractLatestResponse() {
   let currentText = "";
   if (responseEls.length > 0) {
     const lastResponse = responseEls[responseEls.length - 1];
-    currentText = (lastResponse.innerText || lastResponse.textContent || "").trim();
+    
+    // Clone element to safely strip citations, sources, draft switchers without mutating page
+    const clone = lastResponse.cloneNode(true);
+    clone.querySelectorAll('sources-list, .sources-list, [data-test-id="sources-list"], .citation-container, button[aria-label*="draft" i], .draft-selector').forEach(el => el.remove());
+    
+    currentText = (clone.innerText || clone.textContent || "").trim();
   }
 
   // 1. Initial 2.5s debounce: Gemini is still making network request
@@ -232,19 +240,50 @@ function extractLatestResponse() {
   }
 
   const hasNewContent = currentText !== baselineResponseText && currentText.length > 30;
+  const isRefusal = /i cannot fulfill|i can't fulfill|i'm unable to|i cannot assist|as an ai language model/i.test(currentText) && currentText.length < 180;
 
   return {
     success: true,
     completed: hasNewContent && !isStopActive,
     isGenerating: isStopActive || !hasNewContent,
+    isRefusal: isRefusal,
     textLength: currentText.length,
     text: hasNewContent ? currentText : "",
     provider: "gemini"
   };
 }
 
+/**
+ * Helper to collect response containers in Gemini Web UI.
+ * Filters out nested children to preserve the full message bubble.
+ */
 function getGeminiResponseElements() {
-  return Array.from(document.querySelectorAll('message-content, model-response, .response-container-content, div.markdown, .model-response-text'));
+  const modelResponses = Array.from(document.querySelectorAll('model-response, message-content')).filter(el => {
+    const text = el.innerText?.trim() || "";
+    return text.length > 20;
+  });
+  if (modelResponses.length > 0) {
+    return modelResponses;
+  }
+
+  const candidateEls = Array.from(document.querySelectorAll(
+    '.response-container-content, div.markdown, .model-response-text'
+  ));
+
+  const valid = candidateEls.filter(el => {
+    if (el.isContentEditable || el.getAttribute('role') === 'textbox' || el.closest('rich-textarea')) {
+      return false;
+    }
+    const text = el.innerText?.trim() || "";
+    return text.length > 20;
+  });
+
+  // Keep outermost containers only
+  const outermost = valid.filter((el, _, arr) => {
+    return !arr.some(parent => parent !== el && parent.contains(el));
+  });
+
+  return outermost;
 }
 
 function escapeHtml(text) {
@@ -252,3 +291,4 @@ function escapeHtml(text) {
   div.innerText = text;
   return div.innerHTML;
 }
+})();

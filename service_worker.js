@@ -872,18 +872,7 @@ async function buildPromptForReel(reelData, provider = "meta", customPrompt = ""
     treeStr = `YOUR CURRENT KNOWLEDGE TAXONOMY (FROM PREVIOUS REELS):\n${treeLines.join("\n")}`;
   }
 
-  // Custom prompt override if user explicitly enabled custom prompt
-  if (customPrompt && customPrompt.trim()) {
-    let userPrompt = customPrompt.trim()
-      .replace(/\{url\}/g, reelData.url || "")
-      .replace(/\{author\}/g, reelData.author || "Unknown")
-      .replace(/\{audio\}/g, reelData.audioTitle || "Original Audio")
-      .replace(/\{caption\}/g, reelData.caption || "");
-
-    return treeStr ? `${treeStr}\n\n${userPrompt}` : userPrompt;
-  }
-
-  // Lean Follow-Up Prompt for turns 2, 3, 4, 5 (turns 1..4 in 0-indexed loop)
+  // Lean Follow-Up Prompt for turns 1..4 (every turn except 0, 5, 10, etc.)
   // Sends ONLY the URL and the live taxonomy tree — ZERO repeated rule blocks.
   const isContinuationTurn = turnIndex > 0 && turnIndex % 5 !== 0;
 
@@ -905,6 +894,41 @@ async function buildPromptForReel(reelData, provider = "meta", customPrompt = ""
     classificationRules = `CLASSIFICATION RULES:
 - Domain: Identify the broad field (e.g., Technology, Fitness, Finance, Culinary, Design, Career, etc.).
 - Subdomain: Identify the specific specialization or topic (e.g. under Technology: "DevOps & Cloud", "Frontend & UI", "AI & LLMs"; under Fitness: "Strength Training", "Nutrition").`;
+  }
+
+  // Custom prompt override if user explicitly enabled custom prompt
+  if (customPrompt && customPrompt.trim()) {
+    let userPrompt = customPrompt.trim()
+      .replace(/\{url\}/g, reelData.url || "")
+      .replace(/\{author\}/g, reelData.author || "Unknown")
+      .replace(/\{audio\}/g, reelData.audioTitle || "Original Audio")
+      .replace(/\{caption\}/g, reelData.caption || "");
+
+    // If custom prompt didn't include the Reel URL, ensure it is cleanly attached at the top
+    if (reelData.url && !userPrompt.includes(reelData.url)) {
+      userPrompt = `Analyze the attached Instagram Reel and convert it into a reusable knowledge note: ${reelData.url}\n\n${userPrompt}`;
+    }
+
+    // Insert taxonomy & classification rules cleanly right after the URL line if not already included
+    if (treeStr && !userPrompt.includes("YOUR CURRENT KNOWLEDGE TAXONOMY")) {
+      const lines = userPrompt.split("\n");
+      if (lines.length > 0 && lines[0].includes(reelData.url)) {
+        lines.splice(1, 0, `\n${treeStr}\n\n${classificationRules}\n`);
+        userPrompt = lines.join("\n");
+      } else {
+        userPrompt = `${treeStr}\n\n${classificationRules}\n\n${userPrompt}`;
+      }
+    } else if (!treeStr && !userPrompt.includes("CLASSIFICATION RULES")) {
+      const lines = userPrompt.split("\n");
+      if (lines.length > 0 && lines[0].includes(reelData.url)) {
+        lines.splice(1, 0, `\n${classificationRules}\n`);
+        userPrompt = lines.join("\n");
+      } else {
+        userPrompt = `${classificationRules}\n\n${userPrompt}`;
+      }
+    }
+
+    return userPrompt;
   }
 
   let masterHeader = `Analyze the attached Instagram Reel and convert it into a reusable knowledge note: ${reelData.url}\n\n`;

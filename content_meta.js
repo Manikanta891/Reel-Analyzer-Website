@@ -1,131 +1,131 @@
-/**
- * InstaReel Multi-AI Summarizer - Meta AI Content Script
- * Automates prompt injection and response extraction in Meta AI Web UI (meta.ai).
- */
-
-console.log("[InstaReel-AI] Meta AI Content Script loaded.");
-
-let lastSubmissionTime = 0;
-let baselineResponseText = "";
-let baselineResponseCount = 0;
-let lastInjectedPrompt = "";
-let isTurnPending = false;
-
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "PING") {
-    sendResponse({ status: "ok", url: window.location.href, provider: "meta" });
-    return true;
+(() => {
+  if (window.__instaReelMetaLoaded) {
+    console.log("[InstaReel-AI] Meta AI Content Script already initialized. Skipping duplicate listener registration.");
+    return;
   }
+  window.__instaReelMetaLoaded = true;
 
-  if (request.action === "INJECT_PROMPT") {
-    try {
-      const result = injectPromptAndSendMetaAI(request.promptText);
-      sendResponse(result);
-    } catch (err) {
-      console.error("[InstaReel-AI] Meta AI Prompt error:", err);
-      sendResponse({ success: false, error: err.message });
-    }
-    return true;
-  }
+  console.log("[InstaReel-AI] Meta AI Content Script loaded.");
 
-  if (request.action === "EXTRACT_RESPONSE") {
-    try {
-      const result = extractLatestMetaAIResponse();
-      sendResponse(result);
-    } catch (err) {
-      console.error("[InstaReel-AI] Meta AI Extract error:", err);
-      sendResponse({ success: false, error: err.message });
-    }
-    return true;
-  }
-});
+  let lastSubmissionTime = 0;
+  let baselineResponseText = "";
+  let baselineResponseCount = 0;
+  let lastInjectedPrompt = "";
+  let isTurnPending = false;
 
-/**
- * Waits until the Meta AI input element is available, then injects and submits prompt.
- * Retries up to 25 times (5 seconds total) — handles freshly opened tabs.
- */
-function injectPromptAndSendMetaAI(promptText) {
-  lastInjectedPrompt = promptText.trim();
-  isTurnPending = true;
-
-  // Snapshot current state before typing
-  baselineResponseText = getFullMetaAIResponseText();
-  lastSubmissionTime = Date.now();
-
-  let waitAttempts = 0;
-  const maxWait = 25;
-
-  function waitForInputThenInject() {
-    const inputEl = document.querySelector('[data-lexical-editor="true"]') ||
-                    document.querySelector('div[contenteditable="true"]') ||
-                    document.querySelector('div[role="textbox"]') ||
-                    document.querySelector('textarea') ||
-                    document.querySelector('form textarea');
-
-    if (!inputEl && waitAttempts < maxWait) {
-      waitAttempts++;
-      setTimeout(waitForInputThenInject, 200);
-      return;
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "PING") {
+      sendResponse({ status: "ok", url: window.location.href, provider: "meta" });
+      return true;
     }
 
-    if (!inputEl) {
-      console.error('[InstaReel-AI] Meta AI input not found after waiting.');
-      return;
+    if (request.action === "INJECT_PROMPT") {
+      try {
+        const result = injectPromptAndSendMetaAI(request.promptText);
+        sendResponse(result);
+      } catch (err) {
+        console.error("[InstaReel-AI] Meta AI Prompt error:", err);
+        sendResponse({ success: false, error: err.message });
+      }
+      return true;
     }
 
-    doInjectAndSubmit(inputEl, promptText);
+    if (request.action === "EXTRACT_RESPONSE") {
+      try {
+        const result = extractLatestMetaAIResponse();
+        sendResponse(result);
+      } catch (err) {
+        console.error("[InstaReel-AI] Meta AI Extract error:", err);
+        sendResponse({ success: false, error: err.message });
+      }
+      return true;
+    }
+  });
+
+  /**
+   * Waits until the Meta AI input element is available, then injects and submits prompt.
+   * Retries up to 25 times (5 seconds total) — handles freshly opened tabs.
+   */
+  function injectPromptAndSendMetaAI(promptText) {
+    lastInjectedPrompt = promptText.trim();
+    isTurnPending = true;
+
+    // Snapshot current state before typing
+    baselineResponseText = getFullMetaAIResponseText();
+    lastSubmissionTime = Date.now();
+
+    let waitAttempts = 0;
+    const maxWait = 25;
+
+    function waitForInputThenInject() {
+      const inputEl = document.querySelector('[data-lexical-editor="true"]') ||
+                      document.querySelector('div[contenteditable="true"]') ||
+                      document.querySelector('div[role="textbox"]') ||
+                      document.querySelector('textarea') ||
+                      document.querySelector('form textarea');
+
+      if (!inputEl && waitAttempts < maxWait) {
+        waitAttempts++;
+        setTimeout(waitForInputThenInject, 200);
+        return;
+      }
+
+      if (!inputEl) {
+        console.error('[InstaReel-AI] Meta AI input not found after waiting.');
+        return;
+      }
+
+      doInjectAndSubmit(inputEl, promptText);
+    }
+
+    waitForInputThenInject();
+    return { success: true, status: 'submitted', provider: 'meta' };
   }
 
-  waitForInputThenInject();
-  return { success: true, status: 'submitted', provider: 'meta' };
-}
+  function doInjectAndSubmit(inputEl, promptText) {
+    lastSubmissionTime = Date.now();
 
-function doInjectAndSubmit(inputEl, promptText) {
-  lastSubmissionTime = Date.now();
+    console.log(`[InstaReel-AI] Injecting prompt into Meta AI (baseline text len: ${baselineResponseText.length})...`);
 
-  console.log(`[InstaReel-AI] Injecting prompt into Meta AI (baseline text len: ${baselineResponseText.length})...`);
-
-  try {
-    inputEl.focus();
-  } catch (e) {}
-
-  if (inputEl.tagName.toLowerCase() === 'textarea') {
-    inputEl.value = promptText;
-    inputEl.dispatchEvent(new Event('input', { bubbles: true }));
-    inputEl.dispatchEvent(new Event('change', { bubbles: true }));
-  } else {
-    // 1. Select and clear old text
     try {
       inputEl.focus();
-      document.execCommand('selectAll', false, null);
-      document.execCommand('delete', false, null);
     } catch (e) {}
 
-    // 2. Insert text cleanly using execCommand
-    let success = false;
-    try {
-      success = document.execCommand('insertText', false, promptText);
-    } catch (e) {
-      success = false;
-    }
-
-    // 3. Fallback only if execCommand was not supported
-    if (!success) {
+    if (inputEl.tagName.toLowerCase() === 'textarea') {
+      inputEl.value = promptText;
+      inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+      inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+    } else {
+      // 1. Select and clear old text
       try {
-        const dt = new DataTransfer();
-        dt.setData('text/plain', promptText);
-        inputEl.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+        inputEl.focus();
+        document.execCommand('selectAll', false, null);
+        document.execCommand('delete', false, null);
       } catch (e) {}
+
+      // 2. Insert text cleanly using execCommand
+      try {
+        document.execCommand('insertText', false, promptText);
+      } catch (e) {}
+
+      // 3. Check if editor is populated. Only fallback to clipboard paste if editor is still empty!
+      const currentInputText = (inputEl.innerText || inputEl.textContent || "").trim();
+      if (!currentInputText) {
+        try {
+          const dt = new DataTransfer();
+          dt.setData('text/plain', promptText);
+          inputEl.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+        } catch (e) {}
+      }
+
+      // 4. Trigger reactive input events
+      inputEl.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+      inputEl.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
     }
 
-    // 4. Trigger reactive input events
-    inputEl.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-    inputEl.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+    // Attempt button submit with retries
+    setTimeout(() => trySubmitMetaOnce(inputEl, 0), 250);
   }
-
-  // Attempt button submit with retries
-  setTimeout(() => trySubmitMetaOnce(inputEl, 0), 250);
-}
 
 function trySubmitMetaOnce(inputEl, attempts) {
   const maxAttempts = 20; // 20 × 200ms = 4 seconds of retries
@@ -317,3 +317,4 @@ function escapeHtml(text) {
   div.innerText = text;
   return div.innerHTML;
 }
+})();

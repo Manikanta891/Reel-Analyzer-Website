@@ -1,19 +1,21 @@
-/**
- * InstaReel Multi-AI Summarizer - ChatGPT Content Script
- * Automates prompt injection and response extraction in ChatGPT Web UI (chatgpt.com).
- */
-
-console.log("[InstaReel-AI] ChatGPT Content Script loaded.");
-
-let lastSubmissionTime = 0;
-let baselineResponseText = "";
-let baselineResponseCount = 0;
-
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "PING") {
-    sendResponse({ status: "ok", url: window.location.href, provider: "chatgpt" });
-    return true;
+(() => {
+  if (window.__instaReelChatGPTLoaded) {
+    console.log("[InstaReel-AI] ChatGPT Content Script already loaded. Skipping.");
+    return;
   }
+  window.__instaReelChatGPTLoaded = true;
+
+  console.log("[InstaReel-AI] ChatGPT Content Script loaded.");
+
+  let lastSubmissionTime = 0;
+  let baselineResponseText = "";
+  let baselineResponseCount = 0;
+
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "PING") {
+      sendResponse({ status: "ok", url: window.location.href, provider: "chatgpt" });
+      return true;
+    }
 
   if (request.action === "INJECT_PROMPT") {
     try {
@@ -139,6 +141,12 @@ function injectPromptAndSendChatGPT(promptText) {
 function extractLatestChatGPTResponse() {
   const timeSinceSubmission = Date.now() - lastSubmissionTime;
 
+  // Check if ChatGPT rate-limit modal or cloudflare error is blocking
+  const limitModal = document.querySelector('div[role="dialog"]');
+  if (limitModal && /limit|upgrade|verify/i.test(limitModal.innerText)) {
+    console.warn('[InstaReel-AI] ChatGPT modal detected:', limitModal.innerText.slice(0, 80));
+  }
+
   // Check if ChatGPT is still generating: Stop button or streaming class
   const stopBtn = document.querySelector('button[data-testid="stop-button"]') ||
                   document.querySelector('button[aria-label="Stop streaming"]') ||
@@ -154,7 +162,12 @@ function extractLatestChatGPTResponse() {
   let currentText = "";
   if (responseEls.length > 0) {
     const lastAssistant = responseEls[responseEls.length - 1];
-    currentText = (lastAssistant.innerText || lastAssistant.textContent || "").trim();
+    
+    // Clone element to safely strip reasoning / thought accordions without mutating page
+    const clone = lastAssistant.cloneNode(true);
+    clone.querySelectorAll('details, div[class*="thought"], [data-testid*="thought"], div[class*="reasoning"]').forEach(el => el.remove());
+    
+    currentText = (clone.innerText || clone.textContent || "").trim();
   }
 
   // 1. Initial 2.5s debounce: ChatGPT network request in transit
@@ -194,21 +207,47 @@ function extractLatestChatGPTResponse() {
   }
 
   const hasNewContent = currentText !== baselineResponseText && currentText.length > 30;
+  const isRefusal = /i cannot fulfill|i can't fulfill|i'm unable to|i cannot assist|as an ai language model/i.test(currentText) && currentText.length < 180;
 
   return {
     success: true,
     completed: hasNewContent && !isStopActive,
     isGenerating: isStopActive || !hasNewContent,
+    isRefusal: isRefusal,
     textLength: currentText.length,
     text: hasNewContent ? currentText : "",
     provider: "chatgpt"
   };
 }
 
+/**
+ * Helper to collect assistant response bubbles in ChatGPT.
+ * Filters out nested children to preserve full message.
+ */
 function getChatGPTResponseElements() {
-  return Array.from(document.querySelectorAll(
-    'div[data-message-author-role="assistant"], article[data-testid^="conversation-turn"] .markdown, .agent-turn .markdown, div.markdown, .prose'
+  const turns = Array.from(document.querySelectorAll('article[data-testid^="conversation-turn"]')).filter(art => {
+    return art.querySelector('[data-message-author-role="assistant"]') || !art.querySelector('[data-message-author-role="user"]');
+  });
+  if (turns.length > 0) {
+    return turns;
+  }
+
+  const candidateEls = Array.from(document.querySelectorAll(
+    'div[data-message-author-role="assistant"], .agent-turn .markdown, div.markdown, .prose'
   ));
+
+  const valid = candidateEls.filter(el => {
+    if (el.closest('[data-message-author-role="user"]') || el.isContentEditable) return false;
+    const text = el.innerText?.trim() || "";
+    return text.length > 20;
+  });
+
+  // Keep outermost containers only
+  const outermost = valid.filter((el, _, arr) => {
+    return !arr.some(parent => parent !== el && parent.contains(el));
+  });
+
+  return outermost;
 }
 
 function escapeHtml(text) {
@@ -216,3 +255,4 @@ function escapeHtml(text) {
   div.innerText = text;
   return div.innerHTML;
 }
+})();
