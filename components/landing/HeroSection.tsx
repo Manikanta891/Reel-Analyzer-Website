@@ -85,14 +85,15 @@ export const HeroSection: React.FC = () => {
         {/* Interactive Knowledge Transformation Simulator (Bento Layout) */}
         <div className="max-w-5xl mx-auto rounded-2xl bg-[#111218] border border-white/[0.08] p-4 sm:p-6 shadow-2xl relative">
           <div className="flex items-center justify-between border-b border-white/[0.06] pb-4 mb-6">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
               </div>
-              <span className="text-xs font-mono text-zinc-400 ml-2">
-                reel-to-knowledge-pipeline.md
+              <span className="text-xs font-semibold text-zinc-400 ml-2 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                <span>AI Knowledge Synthesizer</span>
               </span>
             </div>
 

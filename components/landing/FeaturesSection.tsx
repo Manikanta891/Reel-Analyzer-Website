@@ -35,10 +35,10 @@ export const FeaturesSection: React.FC = () => {
           </p>
         </div>
 
-        {/* Bento Grid Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
-          {/* Card 1: Obsidian Vault & Bi-directional Links (Span 7) */}
-          <div className="md:col-span-7 rounded-2xl bg-[#12131a] border border-white/[0.06] hover:border-white/[0.12] p-6 sm:p-7 flex flex-col justify-between space-y-6 transition-all duration-200 group">
+        {/* Equal-Sized 2x2 Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+          {/* Card 1: Obsidian Vault & Bi-directional Links */}
+          <div className="rounded-2xl bg-[#12131a] border border-white/[0.06] hover:border-white/[0.12] p-6 sm:p-7 flex flex-col justify-between space-y-6 transition-all duration-200 group h-full">
             <div className="space-y-3">
               <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
                 <FolderTree className="w-5 h-5" strokeWidth={1.5} />
@@ -58,8 +58,8 @@ export const FeaturesSection: React.FC = () => {
             </div>
           </div>
 
-          {/* Card 2: Instant Search & Living Taxonomy (Span 5) */}
-          <div className="md:col-span-5 rounded-2xl bg-[#12131a] border border-white/[0.06] hover:border-white/[0.12] p-6 sm:p-7 flex flex-col justify-between space-y-6 transition-all duration-200 group">
+          {/* Card 2: Instant Search & Living Taxonomy */}
+          <div className="rounded-2xl bg-[#12131a] border border-white/[0.06] hover:border-white/[0.12] p-6 sm:p-7 flex flex-col justify-between space-y-6 transition-all duration-200 group h-full">
             <div className="space-y-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
                 <BookOpen className="w-5 h-5" strokeWidth={1.5} />
@@ -72,14 +72,14 @@ export const FeaturesSection: React.FC = () => {
               </p>
             </div>
 
-            <div className="rounded-xl bg-emerald-950/20 border border-emerald-500/20 p-3 text-[11px] text-emerald-200 flex items-center justify-between">
-              <span>⚡ Sub-millisecond Recall</span>
-              <span className="text-[10px] font-mono bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-300">Fuzzy Filter</span>
+            <div className="rounded-xl bg-[#0e0f14] border border-white/[0.06] p-3.5 text-[11px] text-zinc-400 flex items-center justify-between font-mono">
+              <span className="text-emerald-400 font-semibold">⚡ Sub-millisecond Recall</span>
+              <span className="bg-emerald-500/15 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/20">Fuzzy Filter</span>
             </div>
           </div>
 
-          {/* Card 3: Deep Synthesis & Code Extraction (Span 6) */}
-          <div className="md:col-span-6 rounded-2xl bg-[#12131a] border border-white/[0.06] hover:border-white/[0.12] p-6 sm:p-7 flex flex-col justify-between space-y-6 transition-all duration-200 group">
+          {/* Card 3: Deep Synthesis & Code Extraction */}
+          <div className="rounded-2xl bg-[#12131a] border border-white/[0.06] hover:border-white/[0.12] p-6 sm:p-7 flex flex-col justify-between space-y-6 transition-all duration-200 group h-full">
             <div className="space-y-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20">
                 <Code2 className="w-5 h-5" strokeWidth={1.5} />
@@ -92,13 +92,14 @@ export const FeaturesSection: React.FC = () => {
               </p>
             </div>
 
-            <div className="rounded-xl bg-[#0e0f14] p-3 border border-white/[0.06] font-mono text-[11px] text-amber-300/90">
-              <code>git commit -m &quot;feat: instant vector search&quot;</code>
+            <div className="rounded-xl bg-[#0e0f14] p-3.5 border border-white/[0.06] font-mono text-[11px] text-amber-300/90 flex items-center justify-between">
+              <code>git commit -m &quot;feat: vector search&quot;</code>
+              <span className="text-zinc-500 text-[10px]">Markdown</span>
             </div>
           </div>
 
-          {/* Card 4: 100% Local-First & Zero Tracking (Span 6) */}
-          <div className="md:col-span-6 rounded-2xl bg-[#12131a] border border-white/[0.06] hover:border-white/[0.12] p-6 sm:p-7 flex flex-col justify-between space-y-6 transition-all duration-200 group">
+          {/* Card 4: 100% Local-First & Zero Tracking */}
+          <div className="rounded-2xl bg-[#12131a] border border-white/[0.06] hover:border-white/[0.12] p-6 sm:p-7 flex flex-col justify-between space-y-6 transition-all duration-200 group h-full">
             <div className="space-y-3">
               <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/20">
                 <Lock className="w-5 h-5" strokeWidth={1.5} />
@@ -111,8 +112,8 @@ export const FeaturesSection: React.FC = () => {
               </p>
             </div>
 
-            <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 pt-2 border-t border-white/[0.06]">
-              <span>🔒 Zero Cloud Telemetry</span>
+            <div className="rounded-xl bg-[#0e0f14] p-3.5 border border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-zinc-400">
+              <span className="text-purple-300 font-semibold">🔒 Zero Cloud Telemetry</span>
               <span className="text-zinc-500">IndexedDB Local</span>
             </div>
           </div>
