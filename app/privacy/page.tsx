@@ -136,7 +136,7 @@ export default function PrivacyPage() {
           {/* Section 1 */}
           <section className="space-y-3">
             <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              <span className="text-emerald-400">1.</span> Introduction & Scope
+              <span className="text-brand-400">1.</span> Introduction & Scope
             </h2>
             <p>
               Reel Analyzer (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;the extension&rdquo;) is a developer and creator productivity tool designed to convert educational Instagram Reels into permanent, structured knowledge notes and Obsidian-ready markdown vaults.
@@ -149,12 +149,12 @@ export default function PrivacyPage() {
           {/* Section 2 */}
           <section className="space-y-3">
             <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              <span className="text-emerald-400">2.</span> Single Purpose Statement
+              <span className="text-brand-400">2.</span> Single Purpose Statement
             </h2>
             <p>
               The single, exclusive purpose of Reel Analyzer is:
             </p>
-            <div className="p-4 rounded-xl bg-zinc-900/70 border border-white/[0.08] text-xs font-mono text-emerald-300 leading-relaxed">
+            <div className="p-4 rounded-xl bg-zinc-900/70 border border-white/[0.08] text-xs font-mono text-zinc-300 leading-relaxed">
               &ldquo;To extract publicly visible educational content from Instagram Reels, synthesize it into structured knowledge notes via Meta AI in the user&apos;s active session, and organize it into an offline-first Obsidian markdown knowledge vault.&rdquo;
             </div>
           </section>
@@ -162,7 +162,7 @@ export default function PrivacyPage() {
           {/* Section 3 */}
           <section className="space-y-4">
             <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              <span className="text-emerald-400">3.</span> Information Processing & Use
+              <span className="text-brand-400">3.</span> Information Processing & Use
             </h2>
             <div className="space-y-3 text-xs sm:text-sm">
               <div className="p-4 rounded-xl bg-zinc-900/40 border border-white/[0.06] space-y-1.5">
@@ -207,7 +207,7 @@ export default function PrivacyPage() {
           {/* Section 4 */}
           <section className="space-y-4">
             <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              <span className="text-emerald-400">4.</span> Chrome Extension Permissions Justification
+              <span className="text-brand-400">4.</span> Chrome Extension Permissions Justification
             </h2>
             <p className="text-xs sm:text-sm text-zinc-400">
               Reel Analyzer adheres strictly to the principle of least privilege. Every requested permission is essential for its core features:
@@ -223,37 +223,37 @@ export default function PrivacyPage() {
                 </thead>
                 <tbody className="divide-y divide-white/[0.06] text-zinc-400">
                   <tr>
-                    <td className="p-3.5 font-mono text-emerald-400 font-semibold">storage</td>
+                    <td className="p-3.5 font-mono text-brand-400 font-semibold">storage</td>
                     <td className="p-3.5">
                       Saves your extracted reel notes, taxonomy trees, and custom prompt preferences locally in <code className="text-zinc-300 font-mono">chrome.storage.local</code>.
                     </td>
                   </tr>
                   <tr>
-                    <td className="p-3.5 font-mono text-emerald-400 font-semibold">unlimitedStorage</td>
+                    <td className="p-3.5 font-mono text-brand-400 font-semibold">unlimitedStorage</td>
                     <td className="p-3.5">
                       Prevents quota limit errors so users can maintain a long-term knowledge vault containing hundreds of notes and playbooks without losing data.
                     </td>
                   </tr>
                   <tr>
-                    <td className="p-3.5 font-mono text-emerald-400 font-semibold">activeTab & tabs</td>
+                    <td className="p-3.5 font-mono text-brand-400 font-semibold">activeTab & tabs</td>
                     <td className="p-3.5">
                       Detects the active Instagram reel URL, verifies connection to your open Meta AI tab, and coordinates batch transitions.
                     </td>
                   </tr>
                   <tr>
-                    <td className="p-3.5 font-mono text-emerald-400 font-semibold">scripting</td>
+                    <td className="p-3.5 font-mono text-brand-400 font-semibold">scripting</td>
                     <td className="p-3.5">
                       Facilitates secure content script communication between the extension and the active Instagram / Meta AI tabs.
                     </td>
                   </tr>
                   <tr>
-                    <td className="p-3.5 font-mono text-emerald-400 font-semibold">sidePanel</td>
+                    <td className="p-3.5 font-mono text-brand-400 font-semibold">sidePanel</td>
                     <td className="p-3.5">
                       Displays the Reel Analyzer controller and live note feed inside Chrome&apos;s native Side Panel for seamless multitasking.
                     </td>
                   </tr>
                   <tr>
-                    <td className="p-3.5 font-mono text-emerald-400 font-semibold">Host Permissions</td>
+                    <td className="p-3.5 font-mono text-brand-400 font-semibold">Host Permissions</td>
                     <td className="p-3.5">
                       Scoped strictly to <code className="text-zinc-300 font-mono">*://*.instagram.com/*</code> (for caption extraction), <code className="text-zinc-300 font-mono">*://*.meta.ai/*</code> (for AI synthesis), and <code className="text-zinc-300 font-mono">https://reelanalyzer.manikanta.co.in/*</code> (for local vault syncing).
                     </td>
@@ -266,7 +266,7 @@ export default function PrivacyPage() {
           {/* Section 5 */}
           <section className="space-y-3">
             <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              <span className="text-emerald-400">5.</span> Data Storage, Transmission & Third-Party AI
+              <span className="text-brand-400">5.</span> Data Storage, Transmission & Third-Party AI
             </h2>
             <p>
               <strong>Zero Chrome Extension Telemetry:</strong> The Reel Analyzer Chrome Extension operates 100% locally. It contains no tracking scripts, ad networks, or background telemetry. Your summaries and taxonomy never leave your machine to any database owned by us.
@@ -282,7 +282,7 @@ export default function PrivacyPage() {
           {/* Section 6 */}
           <section className="space-y-3">
             <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              <span className="text-emerald-400">6.</span> Data Portability, Retention & Permanent Deletion
+              <span className="text-brand-400">6.</span> Data Portability, Retention & Permanent Deletion
             </h2>
             <p>
               You maintain 100% ownership and control over all knowledge generated through Reel Analyzer:
@@ -303,7 +303,7 @@ export default function PrivacyPage() {
           {/* Section 7 */}
           <section className="space-y-3">
             <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              <span className="text-emerald-400">7.</span> Chrome Web Store Limited Use Compliance
+              <span className="text-brand-400">7.</span> Chrome Web Store Limited Use Compliance
             </h2>
             <p>
               Reel Analyzer adheres strictly to the <strong>Google Chrome Web Store Developer Program Policies</strong>, including the <strong>Limited Use Policy</strong>:
@@ -322,7 +322,7 @@ export default function PrivacyPage() {
           {/* Section 8 */}
           <section className="space-y-3">
             <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              <span className="text-emerald-400">8.</span> Children&apos;s Privacy
+              <span className="text-brand-400">8.</span> Children&apos;s Privacy
             </h2>
             <p>
               Reel Analyzer is not intended for use by children under the age of 13. We do not knowingly collect or solicit any personal information from children.
@@ -332,7 +332,7 @@ export default function PrivacyPage() {
           {/* Section 9 */}
           <section className="space-y-3">
             <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              <span className="text-emerald-400">9.</span> Updates to This Policy
+              <span className="text-brand-400">9.</span> Updates to This Policy
             </h2>
             <p>
               We may update this Privacy Policy periodically to reflect new features, version improvements, or regulatory updates. Any changes will be posted on this page with an updated &ldquo;Last Updated&rdquo; date.
@@ -342,7 +342,7 @@ export default function PrivacyPage() {
           {/* Section 10 */}
           <section className="space-y-3 border-t border-white/[0.08] pt-8">
             <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              <span className="text-emerald-400">10.</span> Contact & Developer Inquiries
+              <span className="text-brand-400">10.</span> Contact & Developer Inquiries
             </h2>
             <p className="text-xs sm:text-sm text-zinc-400">
               If you have any questions, feedback, or data privacy inquiries regarding Reel Analyzer, please reach out via our official platforms:

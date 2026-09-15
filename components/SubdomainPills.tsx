@@ -1,6 +1,7 @@
-'use client';
+﻿'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface SubdomainPillsProps {
   subdomains: string[];
@@ -17,10 +18,21 @@ export const SubdomainPills: React.FC<SubdomainPillsProps> = ({
   subdomainCounts,
   totalInDomain,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const INITIAL_LIMIT = 5;
+
   if (subdomains.length === 0) return null;
 
+  // Determine which subdomains to render
+  const visibleSubdomains = isExpanded
+    ? subdomains
+    : subdomains.slice(0, INITIAL_LIMIT);
+
+  const hiddenCount = subdomains.length - INITIAL_LIMIT;
+
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto pb-3 mb-5 scrollbar-none">
+    <div className="flex items-center gap-1.5 overflow-x-auto pb-3 mb-5 scrollbar-none flex-wrap">
+      {/* 'All' button */}
       <button
         onClick={() => onSelectSubdomain('All')}
         className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150 active:scale-[0.98] ${
@@ -35,7 +47,8 @@ export const SubdomainPills: React.FC<SubdomainPillsProps> = ({
         </span>
       </button>
 
-      {subdomains.map((sub) => {
+      {/* Render visible subdomains */}
+      {visibleSubdomains.map((sub) => {
         const count = subdomainCounts[sub] || 0;
         const isSelected = selectedSubdomain === sub;
 
@@ -56,6 +69,22 @@ export const SubdomainPills: React.FC<SubdomainPillsProps> = ({
           </button>
         );
       })}
+
+      {/* '+X more' or 'Show less' toggle button */}
+      {hiddenCount > 0 && (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          title={isExpanded ? 'Show fewer subdomains' : `Show ${hiddenCount} more subdomains`}
+          className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-brand-950/40 hover:bg-brand-900/60 text-brand-300 border border-brand-500/30 transition-all duration-150 active:scale-[0.98]"
+        >
+          <span>{isExpanded ? 'Show less' : `+${hiddenCount} more`}</span>
+          {isExpanded ? (
+            <ChevronUp className="w-3 h-3 text-brand-400" />
+          ) : (
+            <ChevronDown className="w-3 h-3 text-brand-400" />
+          )}
+        </button>
+      )}
     </div>
   );
 };

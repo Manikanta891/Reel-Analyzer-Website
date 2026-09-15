@@ -41,7 +41,7 @@ export const FeedAdSpot: React.FC<FeedAdSpotProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400/80 border border-amber-500/20">
+            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-brand-500/10 text-brand-300 border border-brand-500/20">
               DEV AD PREVIEW
             </span>
             <div className="p-1.5 rounded-lg bg-zinc-800/60 text-zinc-400 group-hover:text-white transition-colors">
@@ -53,7 +53,7 @@ export const FeedAdSpot: React.FC<FeedAdSpotProps> = ({
         {/* Title */}
         <h3 className="text-base font-semibold text-zinc-200 tracking-tight leading-snug mb-2 group-hover:text-white transition-colors flex items-center gap-2">
           <span>{title}</span>
-          <Sparkles className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" strokeWidth={1.5} />
+          <Sparkles className="w-3.5 h-3.5 text-brand-400 flex-shrink-0" strokeWidth={1.5} />
         </h3>
 
         {/* Description */}

@@ -25,6 +25,26 @@ export const PlaybookExportModal: React.FC<PlaybookExportModalProps> = ({
   const [selectedDomain, setSelectedDomain] = useState(currentDomain);
   const [copied, setCopied] = useState(false);
 
+  // Esc key listener & Body scroll-lock
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const markdownContent = generatePlaybookMarkdown(reels, selectedDomain, 'All');
@@ -44,7 +64,12 @@ export const PlaybookExportModal: React.FC<PlaybookExportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+    >
       <div className="w-full max-w-2xl bg-zinc-900 border border-white/[0.1] rounded-2xl p-6 sm:p-7 shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-white/[0.08] mb-4">

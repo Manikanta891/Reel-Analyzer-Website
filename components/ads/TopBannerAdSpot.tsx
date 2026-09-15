@@ -27,7 +27,7 @@ export const TopBannerAdSpot: React.FC<TopBannerAdSpotProps> = ({
     <div className="mb-6 rounded-xl bg-zinc-900/40 border border-white/[0.08] p-2.5 sm:px-4 flex items-center justify-between gap-3 text-xs">
       <div className="flex items-center gap-2 flex-wrap min-w-0">
         <span className="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-white/[0.06] flex items-center gap-1">
-          <Sparkles className="w-2.5 h-2.5 text-amber-400" strokeWidth={1.5} />
+          <Sparkles className="w-2.5 h-2.5 text-brand-400" strokeWidth={1.5} />
           <span>Partner</span>
         </span>
         <span className="font-semibold text-zinc-300 truncate">
@@ -39,7 +39,7 @@ export const TopBannerAdSpot: React.FC<TopBannerAdSpotProps> = ({
       </div>
 
       <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400/80 border border-amber-500/20 hidden md:inline">
+        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-brand-500/10 text-brand-300 border border-brand-500/20 hidden md:inline">
           DEV PREVIEW
         </span>
         <a
@@ -51,14 +51,6 @@ export const TopBannerAdSpot: React.FC<TopBannerAdSpotProps> = ({
           <span>{ctaText}</span>
           <ExternalLink className="w-3 h-3" strokeWidth={1.5} />
         </a>
-        <button
-          onClick={() => setDismissed(true)}
-          title="Dismiss banner"
-          aria-label="Dismiss banner"
-          className="p-1 rounded text-zinc-500 hover:text-zinc-300 transition-colors"
-        >
-          <X className="w-3.5 h-3.5" strokeWidth={1.5} />
-        </button>
       </div>
     </div>
   );

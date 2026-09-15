@@ -35,6 +35,9 @@ export const LandingFooter: React.FC = () => {
             <Link href="/vault" className="hover:text-white transition-colors">
               Knowledge Vault
             </Link>
+            <Link href="/privacy" className="hover:text-white transition-colors">
+              Privacy Policy
+            </Link>
             <a
               href="https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci?utm_source=item-share-cb"
               target="_blank"
@@ -43,21 +46,6 @@ export const LandingFooter: React.FC = () => {
             >
               Chrome Extension ↗
             </a>
-            <a href="#how-it-works" className="hover:text-white transition-colors">
-              How It Works
-            </a>
-            <a href="#features" className="hover:text-white transition-colors">
-              Features
-            </a>
-            <Link href="/privacy" className="hover:text-white transition-colors">
-              Privacy
-            </Link>
-            <a href="#contact" className="hover:text-white transition-colors">
-              Feedback
-            </a>
-            <Link href="/uninstall" className="text-zinc-600 hover:text-zinc-400 transition-colors">
-              Uninstall Survey
-            </Link>
           </div>
         </div>
 

@@ -8,6 +8,7 @@ import {
   Lightbulb,
   Wrench,
   ArrowRight,
+  Trash2,
 } from 'lucide-react';
 import { ReelItem } from '@/types';
 
@@ -15,14 +16,17 @@ interface ReelCardProps {
   item: ReelItem;
   onSelect: (item: ReelItem) => void;
   onEntityClick?: (entity: string) => void;
+  onDelete?: (item: ReelItem) => void;
 }
 
 export const ReelCard: React.FC<ReelCardProps> = ({
   item,
   onSelect,
   onEntityClick,
+  onDelete,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [showAllTools, setShowAllTools] = useState(false);
 
   const handleCopyMarkdown = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -41,12 +45,28 @@ ${item.summary}
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onDelete) return;
+    const confirmMsg =
+      `⚠️ Remove Reel from Vault?\n\n` +
+      `Are you sure you want to delete "${item.subject || 'this insight'}"?\n` +
+      `This will remove the summary and takeaway from your local knowledge library.`;
+
+    if (confirm(confirmMsg)) {
+      onDelete(item);
+    }
+  };
+
   const entityList = item.entities
     ? item.entities
         .split(',')
         .map((e) => e.trim())
         .filter(Boolean)
     : [];
+
+  const visibleTools = showAllTools ? entityList : entityList.slice(0, 3);
+  const hiddenCount = entityList.length - 3;
 
   return (
     <div
@@ -90,6 +110,16 @@ ${item.summary}
             >
               <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
             </a>
+            {onDelete && (
+              <button
+                onClick={handleDelete}
+                title="Delete Reel from Vault"
+                aria-label="Delete Reel from Vault"
+                className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 border border-white/[0.06] hover:border-red-500/30 transition-colors duration-150"
+              >
+                <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -98,24 +128,24 @@ ${item.summary}
           {item.subject || 'Actionable Video Insight'}
         </h3>
 
-        {/* Key Takeaway Box */}
-        {item.personalUtility && (
+        {/* Summary Box */}
+        {(item.personalUtility || item.summary) && (
           <div className="mb-3.5 p-3 rounded-xl bg-zinc-950/60 border border-white/[0.06]">
             <div className="flex items-start gap-2 text-xs text-zinc-300 leading-relaxed">
               <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-400" strokeWidth={1.5} />
               <div className="line-clamp-2">
-                <span className="font-medium text-zinc-200">Takeaway:</span>{' '}
-                <span className="text-zinc-400">{item.personalUtility}</span>
+                <span className="font-medium text-zinc-200">Summary:</span>{' '}
+                <span className="text-zinc-400">{item.personalUtility || item.summary}</span>
               </div>
             </div>
           </div>
         )}
 
-        {/* Tool Chips */}
+        {/* Tool Chips with +X truncation */}
         {entityList.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap mb-2">
             <Wrench className="w-3 h-3 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
-            {entityList.slice(0, 4).map((ent) => (
+            {visibleTools.map((ent) => (
               <button
                 key={ent}
                 onClick={(e) => {
@@ -127,10 +157,27 @@ ${item.summary}
                 {ent}
               </button>
             ))}
-            {entityList.length > 4 && (
-              <span className="text-[10px] text-zinc-400 font-mono">
-                +{entityList.length - 4} more
-              </span>
+            {!showAllTools && hiddenCount > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAllTools(true);
+                }}
+                className="text-[10px] text-brand-400 hover:text-brand-300 font-mono px-1.5 py-0.5 rounded bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 transition-colors"
+              >
+                +{hiddenCount} more
+              </button>
+            )}
+            {showAllTools && hiddenCount > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAllTools(false);
+                }}
+                className="text-[10px] text-zinc-500 hover:text-zinc-300 font-mono px-1.5 py-0.5 rounded bg-zinc-800/40 border border-white/[0.04] transition-colors"
+              >
+                Show less
+              </button>
             )}
           </div>
         )}

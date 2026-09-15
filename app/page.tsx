@@ -1,35 +1,31 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { LandingNavbar } from '@/components/landing/LandingNavbar';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { FeaturesSection } from '@/components/landing/FeaturesSection';
-import { PrivacySection } from '@/components/landing/PrivacySection';
 import { CreatorContactSection } from '@/components/landing/CreatorContactSection';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-brand-600 selection:text-white">
-      {/* Top Navbar */}
+      {/* Top Sticky Navbar */}
       <LandingNavbar />
 
-      {/* Main Sections */}
+      {/* 4 Focused Single-Scroll Sections */}
       <main className="flex-1">
-        {/* Hero with interactive video-to-playbook pipeline demo */}
+        {/* Screen 1: Punchy Hero with Live Transformation Card */}
         <HeroSection />
 
-        {/* 3-Step How It Works Breakdown */}
+        {/* Screen 2: 3-Step Clean Visual Pipeline */}
         <HowItWorksSection />
 
-        {/* Core Capabilities & Features Grid */}
+        {/* Screen 3: 4 Core Capabilities */}
         <FeaturesSection />
 
-        {/* Privacy & Security Guarantee */}
-        <PrivacySection />
-
-        {/* Direct Creator Feedback & Message Box */}
+        {/* Screen 4: Call-to-Action & Creator Feedback */}
         <CreatorContactSection />
       </main>
 

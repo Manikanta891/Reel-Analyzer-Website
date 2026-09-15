@@ -30,8 +30,21 @@ export default function VaultPage() {
   const [selectedDomain, setSelectedDomain] = useState<string>('All');
   const [selectedSubdomain, setSelectedSubdomain] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [feedViewMode, setFeedViewMode] = useState<'grid' | 'table'>('grid');
   const [activeTab, setActiveTab] = useState<'reels' | 'flashcards'>('reels');
+
+  // Debounce search query to guarantee 60fps performance on fuzzy Levenshtein calculations
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setDebouncedSearchQuery('');
+      return;
+    }
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const [selectedReelForModal, setSelectedReelForModal] = useState<ReelItem | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -84,7 +97,7 @@ export default function VaultPage() {
   // Reset pagination on filter or search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedDomain, selectedSubdomain, searchQuery, feedViewMode, activeTab]);
+  }, [selectedDomain, selectedSubdomain, debouncedSearchQuery, feedViewMode, activeTab]);
 
   // Compute Categories, Subcategories, and Counts
   const {
@@ -140,28 +153,140 @@ export default function VaultPage() {
     };
   }, [reels, selectedDomain]);
 
-  // Regex-safe Search & Filtering (incorporating Category and Subcategory)
+  // Levenshtein edit distance for typo-tolerant fuzzy matching
+  const levenshtein = (a: string, b: string): number => {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+    const matrix: number[][] = [];
+    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+    return matrix[b.length][a.length];
+  };
+
+  const matchesTokenFuzzy = (fieldStr: string, token: string): boolean => {
+    if (!fieldStr || !token) return false;
+    const lowerField = fieldStr.toLowerCase();
+    const lowerToken = token.toLowerCase();
+
+    // 1. Direct substring match
+    if (lowerField.includes(lowerToken)) return true;
+
+    // 2. Token / word-level typo-tolerant check
+    const words = lowerField.split(/[\s,./\-_|()#]+/);
+    const maxDistance = lowerToken.length <= 3 ? 0 : lowerToken.length <= 6 ? 1 : 2;
+
+    for (const w of words) {
+      if (!w || w.length < 2) continue;
+      if (w.startsWith(lowerToken) || lowerToken.startsWith(w)) return true;
+      if (maxDistance > 0 && Math.abs(w.length - lowerToken.length) <= maxDistance) {
+        if (levenshtein(w, lowerToken) <= maxDistance) return true;
+      }
+    }
+
+    return false;
+  };
+
+  // Relevance scoring to guarantee highest relevance (and closest typo matches) rank first
+  const calculateRelevanceScore = (r: ReelItem, query: string, tokens: string[]): number => {
+    let score = 0;
+    const lowerQuery = query.toLowerCase().trim();
+    const subject = (r.subject || '').toLowerCase();
+    const domain = (r.domain || '').toLowerCase();
+    const subdomain = (r.subdomain || '').toLowerCase();
+    const entities = (r.entities || '').toLowerCase();
+    const tags = (r.tags || '').toLowerCase();
+    const summary = (r.summary || '').toLowerCase();
+    const utility = (r.personalUtility || '').toLowerCase();
+
+    // 1. Exact full phrase matches
+    if (subject.includes(lowerQuery)) score += 100;
+    if (domain.includes(lowerQuery) || subdomain.includes(lowerQuery)) score += 60;
+    if (entities.includes(lowerQuery) || tags.includes(lowerQuery)) score += 50;
+
+    // 2. Token-by-token scoring (exact match vs. close typo matches)
+    for (const t of tokens) {
+      if (subject.includes(t)) {
+        score += 40;
+      } else {
+        const subWords = subject.split(/[\s,./\-_|()#]+/);
+        for (const w of subWords) {
+          if (w.length >= 3) {
+            const dist = levenshtein(w, t);
+            if (dist === 1) score += 25; // 1-letter typo in title
+            else if (dist === 2 && t.length >= 6) score += 15; // 2-letter typo in title
+          }
+        }
+      }
+
+      if (entities.includes(t) || tags.includes(t)) {
+        score += 30;
+      } else {
+        const entWords = (entities + ' ' + tags).split(/[\s,./\-_|()#]+/);
+        for (const w of entWords) {
+          if (w.length >= 3 && levenshtein(w, t) === 1) score += 18;
+        }
+      }
+
+      if (domain.includes(t) || subdomain.includes(t)) {
+        score += 20;
+      }
+
+      if (utility.includes(t) || summary.includes(t)) {
+        score += 10;
+      }
+    }
+
+    return score;
+  };
+
+  // Typo-tolerant multi-token Search & Filtering with Relevance Ranking (Debounced)
   const filteredReels = useMemo(() => {
-    return reels.filter((r) => {
-      const domainMatch = selectedDomain === 'All' || r.domain === selectedDomain;
-      const subMatch = selectedSubdomain === 'All' || r.subdomain === selectedSubdomain;
+    const rawTokens = debouncedSearchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
 
-      if (!domainMatch || !subMatch) return false;
+    return reels
+      .filter((r) => {
+        const domainMatch = selectedDomain === 'All' || r.domain === selectedDomain;
+        const subMatch = selectedSubdomain === 'All' || r.subdomain === selectedSubdomain;
 
-      if (!searchQuery.trim()) return true;
+        if (!domainMatch || !subMatch) return false;
+        if (rawTokens.length === 0) return true;
 
-      const q = searchQuery.toLowerCase().trim();
-      return (
-        (r.subject && r.subject.toLowerCase().includes(q)) ||
-        (r.domain && r.domain.toLowerCase().includes(q)) ||
-        (r.subdomain && r.subdomain.toLowerCase().includes(q)) ||
-        (r.personalUtility && r.personalUtility.toLowerCase().includes(q)) ||
-        (r.entities && r.entities.toLowerCase().includes(q)) ||
-        (r.tags && r.tags.toLowerCase().includes(q)) ||
-        (r.summary && r.summary.toLowerCase().includes(q))
-      );
-    });
-  }, [reels, selectedDomain, selectedSubdomain, searchQuery]);
+        const searchableFields = [
+          r.subject || '',
+          r.domain || '',
+          r.subdomain || '',
+          r.personalUtility || '',
+          r.entities || '',
+          r.tags || '',
+          r.summary || '',
+          r.caption || '',
+        ];
+
+        // Every token typed by user must match at least one field (fuzzy or substring)
+        return rawTokens.every((token) =>
+          searchableFields.some((field) => matchesTokenFuzzy(field, token))
+        );
+      })
+      .sort((a, b) => {
+        if (rawTokens.length === 0) return 0;
+        const scoreA = calculateRelevanceScore(a, debouncedSearchQuery, rawTokens);
+        const scoreB = calculateRelevanceScore(b, debouncedSearchQuery, rawTokens);
+        return scoreB - scoreA; // Highest relevance score always ranks first
+      });
+  }, [reels, selectedDomain, selectedSubdomain, debouncedSearchQuery]);
 
   // Paginated Slices
   const totalPages = Math.ceil(filteredReels.length / pageSize) || 1;
@@ -170,13 +295,25 @@ export default function VaultPage() {
     return filteredReels.slice(start, start + pageSize);
   }, [filteredReels, currentPage, pageSize]);
 
-  // Handlers for Data Sync
+  // Handlers for Data Sync & Management
   const handleImportReels = (imported: ReelItem[]) => {
-    const existingUrls = new Set(reels.map((r) => r.url));
-    const newItems = imported.filter((r) => !existingUrls.has(r.url));
+    const existingUrls = new Set(reels.map((r) => r.url.toLowerCase()));
+    const existingSubjects = new Set(reels.map((r) => (r.subject || '').toLowerCase().trim()));
+    const newItems = imported.filter(
+      (r) => !existingUrls.has(r.url.toLowerCase()) && !existingSubjects.has((r.subject || '').toLowerCase().trim())
+    );
     const merged = [...newItems, ...reels];
     setReels(merged);
     saveStoredReels(merged);
+  };
+
+  const handleDeleteReel = (reelToDelete: ReelItem) => {
+    const updated = reels.filter((r) => r.url !== reelToDelete.url);
+    setReels(updated);
+    saveStoredReels(updated);
+    if (selectedReelForModal && selectedReelForModal.url === reelToDelete.url) {
+      setSelectedReelForModal(null);
+    }
   };
 
   const handleResetSample = () => {
@@ -329,6 +466,7 @@ export default function VaultPage() {
                     <>
                       <ReelTableView
                         reels={paginatedReels}
+                        onDelete={handleDeleteReel}
                       />
                     </>
                   ) : (
@@ -340,9 +478,10 @@ export default function VaultPage() {
                             item={item}
                             onSelect={(reel) => setSelectedReelForModal(reel)}
                             onEntityClick={handleEntityClick}
+                            onDelete={handleDeleteReel}
                           />
-                          {/* Native Sponsored Slot */}
-                          {(idx === 3 || (paginatedReels.length < 4 && idx === paginatedReels.length - 1)) && (
+                          {/* Native Sponsored Slot - Hidden during search */}
+                          {!searchQuery.trim() && (idx === 3 || (paginatedReels.length < 4 && idx === paginatedReels.length - 1)) && (
                             <FeedAdSpot
                               key="feed-sponsor-slot"
                               sponsorName="DevFlow Cloud"
@@ -430,6 +569,7 @@ export default function VaultPage() {
         reel={selectedReelForModal}
         onClose={() => setSelectedReelForModal(null)}
         onEntityClick={handleEntityClick}
+        onDelete={handleDeleteReel}
       />
 
       {/* Sync & Export Modals */}
@@ -440,6 +580,7 @@ export default function VaultPage() {
         onResetSample={handleResetSample}
         onClearData={handleClearData}
         currentCount={reels.length}
+        existingReels={reels}
       />
 
       <PlaybookExportModal

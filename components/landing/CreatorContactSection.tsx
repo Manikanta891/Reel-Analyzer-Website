@@ -1,13 +1,18 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   MessageSquare,
   Send,
   CheckCircle2,
   Sparkles,
-  HelpCircle,
+  ArrowRight,
+  ShieldCheck,
 } from 'lucide-react';
+
+const CHROME_STORE_URL =
+  'https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci?utm_source=item-share-cb';
 
 export const CreatorContactSection: React.FC = () => {
   const [topic, setTopic] = useState<'feature' | 'bug' | 'feedback' | 'other'>('feature');
@@ -42,112 +47,146 @@ export const CreatorContactSection: React.FC = () => {
   };
 
   return (
-    <section id="contact" className="py-20 bg-zinc-950 border-t border-white/[0.08] relative">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto rounded-3xl bg-zinc-900/50 border border-white/[0.08] p-7 sm:p-9 backdrop-blur-xl">
-          <div className="text-center mb-6">
-            <span className="text-[10px] uppercase font-semibold tracking-wider px-2.5 py-1 rounded-md bg-zinc-900 text-brand-400 border border-white/[0.08] inline-flex items-center gap-1.5 mb-2">
-              <MessageSquare className="w-3 h-3 text-brand-400" strokeWidth={1.5} />
-              <span>Direct Creator Channel</span>
-            </span>
-            <h2 className="text-2xl font-bold text-white tracking-tight">
-              Send a Message to the Creator
-            </h2>
-            <p className="text-xs text-zinc-400 mt-1">
-              Have a feature idea, discovered an edge case, or want custom integrations? Drop a direct note.
-            </p>
+    <section
+      id="contact"
+      className="min-h-screen flex flex-col justify-between items-center py-12 px-4 sm:px-6 lg:px-8 bg-zinc-950 border-t border-white/[0.08] relative"
+    >
+      <div className="w-full max-w-5xl mx-auto my-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        {/* Left Column: Get Started Callout */}
+        <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-white/[0.08] text-xs text-brand-300">
+            <Sparkles className="w-3.5 h-3.5 text-brand-400" />
+            <span>Start Building Today</span>
           </div>
 
-          {isSent ? (
-            <div className="p-6 rounded-2xl bg-zinc-950/60 border border-emerald-500/20 text-center space-y-3">
-              <div className="w-10 h-10 mx-auto rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5" strokeWidth={1.5} />
-              </div>
-              <h3 className="text-sm font-semibold text-white">Message Delivered!</h3>
-              <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-                Thanks for your message. Your feedback directly shapes upcoming releases of Reel Analyzer.
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+            Ready to turn saved videos into permanent knowledge?
+          </h2>
+
+          <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-md mx-auto lg:mx-0">
+            Install the free Chrome extension and start organizing coding tips, frameworks, and tools in one click.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start pt-2">
+            <a
+              href={CHROME_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-lg shadow-brand-600/20 transition-all active:scale-[0.98]"
+            >
+              <span>Add to Chrome — Free</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </a>
+
+            <Link
+              href="/vault"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-semibold border border-white/[0.08] flex items-center justify-center gap-2 transition-colors"
+            >
+              <span>Explore Web Vault</span>
+            </Link>
+          </div>
+
+          <div className="pt-2 flex items-center gap-2 justify-center lg:justify-start text-[11px] text-zinc-500">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>100% Local Storage &bull; </span>
+            <Link href="/privacy" className="text-zinc-400 hover:underline">
+              Privacy Policy
+            </Link>
+          </div>
+        </div>
+
+        {/* Right Column: Direct Creator Message Box */}
+        <div className="lg:col-span-6">
+          <div className="rounded-2xl bg-zinc-900/60 border border-white/[0.08] p-6 sm:p-7 backdrop-blur-xl">
+            <div className="mb-4">
+              <span className="text-xs font-bold text-white flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-brand-400" />
+                Message the Creator
+              </span>
+              <p className="text-[11px] text-zinc-400 mt-0.5">
+                Have a feature idea or feedback? Send a direct note.
               </p>
-              <button
-                onClick={() => {
-                  setIsSent(false);
-                  setMessage('');
-                }}
-                className="text-xs text-brand-400 hover:text-brand-300 font-medium transition-colors"
-              >
-                Send another message
-              </button>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              {/* Topic Selector */}
-              <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-2">
-                  Topic:
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+
+            {isSent ? (
+              <div className="p-6 rounded-xl bg-zinc-950/60 border border-emerald-500/20 text-center space-y-2">
+                <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto" />
+                <h4 className="text-xs font-semibold text-white">Message Delivered!</h4>
+                <p className="text-[11px] text-zinc-400">
+                  Thanks for your feedback. It directly shapes our next update.
+                </p>
+                <button
+                  onClick={() => {
+                    setIsSent(false);
+                    setMessage('');
+                  }}
+                  className="text-[11px] text-brand-400 hover:underline font-medium pt-2"
+                >
+                  Send another note
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-3 text-xs">
+                {/* Topic selector */}
+                <div className="grid grid-cols-4 gap-1.5 text-[11px]">
                   {[
-                    { id: 'feature', label: 'Feature Idea' },
-                    { id: 'bug', label: 'Bug Report' },
-                    { id: 'feedback', label: 'General Feedback' },
+                    { id: 'feature', label: 'Feature' },
+                    { id: 'bug', label: 'Bug' },
+                    { id: 'feedback', label: 'Feedback' },
                     { id: 'other', label: 'Other' },
                   ].map((t) => (
                     <button
                       type="button"
                       key={t.id}
                       onClick={() => setTopic(t.id as any)}
-                      className={`py-2 px-2.5 rounded-xl border text-center transition-colors ${
+                      className={`py-1.5 px-2 rounded-lg border text-center transition-colors ${
                         topic === t.id
                           ? 'bg-zinc-800 text-white font-semibold border-white/[0.2]'
-                          : 'bg-zinc-950/60 text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200 border-white/[0.06]'
+                          : 'bg-zinc-950/60 text-zinc-400 hover:text-zinc-200 border-white/[0.06]'
                       }`}
                     >
                       {t.label}
                     </button>
                   ))}
                 </div>
-              </div>
 
-              {/* Message Textarea */}
-              <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                  Your Message:
-                </label>
+                {/* Message Textarea */}
                 <textarea
-                  rows={4}
+                  rows={3}
                   required
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Describe your suggestion or feedback in detail..."
-                  className="w-full p-3 rounded-xl bg-zinc-950/70 border border-white/[0.08] focus:border-brand-500 text-xs text-white placeholder-zinc-500 outline-none transition-colors duration-150 resize-none"
+                  placeholder="Your suggestions or feedback..."
+                  className="w-full p-2.5 rounded-xl bg-zinc-950/70 border border-white/[0.08] focus:border-brand-500 text-xs text-white placeholder-zinc-500 outline-none transition-colors resize-none"
                 />
-              </div>
 
-              {/* Email (Optional) */}
-              <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                  Your Email <span className="text-zinc-500 font-normal">(Optional, if you'd like a reply)</span>
-                </label>
+                {/* Email Input */}
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@domain.com"
-                  className="w-full px-3 py-2.5 rounded-xl bg-zinc-950/70 border border-white/[0.08] focus:border-brand-500 text-xs text-white placeholder-zinc-500 outline-none transition-colors duration-150"
+                  placeholder="Your email (optional)"
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-950/70 border border-white/[0.08] focus:border-brand-500 text-xs text-white placeholder-zinc-500 outline-none transition-colors"
                 />
-              </div>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isSubmitting || !message.trim()}
-                className="w-full py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-50"
-              >
-                <Send className="w-3.5 h-3.5" strokeWidth={1.5} />
-                <span>{isSubmitting ? 'Sending...' : 'Send Message'}</span>
-              </button>
-            </form>
-          )}
+                {/* Submit button */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !message.trim()}
+                  className="w-full py-2 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+                >
+                  <Send className="w-3 h-3" />
+                  <span>{isSubmitting ? 'Sending...' : 'Send Message'}</span>
+                </button>
+              </form>
+            )}
+          </div>
         </div>
+      </div>
+
+      {/* Subtle Bottom Credit */}
+      <div className="text-[11px] text-zinc-600 font-mono text-center">
+        Reel Analyzer &bull; 100% Free Personal Knowledge Engine
       </div>
     </section>
   );

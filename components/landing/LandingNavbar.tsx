@@ -51,7 +51,7 @@ export const LandingNavbar: React.FC = () => {
         </Link>
 
         {/* Center Nav Links */}
-        <nav className="hidden md:flex items-center gap-6 text-xs text-zinc-400 font-medium">
+        <nav className="hidden md:flex items-center gap-8 text-xs text-zinc-400 font-medium">
           <a href="#how-it-works" className="hover:text-white transition-colors">
             How It Works
           </a>
@@ -61,35 +61,21 @@ export const LandingNavbar: React.FC = () => {
           <Link href="/privacy" className="hover:text-white transition-colors">
             Privacy
           </Link>
-          <a href="#contact" className="hover:text-white transition-colors">
-            Message Creator
-          </a>
         </nav>
 
         {/* Right CTA Actions */}
-        <div className="flex items-center gap-2.5">
-          {/* Extension Status Badge */}
-          {isExtensionConnected ? (
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-medium text-emerald-400">
+        <div className="flex items-center gap-3">
+          {isExtensionConnected && (
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-medium text-emerald-400">
               <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={1.5} />
-              <span>Extension Active</span>
+              <span>Synced</span>
             </div>
-          ) : (
-            <a
-              href="https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci?utm_source=item-share-cb"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-850 text-xs font-medium text-zinc-300 border border-white/[0.08] transition-colors"
-            >
-              <span>Install Extension</span>
-              <ExternalLink className="w-3 h-3 text-zinc-500" strokeWidth={1.5} />
-            </a>
           )}
 
           {/* Primary Action Button to Launch Knowledge Vault */}
           <Link
             href="/vault"
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-semibold text-white shadow-lg shadow-brand-600/20 transition-all duration-150 active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-semibold text-white shadow-lg shadow-brand-600/20 transition-all duration-150 active:scale-[0.98]"
           >
             <span>Open Vault</span>
             <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />

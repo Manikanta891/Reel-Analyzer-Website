@@ -24,7 +24,7 @@ export const SidebarAdSpot: React.FC<SidebarAdSpotProps> = ({
           Sponsored
         </span>
         <div className="flex items-center gap-1">
-          <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-amber-500/10 text-amber-400/80 border border-amber-500/20">
+          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-brand-500/10 text-brand-300 border border-brand-500/20">
             DEV
           </span>
           <Sparkles className="w-3 h-3 text-zinc-500" strokeWidth={1.5} />
