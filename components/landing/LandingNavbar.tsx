@@ -45,7 +45,7 @@ export const LandingNavbar: React.FC = () => {
               Reel Analyzer
             </span>
             <span className="hidden sm:inline-flex text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-white/[0.06]">
-              v1.0
+              v1.1
             </span>
           </div>
         </Link>
@@ -58,9 +58,9 @@ export const LandingNavbar: React.FC = () => {
           <a href="#features" className="hover:text-white transition-colors">
             Features
           </a>
-          <a href="#privacy" className="hover:text-white transition-colors">
+          <Link href="/privacy" className="hover:text-white transition-colors">
             Privacy
-          </a>
+          </Link>
           <a href="#contact" className="hover:text-white transition-colors">
             Message Creator
           </a>

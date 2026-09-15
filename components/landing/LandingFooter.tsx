@@ -49,9 +49,9 @@ export const LandingFooter: React.FC = () => {
             <a href="#features" className="hover:text-white transition-colors">
               Features
             </a>
-            <a href="#privacy" className="hover:text-white transition-colors">
+            <Link href="/privacy" className="hover:text-white transition-colors">
               Privacy
-            </a>
+            </Link>
             <a href="#contact" className="hover:text-white transition-colors">
               Feedback
             </a>

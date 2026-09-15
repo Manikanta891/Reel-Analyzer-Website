@@ -67,6 +67,17 @@ export const PrivacySection: React.FC = () => {
               </p>
             </div>
           </div>
+
+          <div className="mt-6 pt-6 border-t border-white/[0.06] text-center">
+            <a
+              href="/privacy"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-950/80 hover:bg-zinc-800 text-xs font-semibold text-zinc-300 hover:text-white border border-white/[0.08] transition-colors"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Read Full Chrome Web Store Privacy Policy & Permissions Policy</span>
+              <span className="text-zinc-500">→</span>
+            </a>
+          </div>
         </div>
       </div>
     </section>
