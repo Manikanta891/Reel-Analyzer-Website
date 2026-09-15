@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FolderClosed, Layers } from 'lucide-react';
+import { FolderTree, Layers, Sparkles } from 'lucide-react';
 import { SidebarAdSpot } from '@/components/ads/SidebarAdSpot';
 
 interface DomainSidebarProps {
@@ -20,14 +20,14 @@ export const DomainSidebar: React.FC<DomainSidebarProps> = ({
   totalCount,
 }) => {
   return (
-    <aside className="w-full lg:w-56 flex-shrink-0 space-y-4">
+    <aside className="w-full lg:w-60 flex-shrink-0 space-y-4">
       {/* Categories Card */}
-      <div className="rounded-2xl bg-zinc-900/50 border border-white/[0.08] p-3 backdrop-blur-xl">
-        <div className="flex items-center justify-between mb-2.5 px-2.5 pt-1">
-          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            Categories
+      <div className="rounded-xl bg-[#12131a] border border-white/[0.06] p-3 shadow-sm">
+        <div className="flex items-center justify-between mb-2 px-2 pt-1">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+            Knowledge Topics
           </span>
-          <span className="text-[11px] font-mono text-zinc-500">
+          <span className="text-[10px] font-mono text-zinc-500">
             {domains.length}
           </span>
         </div>
@@ -36,21 +36,21 @@ export const DomainSidebar: React.FC<DomainSidebarProps> = ({
           {/* All Categories Button */}
           <button
             onClick={() => onSelectDomain('All')}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all duration-150 active:scale-[0.98] ${
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all ${
               selectedDomain === 'All'
-                ? 'bg-zinc-800 text-white font-semibold border border-white/[0.1]'
-                : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                ? 'bg-indigo-600/15 text-indigo-300 font-semibold border border-indigo-500/25'
+                : 'text-zinc-400 hover:bg-white/[0.03] hover:text-zinc-200'
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <Layers className="w-4 h-4 text-zinc-400" strokeWidth={1.5} />
-              <span>All</span>
+              <Layers className="w-3.5 h-3.5 text-zinc-400" strokeWidth={1.5} />
+              <span>All Topics</span>
             </div>
             <span
-              className={`text-[11px] font-mono px-2 py-0.5 rounded-md font-medium ${
+              className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-medium ${
                 selectedDomain === 'All'
-                  ? 'bg-zinc-700 text-white'
-                  : 'bg-zinc-800/60 text-zinc-400'
+                  ? 'bg-indigo-500/20 text-indigo-300'
+                  : 'bg-white/[0.04] text-zinc-400'
               }`}
             >
               {totalCount}
@@ -66,21 +66,21 @@ export const DomainSidebar: React.FC<DomainSidebarProps> = ({
               <button
                 key={domain}
                 onClick={() => onSelectDomain(domain)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all duration-150 active:scale-[0.98] ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all ${
                   isSelected
-                    ? 'bg-zinc-800 text-white font-semibold border border-white/[0.1]'
-                    : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                    ? 'bg-indigo-600/15 text-indigo-300 font-semibold border border-indigo-500/25'
+                    : 'text-zinc-400 hover:bg-white/[0.03] hover:text-zinc-200'
                 }`}
               >
                 <div className="flex items-center gap-2.5 truncate">
-                  <FolderClosed className="w-4 h-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+                  <FolderTree className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
                   <span className="truncate">{domain}</span>
                 </div>
                 <span
-                  className={`text-[11px] font-mono px-2 py-0.5 rounded-md font-medium ml-2 flex-shrink-0 ${
+                  className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-medium ml-2 flex-shrink-0 ${
                     isSelected
-                      ? 'bg-zinc-700 text-white'
-                      : 'bg-zinc-800/60 text-zinc-400'
+                      ? 'bg-indigo-500/20 text-indigo-300'
+                      : 'bg-white/[0.04] text-zinc-400'
                   }`}
                 >
                   {count}
@@ -92,7 +92,7 @@ export const DomainSidebar: React.FC<DomainSidebarProps> = ({
       </div>
 
       {/* Sidebar Partner Spot */}
-      <div className="rounded-2xl bg-zinc-900/50 border border-white/[0.08] p-3 backdrop-blur-xl">
+      <div className="rounded-xl bg-[#12131a] border border-white/[0.06] p-3 shadow-sm">
         <SidebarAdSpot />
       </div>
     </aside>

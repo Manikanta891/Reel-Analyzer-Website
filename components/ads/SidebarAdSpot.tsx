@@ -24,7 +24,7 @@ export const SidebarAdSpot: React.FC<SidebarAdSpotProps> = ({
           Sponsored
         </span>
         <div className="flex items-center gap-1">
-          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-brand-500/10 text-brand-300 border border-brand-500/20">
+          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
             DEV
           </span>
           <Sparkles className="w-3 h-3 text-zinc-500" strokeWidth={1.5} />
@@ -35,7 +35,7 @@ export const SidebarAdSpot: React.FC<SidebarAdSpotProps> = ({
         href={link}
         target="_blank"
         rel="noopener noreferrer sponsored"
-        className="block p-3 rounded-xl bg-zinc-950/60 hover:bg-zinc-950 border border-white/[0.06] hover:border-white/[0.14] transition-colors duration-150 group"
+        className="block p-3 rounded-xl bg-[#12131a] hover:bg-[#171822] border border-white/[0.06] hover:border-white/[0.14] transition-colors duration-150 group"
       >
         <div className="flex items-center justify-between gap-1.5 mb-1">
           <span className="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors">

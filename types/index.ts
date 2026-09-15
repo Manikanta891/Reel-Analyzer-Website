@@ -4,6 +4,7 @@ export interface ReelItem {
   domain: string;
   subdomain: string;
   category?: string;
+  creator?: string;
   subject: string;
   personalUtility?: string;
   entities?: string;
@@ -19,7 +20,7 @@ export interface TaxonomyTree {
   [domain: string]: string[];
 }
 
-export type ViewMode = 'grid' | 'table' | 'flashcard';
+export type ViewMode = 'grid' | 'table';
 
 export interface EntitySummary {
   name: string;

@@ -13,7 +13,11 @@ import {
   List,
   FolderGit2,
   FileText,
-  Shield,
+  BookOpen,
+  Brain,
+  Download,
+  RotateCw,
+  Clock,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -34,6 +38,7 @@ export const ReelDetailModal: React.FC<ReelDetailModalProps> = ({
   onDelete,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<'note' | 'yaml'>('note');
   const [showAllTags, setShowAllTags] = useState(false);
   const [showAllTools, setShowAllTools] = useState(false);
 
@@ -54,31 +59,52 @@ export const ReelDetailModal: React.FC<ReelDetailModalProps> = ({
 
   if (!reel) return null;
 
-  const handleCopyMarkdown = () => {
-    try {
-      const text = `---
+  const rawMarkdown = `---
+title: "${(reel.subject || 'Video Note').replace(/"/g, '\\"')}"
 domain: "${reel.domain || 'General'}"
 subdomain: "${reel.subdomain || 'General'}"
-takeaway: "${reel.personalUtility || ''}"
-tools: "${reel.entities || ''}"
-tags: "${reel.tags || ''}"
+creator: "${reel.creator || ''}"
+takeaway: "${(reel.personalUtility || '').replace(/"/g, '\\"')}"
+tools: [${(reel.entities || '').split(',').map((e) => `"${e.trim()}"`).filter((e) => e !== '""').join(', ')}]
+tags: [${(reel.tags || '').split(/[,\s]+/).map((t) => `"#${t.replace(/^#/, '')}"`).filter((t) => t !== '"#"').join(', ')}]
+url: "${reel.url || ''}"
+date: "${new Date().toISOString().split('T')[0]}"
 ---
 
-### ${reel.subject || 'Actionable Video Insight'}
-**Category:** ${reel.domain || 'General'} > ${reel.subdomain || 'General'}
-${reel.personalUtility ? `**Key Takeaway:** ${reel.personalUtility}\n` : ''}
-${reel.entities ? `**Tools & Frameworks:** ${reel.entities}\n` : ''}
+# ${reel.subject || 'Actionable Video Insight'}
 
-#### Summary & Directives
+> **Core Takeaway:** ${reel.personalUtility || reel.summary?.slice(0, 150) || 'Key learning from reel'}
+
 ${reel.summary || ''}
 
-[View Original Reel](${reel.url})
+---
+*Source Reel:* [Instagram Reel](${reel.url})
 `;
-      navigator.clipboard.writeText(text);
+
+  const handleCopyMarkdown = () => {
+    try {
+      navigator.clipboard.writeText(rawMarkdown);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy to clipboard:', err);
+      console.error('Failed to copy markdown:', err);
+    }
+  };
+
+  const handleDownloadMarkdown = () => {
+    try {
+      const blob = new Blob([rawMarkdown], { type: 'text/markdown;charset=utf-8' });
+      const filename = `${(reel.subject || 'reel-note').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download markdown file:', err);
     }
   };
 
@@ -109,37 +135,66 @@ ${reel.summary || ''}
         .filter(Boolean)
     : [];
 
-  const visibleTags = showAllTags ? rawTags : rawTags.slice(0, 5);
-  const hiddenTagsCount = rawTags.length - 5;
+  const visibleTags = showAllTags ? rawTags : rawTags.slice(0, 6);
+  const hiddenTagsCount = rawTags.length - 6;
+
+  const wordCount = (reel.summary || '').split(/\s+/).length;
+  const readTime = Math.max(1, Math.ceil(wordCount / 120));
 
   return (
-    <ErrorBoundary fallbackTitle="Error loading summary reader">
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm">
+    <ErrorBoundary fallbackTitle="Error loading Knowledge Reader">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
         {/* Backdrop click to close */}
         <div className="fixed inset-0" onClick={onClose} />
 
-        {/* Static, stable modal box */}
+        {/* Modal Container */}
         <div
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-2xl max-h-[90vh] bg-zinc-900 border border-white/[0.1] rounded-2xl shadow-2xl flex flex-col overflow-hidden z-10"
+          className="relative w-full max-w-3xl max-h-[92vh] bg-[#111218] border border-white/[0.08] rounded-2xl shadow-2xl flex flex-col overflow-hidden z-10"
         >
           {/* Top Control Bar */}
-          <div className="p-3.5 sm:p-4 border-b border-white/[0.08] bg-zinc-900/90 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-white/[0.06]">
-                Vault Note
+          <div className="p-3.5 sm:p-4 border-b border-white/[0.06] bg-[#0d0e13] flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-white/[0.04] text-indigo-400 border border-white/[0.06]">
+                {reel.domain}
               </span>
-              <span className="text-xs text-zinc-400 font-medium truncate max-w-[240px]">
-                {reel.domain} / {reel.subdomain || 'General'}
+              <span className="text-xs text-zinc-400 font-medium truncate max-w-[200px] sm:max-w-[320px]">
+                {reel.subject || 'Knowledge Note'}
               </span>
+            </div>
+
+            {/* Tab Selector */}
+            <div className="flex items-center gap-1 bg-[#171822] p-1 rounded-lg border border-white/[0.06]">
+              <button
+                onClick={() => setActiveTab('note')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-all ${
+                  activeTab === 'note'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Note Reader</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('yaml')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-all ${
+                  activeTab === 'yaml'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <FolderGit2 className="w-3.5 h-3.5" />
+                <span>Properties &amp; Export</span>
+              </button>
             </div>
 
             {/* Actions */}
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <button
                 onClick={handleCopyMarkdown}
-                title="Copy Markdown Playbook"
-                className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white border border-white/[0.06] transition-colors duration-150"
+                title="Copy Markdown"
+                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06] transition-colors"
               >
                 {copied ? (
                   <Check className="w-3.5 h-3.5 text-emerald-400" strokeWidth={1.5} />
@@ -147,12 +202,19 @@ ${reel.summary || ''}
                   <Copy className="w-3.5 h-3.5" strokeWidth={1.5} />
                 )}
               </button>
+              <button
+                onClick={handleDownloadMarkdown}
+                title="Download .md File"
+                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06] transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" strokeWidth={1.5} />
+              </button>
               <a
                 href={reel.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="View on Instagram"
-                className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white border border-white/[0.06] transition-colors duration-150"
+                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06] transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
               </a>
@@ -160,7 +222,7 @@ ${reel.summary || ''}
                 <button
                   onClick={handleDelete}
                   title="Delete from Vault"
-                  className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 border border-white/[0.06] hover:border-red-500/30 transition-colors duration-150"
+                  className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-red-500/20 text-zinc-400 hover:text-red-400 border border-white/[0.06] hover:border-red-500/30 transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
                 </button>
@@ -168,7 +230,7 @@ ${reel.summary || ''}
               <button
                 onClick={onClose}
                 title="Close (Esc)"
-                className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white border border-white/[0.06] transition-colors duration-150"
+                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06] transition-colors"
               >
                 <X className="w-3.5 h-3.5" strokeWidth={1.5} />
               </button>
@@ -176,252 +238,222 @@ ${reel.summary || ''}
           </div>
 
           {/* Scrollable Content Body */}
-          <div className="p-4 sm:p-6 overflow-y-auto space-y-5">
-            {/* Obsidian YAML Frontmatter Property Panel */}
-            <div className="rounded-xl bg-zinc-950/80 border border-white/[0.08] p-4 text-xs space-y-3 font-sans">
-              {/* Row 1: Subject */}
-              <div className="flex items-start gap-3">
-                <div className="w-24 flex items-center gap-1.5 text-zinc-500 font-mono text-[11px] pt-0.5 flex-shrink-0">
-                  <List className="w-3.5 h-3.5 text-zinc-500" />
-                  <span>subject</span>
-                </div>
-                <div className="flex-1 text-white font-semibold flex items-center gap-2">
-                  <span className="text-brand-400">🛡️</span>
-                  <span>{reel.subject || 'Actionable Video Insight'}</span>
-                </div>
-              </div>
-
-              {/* Row 2: Domain */}
-              <div className="flex items-start gap-3">
-                <div className="w-24 flex items-center gap-1.5 text-zinc-500 font-mono text-[11px] pt-0.5 flex-shrink-0">
-                  <FolderGit2 className="w-3.5 h-3.5 text-zinc-500" />
-                  <span>domain</span>
-                </div>
-                <div className="flex-1 flex items-center gap-1.5 text-zinc-200 font-medium">
-                  <span className="px-2 py-0.5 rounded bg-zinc-800 border border-white/[0.06] text-[11px]">
-                    {reel.domain || 'General'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Row 3: Subdomain */}
-              {reel.subdomain && (
-                <div className="flex items-start gap-3">
-                  <div className="w-24 flex items-center gap-1.5 text-zinc-500 font-mono text-[11px] pt-0.5 flex-shrink-0">
-                    <FolderGit2 className="w-3.5 h-3.5 text-zinc-500" />
-                    <span>subdomain</span>
-                  </div>
-                  <div className="flex-1 flex items-center gap-1.5 text-zinc-300 font-medium">
-                    <span className="px-2 py-0.5 rounded bg-zinc-800/60 text-zinc-400 border border-white/[0.04] text-[11px]">
-                      {reel.subdomain}
+          <div className="p-5 sm:p-7 overflow-y-auto space-y-6">
+            {activeTab === 'note' && (
+              <div className="space-y-5">
+                {/* Header Title & Reading Metric */}
+                <div className="space-y-2 border-b border-white/[0.06] pb-4">
+                  <h1 className="text-xl sm:text-2xl font-bold text-zinc-100 tracking-tight leading-tight">
+                    {reel.subject || 'Actionable Video Insight'}
+                  </h1>
+                  <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {readTime} min read
                     </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Row 4: Tools & Frameworks with +X More */}
-              {entityList.length > 0 && (
-                <div className="flex items-start gap-3">
-                  <div className="w-24 flex items-center gap-1.5 text-zinc-500 font-mono text-[11px] pt-0.5 flex-shrink-0">
-                    <Wrench className="w-3.5 h-3.5 text-zinc-500" />
-                    <span>tools</span>
-                  </div>
-                  <div className="flex-1 flex items-center gap-1.5 flex-wrap">
-                    {(showAllTools ? entityList : entityList.slice(0, 4)).map((ent) => (
-                      <button
-                        key={ent}
-                        onClick={() => {
-                          onEntityClick?.(ent);
-                          onClose();
-                        }}
-                        className="text-[11px] font-mono px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-white/[0.06] transition-colors"
-                      >
-                        {ent}
-                      </button>
-                    ))}
-                    {!showAllTools && entityList.length > 4 && (
-                      <button
-                        onClick={() => setShowAllTools(true)}
-                        className="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 transition-colors"
-                      >
-                        +{entityList.length - 4} more
-                      </button>
-                    )}
-                    {showAllTools && entityList.length > 4 && (
-                      <button
-                        onClick={() => setShowAllTools(false)}
-                        className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-400 transition-colors"
-                      >
-                        Show less
-                      </button>
+                    <span>&bull;</span>
+                    <span>{wordCount} words</span>
+                    {reel.creator && (
+                      <>
+                        <span>&bull;</span>
+                        <span className="text-indigo-400">{reel.creator}</span>
+                      </>
                     )}
                   </div>
                 </div>
-              )}
 
-              {/* Row 5: Tags with +X More */}
-              {rawTags.length > 0 && (
-                <div className="flex items-start gap-3">
-                  <div className="w-24 flex items-center gap-1.5 text-zinc-500 font-mono text-[11px] pt-0.5 flex-shrink-0">
-                    <Tag className="w-3.5 h-3.5 text-zinc-500" />
-                    <span>tags</span>
-                  </div>
-                  <div className="flex-1 flex items-center gap-1.5 flex-wrap">
-                    {visibleTags.map((t) => (
-                      <span
-                        key={t}
-                        className="text-[11px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-white/[0.06] flex items-center gap-1"
-                      >
-                        <span className="text-zinc-500 text-[10px]">#</span>
-                        <span>{t.replace(/^#/, '')}</span>
-                      </span>
-                    ))}
-                    {!showAllTags && hiddenTagsCount > 0 && (
-                      <button
-                        onClick={() => setShowAllTags(true)}
-                        className="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 transition-colors"
-                      >
-                        +{hiddenTagsCount} more
-                      </button>
-                    )}
-                    {showAllTags && hiddenTagsCount > 0 && (
-                      <button
-                        onClick={() => setShowAllTags(false)}
-                        className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-400 transition-colors"
-                      >
-                        Show less
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Entire Content & Summary Body */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                <FileText className="w-3.5 h-3.5 text-brand-400" />
-                <span>Summary</span>
-              </div>
-
-              {/* Core Utility Highlight (if available and not duplicated in summary) */}
-              {reel.personalUtility && !reel.summary?.includes(reel.personalUtility) && (
-                <div className="p-3.5 rounded-xl bg-zinc-950/90 border border-white/[0.08] text-xs text-zinc-300 leading-relaxed">
-                  <div className="flex items-start gap-2.5">
-                    <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-400" strokeWidth={1.5} />
-                    <div>
-                      <span className="font-semibold text-white">Direct Takeaway:</span>{' '}
-                      <span className="text-zinc-300">{reel.personalUtility}</span>
+                {/* Core Takeaway Highlight Box */}
+                {(reel.personalUtility || reel.summary) && (
+                  <div className="p-4 rounded-xl bg-[#0e0f14] border-l-3 border-indigo-500 border border-white/[0.06] text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                    <div className="flex items-start gap-2.5">
+                      <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-400" strokeWidth={1.5} />
+                      <div>
+                        <strong className="text-zinc-100">Core Takeaway:</strong>{' '}
+                        <span className="text-zinc-300">{reel.personalUtility || reel.summary?.slice(0, 200)}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Full Rich Markdown Content Styled like Obsidian / GDrive-Sync */}
-              <div className="p-5 rounded-xl bg-zinc-950/80 border border-white/[0.08] text-[#dcddde] text-xs sm:text-sm leading-relaxed overflow-x-auto select-text font-sans">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    h1: ({ node, ...props }) => (
-                      <h1 className="text-lg sm:text-xl font-bold text-white mt-5 mb-2.5 pb-1.5 border-b border-white/[0.08]" {...props} />
-                    ),
-                    h2: ({ node, ...props }) => (
-                      <h2 className="text-base sm:text-lg font-bold text-white mt-4 mb-2 flex items-center gap-1.5" {...props} />
-                    ),
-                    h3: ({ node, ...props }) => (
-                      <h3 className="text-sm sm:text-base font-semibold text-brand-300 mt-3.5 mb-1.5" {...props} />
-                    ),
-                    h4: ({ node, ...props }) => (
-                      <h4 className="text-xs sm:text-sm font-semibold text-zinc-200 mt-2.5 mb-1" {...props} />
-                    ),
-                    p: ({ node, ...props }) => (
-                      <p className="leading-relaxed text-[#dcddde] my-2 text-xs sm:text-sm" {...props} />
-                    ),
-                    ul: ({ node, ...props }) => (
-                      <ul className="list-disc pl-5 space-y-1.5 my-2.5 text-[#dcddde] text-xs sm:text-sm" {...props} />
-                    ),
-                    ol: ({ node, ...props }) => (
-                      <ol className="list-decimal pl-5 space-y-1.5 my-2.5 text-[#dcddde] text-xs sm:text-sm" {...props} />
-                    ),
-                    li: ({ node, ...props }) => (
-                      <li className="leading-relaxed text-[#dcddde] pl-0.5" {...props} />
-                    ),
-                    blockquote: ({ node, ...props }) => (
-                      <blockquote className="border-l-4 border-purple-500/60 pl-3.5 py-1.5 italic text-[#8a8a8e] bg-[#1e1e20]/40 rounded-r-lg my-3 text-xs sm:text-sm" {...props} />
-                    ),
-                    code: ({ node, inline, className, children, ...props }: any) => {
-                      if (inline) {
+                {/* Notion/Obsidian Markdown Body */}
+                <div className="p-5 rounded-xl bg-[#0e0f14] border border-white/[0.06] text-[#e2e8f0] text-xs sm:text-sm leading-relaxed overflow-x-auto select-text font-sans">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      h1: ({ node, ...props }) => (
+                        <h1 className="text-lg font-bold text-zinc-100 mt-5 mb-2 pb-1 border-b border-white/[0.06]" {...props} />
+                      ),
+                      h2: ({ node, ...props }) => (
+                        <h2 className="text-base font-bold text-zinc-100 mt-4 mb-2 flex items-center gap-1.5" {...props} />
+                      ),
+                      h3: ({ node, ...props }) => (
+                        <h3 className="text-sm font-semibold text-indigo-300 mt-3 mb-1" {...props} />
+                      ),
+                      p: ({ node, ...props }) => (
+                        <p className="leading-relaxed text-zinc-300 my-2" {...props} />
+                      ),
+                      ul: ({ node, ...props }) => (
+                        <ul className="list-disc pl-5 space-y-1.5 my-2.5 text-zinc-300" {...props} />
+                      ),
+                      ol: ({ node, ...props }) => (
+                        <ol className="list-decimal pl-5 space-y-1.5 my-2.5 text-zinc-300" {...props} />
+                      ),
+                      li: ({ node, ...props }) => (
+                        <li className="leading-relaxed text-zinc-300 pl-0.5" {...props} />
+                      ),
+                      blockquote: ({ node, ...props }) => (
+                        <blockquote className="border-l-2 border-indigo-500/70 pl-3.5 py-1 text-zinc-400 bg-[#161822] rounded-r-lg my-3 italic" {...props} />
+                      ),
+                      code: ({ node, inline, className, children, ...props }: any) => {
+                        if (inline) {
+                          return (
+                            <code className="px-1.5 py-0.5 bg-[#171822] text-indigo-300 font-mono text-[11px] rounded border border-white/[0.06]" {...props}>
+                              {children}
+                            </code>
+                          );
+                        }
                         return (
-                          <code className="px-1.5 py-0.5 bg-[#1e1e20] text-purple-300 font-mono text-[11px] rounded border border-[#2a2a2d]" {...props}>
-                            {children}
-                          </code>
+                          <pre className="p-4 bg-[#0a0b0e] text-zinc-200 rounded-xl border border-white/[0.08] font-mono text-xs overflow-x-auto my-3 leading-relaxed">
+                            <code {...props}>{children}</code>
+                          </pre>
                         );
-                      }
-                      return (
-                        <pre className="p-4 bg-[#121214] text-[#dcddde] rounded-xl border border-[#2a2a2d] font-mono text-xs overflow-x-auto my-3 leading-relaxed">
-                          <code {...props}>{children}</code>
-                        </pre>
-                      );
-                    },
-                    table: ({ node, ...props }) => (
-                      <div className="overflow-x-auto my-3.5 border border-[#2a2a2d] rounded-xl">
-                        <table className="w-full text-left border-collapse text-xs" {...props} />
-                      </div>
-                    ),
-                    thead: ({ node, ...props }) => (
-                      <thead className="bg-[#1e1e20] border-b border-[#2a2a2d] text-white font-semibold text-xs" {...props} />
-                    ),
-                    th: ({ node, ...props }) => (
-                      <th className="p-2.5 border-r border-[#2a2a2d] last:border-r-0" {...props} />
-                    ),
-                    td: ({ node, ...props }) => (
-                      <td className="p-2.5 text-[#dcddde] border-r border-[#2a2a2d] last:border-r-0 border-t border-[#2a2a2d]/60" {...props} />
-                    ),
-                    hr: ({ node, ...props }) => (
-                      <hr className="border-[#2a2a2d] my-4" {...props} />
-                    ),
-                    strong: ({ node, ...props }) => (
-                      <strong className="font-bold text-white tracking-wide" {...props} />
-                    ),
-                    em: ({ node, ...props }) => (
-                      <em className="italic text-zinc-300" {...props} />
-                    ),
-                    del: ({ node, ...props }) => (
-                      <del className="line-through text-zinc-500" {...props} />
-                    ),
-                    input: ({ node, ...props }) => (
-                      <input
-                        type="checkbox"
-                        disabled
-                        className="mr-2 rounded bg-zinc-800 border-zinc-700 text-purple-500 focus:ring-0 accent-purple-500 align-middle"
-                        {...props}
-                      />
-                    ),
-                    a: ({ node, ...props }) => (
-                      <a className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors" target="_blank" rel="noopener noreferrer" {...props} />
-                    ),
-                  }}
-                >
-                  {reel.summary || '*No detailed summary provided.*'}
-                </ReactMarkdown>
+                      },
+                      table: ({ node, ...props }) => (
+                        <div className="overflow-x-auto my-3.5 border border-white/[0.08] rounded-xl">
+                          <table className="w-full text-left border-collapse text-xs" {...props} />
+                        </div>
+                      ),
+                      thead: ({ node, ...props }) => (
+                        <thead className="bg-[#161822] border-b border-white/[0.08] text-zinc-100 font-semibold text-xs" {...props} />
+                      ),
+                      th: ({ node, ...props }) => (
+                        <th className="p-2.5 border-r border-white/[0.06] last:border-r-0" {...props} />
+                      ),
+                      td: ({ node, ...props }) => (
+                        <td className="p-2.5 text-zinc-300 border-r border-white/[0.06] last:border-r-0 border-t border-white/[0.04]" {...props} />
+                      ),
+                      strong: ({ node, ...props }) => (
+                        <strong className="font-semibold text-zinc-100" {...props} />
+                      ),
+                      a: ({ node, ...props }) => (
+                        <a className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors" target="_blank" rel="noopener noreferrer" {...props} />
+                      ),
+                    }}
+                  >
+                    {reel.summary || '*No detailed summary provided.*'}
+                  </ReactMarkdown>
+                </div>
               </div>
-            </div>
+            )}
+
+            {activeTab === 'yaml' && (
+              <div className="space-y-4">
+                <div className="rounded-xl bg-[#0e0f14] border border-white/[0.06] p-4 text-xs space-y-3 font-sans">
+                  {/* Subject */}
+                  <div className="flex items-start gap-3">
+                    <div className="w-24 text-zinc-500 font-mono text-[11px] pt-0.5 flex-shrink-0">
+                      subject
+                    </div>
+                    <div className="flex-1 text-zinc-100 font-semibold">
+                      {reel.subject || 'Actionable Video Insight'}
+                    </div>
+                  </div>
+
+                  {/* Domain */}
+                  <div className="flex items-start gap-3">
+                    <div className="w-24 text-zinc-500 font-mono text-[11px] pt-0.5 flex-shrink-0">
+                      domain
+                    </div>
+                    <div className="flex-1 text-zinc-300">
+                      {reel.domain || 'General'}
+                    </div>
+                  </div>
+
+                  {/* Subdomain */}
+                  {reel.subdomain && (
+                    <div className="flex items-start gap-3">
+                      <div className="w-24 text-zinc-500 font-mono text-[11px] pt-0.5 flex-shrink-0">
+                        subdomain
+                      </div>
+                      <div className="flex-1 text-zinc-400">
+                        {reel.subdomain}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tools */}
+                  {entityList.length > 0 && (
+                    <div className="flex items-start gap-3">
+                      <div className="w-24 text-zinc-500 font-mono text-[11px] pt-0.5 flex-shrink-0">
+                        tools
+                      </div>
+                      <div className="flex-1 flex items-center gap-1.5 flex-wrap">
+                        {entityList.map((ent) => (
+                          <span
+                            key={ent}
+                            className="text-[11px] font-mono px-2 py-0.5 rounded bg-white/[0.04] text-zinc-300 border border-white/[0.06]"
+                          >
+                            {ent}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tags */}
+                  {rawTags.length > 0 && (
+                    <div className="flex items-start gap-3">
+                      <div className="w-24 text-zinc-500 font-mono text-[11px] pt-0.5 flex-shrink-0">
+                        tags
+                      </div>
+                      <div className="flex-1 flex items-center gap-1.5 flex-wrap">
+                        {visibleTags.map((t) => (
+                          <span
+                            key={t}
+                            className="text-[11px] font-mono px-2 py-0.5 rounded bg-white/[0.04] text-zinc-300 border border-white/[0.06]"
+                          >
+                            #{t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Raw Markdown Source Code Box */}
+                <div className="space-y-2">
+                  <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">
+                    Raw Markdown File Export
+                  </span>
+                  <pre className="p-4 rounded-xl bg-[#0a0b0e] border border-white/[0.06] text-zinc-400 font-mono text-xs overflow-x-auto">
+                    <code>{rawMarkdown}</code>
+                  </pre>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Sticky Footer */}
-          <div className="p-3.5 px-5 bg-zinc-900 border-t border-white/[0.08] flex items-center justify-between text-xs text-zinc-400">
+          <div className="p-3.5 px-5 bg-[#0d0e13] border-t border-white/[0.06] flex items-center justify-between text-xs text-zinc-400">
             <span className="font-mono text-[11px] text-zinc-500">
-              Press <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-mono">Esc</kbd> to close
+              Press <kbd className="px-1.5 py-0.5 rounded bg-white/[0.04] text-zinc-300 font-mono border border-white/[0.06]">Esc</kbd> to close
             </span>
-            <a
-              href={reel.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
-            >
-              <span>View Original Reel</span>
-              <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
-            </a>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleCopyMarkdown}
+                className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                {copied ? 'Copied to Clipboard!' : 'Copy Note'}
+              </button>
+              <a
+                href={reel.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
+              >
+                <span>Original Video</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
           </div>
         </div>
       </div>

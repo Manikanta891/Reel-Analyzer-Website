@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Bookmark, Folder, Layers, Wrench } from 'lucide-react';
+import { Bookmark, FolderTree, Layers, Tag } from 'lucide-react';
 
 interface StatsCounterProps {
   totalReels: number;
@@ -18,24 +18,36 @@ export const StatsCounter: React.FC<StatsCounterProps> = ({
 }) => {
   const stats = [
     {
-      label: 'Reels Saved',
+      label: 'Knowledge Notes',
       value: totalReels.toLocaleString(),
       icon: Bookmark,
+      color: 'text-indigo-400',
+      bg: 'bg-indigo-500/10',
+      border: 'border-indigo-500/20',
     },
     {
-      label: 'Categories',
+      label: 'Topic Domains',
       value: totalDomains.toLocaleString(),
-      icon: Folder,
+      icon: FolderTree,
+      color: 'text-emerald-400',
+      bg: 'bg-emerald-500/10',
+      border: 'border-emerald-500/20',
     },
     {
-      label: 'Subtopics',
+      label: 'Subtopics & Tags',
       value: totalSubtopics.toLocaleString(),
       icon: Layers,
+      color: 'text-purple-400',
+      bg: 'bg-purple-500/10',
+      border: 'border-purple-500/20',
     },
     {
-      label: 'Tools Cataloged',
+      label: 'Concepts & Tools',
       value: totalEntities.toLocaleString(),
-      icon: Wrench,
+      icon: Tag,
+      color: 'text-amber-400',
+      bg: 'bg-amber-500/10',
+      border: 'border-amber-500/20',
     },
   ];
 
@@ -46,17 +58,17 @@ export const StatsCounter: React.FC<StatsCounterProps> = ({
         return (
           <div
             key={stat.label}
-            className="rounded-xl p-4 bg-zinc-900/50 backdrop-blur-md border border-white/[0.08] hover:border-white/[0.14] transition-all duration-150 flex items-center justify-between"
+            className="rounded-xl p-4 bg-[#12131a] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-150 flex items-center justify-between shadow-sm"
           >
             <div>
               <div className="text-[11px] font-medium text-zinc-400 mb-1">
                 {stat.label}
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-white tracking-tight font-mono tabular-nums">
+              <div className="text-xl sm:text-2xl font-bold text-zinc-100 tracking-tight font-mono tabular-nums">
                 {stat.value}
               </div>
             </div>
-            <div className="p-2 rounded-lg bg-zinc-800/80 text-zinc-400 border border-white/[0.06]">
+            <div className={`p-2.5 rounded-lg ${stat.bg} ${stat.color} border ${stat.border}`}>
               <Icon className="w-4 h-4" strokeWidth={1.5} />
             </div>
           </div>

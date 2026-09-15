@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -35,14 +35,14 @@ export const SubdomainPills: React.FC<SubdomainPillsProps> = ({
       {/* 'All' button */}
       <button
         onClick={() => onSelectSubdomain('All')}
-        className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150 active:scale-[0.98] ${
+        className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all ${
           selectedSubdomain === 'All'
-            ? 'bg-zinc-800 text-white font-semibold border border-white/[0.12]'
-            : 'bg-zinc-900/60 text-zinc-400 hover:text-zinc-200 border border-white/[0.06] hover:bg-zinc-800/40'
+            ? 'bg-indigo-600/15 text-indigo-300 font-semibold border border-indigo-500/30 shadow-sm'
+            : 'bg-[#12131a] text-zinc-400 hover:text-zinc-200 border border-white/[0.06] hover:bg-white/[0.04]'
         }`}
       >
         <span>All</span>
-        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 font-medium">
+        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/[0.04] text-zinc-400 font-medium">
           {totalInDomain}
         </span>
       </button>
@@ -56,14 +56,14 @@ export const SubdomainPills: React.FC<SubdomainPillsProps> = ({
           <button
             key={sub}
             onClick={() => onSelectSubdomain(sub)}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150 active:scale-[0.98] ${
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all ${
               isSelected
-                ? 'bg-zinc-800 text-white font-semibold border border-white/[0.12]'
-                : 'bg-zinc-900/60 text-zinc-400 hover:text-zinc-200 border border-white/[0.06] hover:bg-zinc-800/40'
+                ? 'bg-indigo-600/15 text-indigo-300 font-semibold border border-indigo-500/30 shadow-sm'
+                : 'bg-[#12131a] text-zinc-400 hover:text-zinc-200 border border-white/[0.06] hover:bg-white/[0.04]'
             }`}
           >
             <span>{sub}</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 font-medium">
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/[0.04] text-zinc-400 font-medium">
               {count}
             </span>
           </button>
@@ -75,13 +75,13 @@ export const SubdomainPills: React.FC<SubdomainPillsProps> = ({
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           title={isExpanded ? 'Show fewer subdomains' : `Show ${hiddenCount} more subdomains`}
-          className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-brand-950/40 hover:bg-brand-900/60 text-brand-300 border border-brand-500/30 transition-all duration-150 active:scale-[0.98]"
+          className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/20 transition-all"
         >
           <span>{isExpanded ? 'Show less' : `+${hiddenCount} more`}</span>
           {isExpanded ? (
-            <ChevronUp className="w-3 h-3 text-brand-400" />
+            <ChevronUp className="w-3 h-3 text-indigo-400" />
           ) : (
-            <ChevronDown className="w-3 h-3 text-brand-400" />
+            <ChevronDown className="w-3 h-3 text-indigo-400" />
           )}
         </button>
       )}

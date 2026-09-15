@@ -70,7 +70,7 @@ export const PlaybookExportModal: React.FC<PlaybookExportModalProps> = ({
       }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
     >
-      <div className="w-full max-w-2xl bg-zinc-900 border border-white/[0.1] rounded-2xl p-6 sm:p-7 shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-2xl bg-[#12131a] border border-white/[0.1] rounded-2xl p-6 sm:p-7 shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-white/[0.08] mb-4">
           <div>
@@ -100,7 +100,7 @@ export const PlaybookExportModal: React.FC<PlaybookExportModalProps> = ({
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 active:scale-[0.98] ${
                 selectedDomain === 'All'
                   ? 'bg-zinc-800 text-white font-semibold border border-white/[0.12]'
-                  : 'bg-zinc-950/60 text-zinc-400 hover:text-white border border-white/[0.06]'
+                  : 'bg-[#0b0c10]/80 text-zinc-400 hover:text-white border border-white/[0.06]'
               }`}
             >
               All Categories ({reels.length})
@@ -112,7 +112,7 @@ export const PlaybookExportModal: React.FC<PlaybookExportModalProps> = ({
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-150 active:scale-[0.98] ${
                   selectedDomain === d
                     ? 'bg-zinc-800 text-white font-semibold border border-white/[0.12]'
-                    : 'bg-zinc-950/60 text-zinc-400 hover:text-white border border-white/[0.06]'
+                    : 'bg-[#0b0c10]/80 text-zinc-400 hover:text-white border border-white/[0.06]'
                 }`}
               >
                 {d}
@@ -129,7 +129,7 @@ export const PlaybookExportModal: React.FC<PlaybookExportModalProps> = ({
               {markdownContent.split('\n').length} lines • Markdown / Obsidian ready
             </span>
           </div>
-          <div className="flex-1 overflow-y-auto bg-zinc-950/80 rounded-xl border border-white/[0.08] p-4 font-mono text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed">
+          <div className="flex-1 overflow-y-auto bg-[#0b0c10]/90 rounded-xl border border-white/[0.08] p-4 font-mono text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed">
             {markdownContent}
           </div>
         </div>
@@ -155,7 +155,7 @@ export const PlaybookExportModal: React.FC<PlaybookExportModalProps> = ({
 
           <button
             onClick={handleDownload}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-xs font-semibold text-white shadow-sm transition-all duration-150 active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow-sm shadow-indigo-500/20 transition-all duration-150 active:scale-[0.98]"
           >
             <Download className="w-3.5 h-3.5" strokeWidth={1.5} />
             <span>Download .md</span>

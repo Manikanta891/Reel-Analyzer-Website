@@ -6,9 +6,11 @@ import {
   Copy,
   Check,
   Lightbulb,
-  Wrench,
   ArrowRight,
   Trash2,
+  Clock,
+  BookOpen,
+  Tag,
 } from 'lucide-react';
 import { ReelItem } from '@/types';
 
@@ -68,31 +70,40 @@ ${item.summary}
   const visibleTools = showAllTools ? entityList : entityList.slice(0, 3);
   const hiddenCount = entityList.length - 3;
 
+  // Calculate estimated reading time based on summary length
+  const wordCount = (item.summary || '').split(/\s+/).length;
+  const readTime = Math.max(1, Math.ceil(wordCount / 120));
+
   return (
     <div
       onClick={() => onSelect(item)}
-      className="group rounded-2xl bg-zinc-900/50 border border-white/[0.08] hover:border-white/[0.2] p-5 sm:p-6 backdrop-blur-md transition-colors duration-150 cursor-pointer flex flex-col justify-between hover:bg-zinc-900/80"
+      className="group rounded-xl bg-[#12131a] hover:bg-[#161822] border border-white/[0.06] hover:border-white/[0.14] p-5 transition-all duration-150 cursor-pointer flex flex-col justify-between shadow-md select-none"
     >
       <div>
-        {/* Top Header & Badges */}
+        {/* Top Header & Metadata */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-zinc-800 text-zinc-300 border border-white/[0.06]">
+            <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-white/[0.04] text-zinc-300 border border-white/[0.06]">
               {item.domain}
             </span>
             {item.subdomain && (
-              <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-zinc-800/50 text-zinc-400">
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-white/[0.02] text-zinc-400">
                 {item.subdomain}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <span className="text-[10px] text-zinc-500 font-mono flex items-center gap-1 mr-1">
+              <Clock className="w-3 h-3" />
+              {readTime}m read
+            </span>
+
             <button
               onClick={handleCopyMarkdown}
               title="Copy Summary"
               aria-label="Copy Summary"
-              className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white border border-white/[0.06] transition-colors duration-150"
+              className="p-1.5 rounded-lg bg-[#0e0f14] hover:bg-[#1a1c26] text-zinc-400 hover:text-zinc-200 border border-white/[0.06] transition-colors"
             >
               {copied ? (
                 <Check className="w-3.5 h-3.5 text-emerald-400" strokeWidth={1.5} />
@@ -106,7 +117,7 @@ ${item.summary}
               rel="noopener noreferrer"
               title="Open Reel on Instagram"
               aria-label="Open Reel on Instagram"
-              className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white border border-white/[0.06] transition-colors duration-150"
+              className="p-1.5 rounded-lg bg-[#0e0f14] hover:bg-[#1a1c26] text-zinc-400 hover:text-zinc-200 border border-white/[0.06] transition-colors"
             >
               <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
             </a>
@@ -115,7 +126,7 @@ ${item.summary}
                 onClick={handleDelete}
                 title="Delete Reel from Vault"
                 aria-label="Delete Reel from Vault"
-                className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 border border-white/[0.06] hover:border-red-500/30 transition-colors duration-150"
+                className="p-1.5 rounded-lg bg-[#0e0f14] hover:bg-red-500/20 text-zinc-500 hover:text-red-400 border border-white/[0.06] hover:border-red-500/30 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
               </button>
@@ -124,27 +135,27 @@ ${item.summary}
         </div>
 
         {/* Subject Title */}
-        <h3 className="text-base font-semibold text-white tracking-tight leading-snug mb-3 group-hover:text-brand-300 transition-colors">
+        <h3 className="text-[15px] font-semibold text-zinc-100 tracking-tight leading-snug mb-3 group-hover:text-indigo-400 transition-colors">
           {item.subject || 'Actionable Video Insight'}
         </h3>
 
-        {/* Summary Box */}
+        {/* Core Takeaway / Insight Callout Box */}
         {(item.personalUtility || item.summary) && (
-          <div className="mb-3.5 p-3 rounded-xl bg-zinc-950/60 border border-white/[0.06]">
+          <div className="mb-3.5 p-3 rounded-lg bg-[#0e0f14] border-l-2 border-indigo-500/70 border border-white/[0.04]">
             <div className="flex items-start gap-2 text-xs text-zinc-300 leading-relaxed">
-              <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-400" strokeWidth={1.5} />
+              <Lightbulb className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-amber-400" strokeWidth={1.5} />
               <div className="line-clamp-2">
-                <span className="font-medium text-zinc-200">Summary:</span>{' '}
+                <span className="font-medium text-zinc-200">Core Takeaway:</span>{' '}
                 <span className="text-zinc-400">{item.personalUtility || item.summary}</span>
               </div>
             </div>
           </div>
         )}
 
-        {/* Tool Chips with +X truncation */}
+        {/* Concept / Tool Chips */}
         {entityList.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap mb-2">
-            <Wrench className="w-3 h-3 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+            <Tag className="w-3 h-3 text-zinc-500 flex-shrink-0" strokeWidth={1.5} />
             {visibleTools.map((ent) => (
               <button
                 key={ent}
@@ -152,9 +163,9 @@ ${item.summary}
                   e.stopPropagation();
                   onEntityClick?.(ent);
                 }}
-                className="text-[11px] font-mono px-2 py-0.5 rounded bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/[0.06] transition-colors"
+                className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-[#0e0f14] hover:bg-[#1a1c26] text-zinc-400 hover:text-zinc-200 border border-white/[0.05] transition-colors"
               >
-                {ent}
+                #{ent}
               </button>
             ))}
             {!showAllTools && hiddenCount > 0 && (
@@ -163,7 +174,7 @@ ${item.summary}
                   e.stopPropagation();
                   setShowAllTools(true);
                 }}
-                className="text-[10px] text-brand-400 hover:text-brand-300 font-mono px-1.5 py-0.5 rounded bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 transition-colors"
+                className="text-[10px] text-indigo-400 hover:text-indigo-300 font-mono px-1.5 py-0.5 rounded-md bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 transition-colors"
               >
                 +{hiddenCount} more
               </button>
@@ -174,7 +185,7 @@ ${item.summary}
                   e.stopPropagation();
                   setShowAllTools(false);
                 }}
-                className="text-[10px] text-zinc-500 hover:text-zinc-300 font-mono px-1.5 py-0.5 rounded bg-zinc-800/40 border border-white/[0.04] transition-colors"
+                className="text-[10px] text-zinc-500 hover:text-zinc-300 font-mono px-1.5 py-0.5 rounded-md bg-white/[0.02] border border-white/[0.04] transition-colors"
               >
                 Show less
               </button>
@@ -183,10 +194,16 @@ ${item.summary}
         )}
       </div>
 
-      {/* Bottom Action Trigger */}
-      <div className="border-t border-white/[0.06] pt-3 mt-3 flex items-center justify-between text-xs text-zinc-400 group-hover:text-zinc-200 transition-colors">
-        <span className="font-medium">Read Summary</span>
-        <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+      {/* Bottom Action Footer */}
+      <div className="border-t border-white/[0.05] pt-3 mt-3 flex items-center justify-between text-xs text-zinc-400 group-hover:text-zinc-200 transition-colors">
+        <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-400">
+          <BookOpen className="w-3 h-3 text-indigo-400" />
+          <span>Knowledge Note</span>
+        </div>
+        <div className="flex items-center gap-1 text-indigo-400 font-medium text-xs">
+          <span>Read Note</span>
+          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" strokeWidth={1.5} />
+        </div>
       </div>
     </div>
   );

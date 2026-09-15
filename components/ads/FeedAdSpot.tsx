@@ -26,7 +26,7 @@ export const FeedAdSpot: React.FC<FeedAdSpotProps> = ({
       href={link}
       target="_blank"
       rel="noopener noreferrer sponsored"
-      className="group relative rounded-2xl bg-zinc-900/30 border border-dashed border-white/[0.12] hover:border-white/[0.24] p-5 sm:p-6 backdrop-blur-md transition-colors duration-150 flex flex-col justify-between hover:bg-zinc-900/60"
+      className="group relative rounded-2xl bg-[#12131a] border border-dashed border-white/[0.12] hover:border-white/[0.24] p-5 sm:p-6 backdrop-blur-md transition-colors duration-150 flex flex-col justify-between hover:bg-[#171822]"
     >
       <div>
         {/* Top Header */}
@@ -41,7 +41,7 @@ export const FeedAdSpot: React.FC<FeedAdSpotProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-brand-500/10 text-brand-300 border border-brand-500/20">
+            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
               DEV AD PREVIEW
             </span>
             <div className="p-1.5 rounded-lg bg-zinc-800/60 text-zinc-400 group-hover:text-white transition-colors">
@@ -53,7 +53,7 @@ export const FeedAdSpot: React.FC<FeedAdSpotProps> = ({
         {/* Title */}
         <h3 className="text-base font-semibold text-zinc-200 tracking-tight leading-snug mb-2 group-hover:text-white transition-colors flex items-center gap-2">
           <span>{title}</span>
-          <Sparkles className="w-3.5 h-3.5 text-brand-400 flex-shrink-0" strokeWidth={1.5} />
+          <Sparkles className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" strokeWidth={1.5} />
         </h3>
 
         {/* Description */}

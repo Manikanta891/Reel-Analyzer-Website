@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { Users, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -51,11 +51,11 @@ export const TopCreatorsWidget: React.FC<TopCreatorsWidgetProps> = ({
   };
 
   return (
-    <div className="rounded-2xl bg-zinc-900/50 border border-white/[0.08] p-3 backdrop-blur-xl space-y-2.5">
+    <div className="rounded-2xl bg-[#12131a] border border-white/[0.08] p-3 backdrop-blur-xl space-y-2.5">
       {/* Header Bar */}
       <div className="flex items-center justify-between px-2 pt-1">
         <div className="flex items-center gap-1.5">
-          <Users className="w-3.5 h-3.5 text-brand-400" strokeWidth={1.5} />
+          <Users className="w-3.5 h-3.5 text-indigo-400" strokeWidth={1.5} />
           <span className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
             Top Creators
           </span>
@@ -81,7 +81,7 @@ export const TopCreatorsWidget: React.FC<TopCreatorsWidgetProps> = ({
               title={`Filter by @${cleanName} (${count} saved ${count === 1 ? 'reel' : 'reels'})`}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-all duration-150 active:scale-[0.98] group ${
                 isSelected
-                  ? 'bg-brand-600/20 text-white font-semibold border border-brand-500/40 shadow-sm'
+                  ? 'bg-indigo-600/20 text-white font-semibold border border-indigo-500/40 shadow-sm'
                   : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200 border border-transparent'
               }`}
             >
@@ -90,9 +90,9 @@ export const TopCreatorsWidget: React.FC<TopCreatorsWidgetProps> = ({
                 <div
                   className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 transition-transform duration-150 group-hover:scale-105 ${
                     isSelected
-                      ? 'bg-gradient-to-tr from-brand-500 to-indigo-500 text-white shadow-md'
+                      ? 'bg-gradient-to-tr from-indigo-500 to-indigo-600 text-white shadow-md'
                       : rank <= 3
-                      ? 'bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white'
+                      ? 'bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 text-white'
                       : 'bg-zinc-800 text-zinc-300 border border-white/[0.1]'
                   }`}
                 >
@@ -110,7 +110,7 @@ export const TopCreatorsWidget: React.FC<TopCreatorsWidgetProps> = ({
                 <span
                   className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-medium ${
                     isSelected
-                      ? 'bg-brand-500 text-white'
+                      ? 'bg-indigo-500 text-white'
                       : 'bg-zinc-800/80 text-zinc-400 group-hover:bg-zinc-700 group-hover:text-zinc-200'
                   }`}
                 >

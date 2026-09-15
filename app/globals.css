@@ -3,12 +3,18 @@
 @tailwind utilities;
 
 :root {
-  --background: #09090b;
-  --foreground: #f8fafc;
+  --background: #0b0c10;
+  --foreground: #f1f3f6;
+  --card-bg: #12131a;
+  --card-hover: #171822;
+  --studio-border: rgba(255, 255, 255, 0.06);
+  --studio-border-hover: rgba(255, 255, 255, 0.12);
+  --brand-primary: #5e6ad2;
 }
 
 html {
   scroll-behavior: smooth;
+  color-scheme: dark;
 }
 
 body {
@@ -16,12 +22,13 @@ body {
   color: var(--foreground);
   font-family: var(--font-plus-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow-x: hidden;
+  background-image: radial-gradient(circle at 50% -20%, rgba(94, 106, 210, 0.08) 0%, transparent 70%);
 }
 
-/* Luxury Custom Scrollbar */
+/* Subtle Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -29,29 +36,66 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.18);
 }
 
-/* Markdown Custom Prose Styling in Dark Mode */
+/* 3D Flashcard Flip Mechanics */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Studio Glass & Card Utilities */
+.studio-card {
+  background-color: #12131a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.studio-card:hover {
+  background-color: #171822;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.studio-glass {
+  background-color: rgba(11, 12, 16, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Markdown Reader Custom Prose Styling */
 .prose pre {
-  background-color: #0d0d11 !important;
+  background-color: #0d0e13 !important;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  padding: 1rem;
+  padding: 1.125rem;
 }
 
 .prose code {
   color: #a5b4fc !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-fira-code), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .prose h1, .prose h2, .prose h3, .prose h4 {
-  color: #ffffff !important;
+  color: #f8fafc !important;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -74,6 +118,6 @@ body {
 }
 
 .prose li {
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
 }

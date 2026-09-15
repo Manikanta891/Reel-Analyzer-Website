@@ -16,7 +16,6 @@ import { DomainSidebar } from '@/components/DomainSidebar';
 import { SubdomainPills } from '@/components/SubdomainPills';
 import { ReelCard } from '@/components/ReelCard';
 import { ReelTableView } from '@/components/ReelTableView';
-import { FlashcardViewer } from '@/components/FlashcardViewer';
 import { SyncModal } from '@/components/SyncModal';
 import { PlaybookExportModal } from '@/components/PlaybookExportModal';
 import { ReelDetailModal } from '@/components/ReelDetailModal';
@@ -32,7 +31,6 @@ export default function VaultPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [feedViewMode, setFeedViewMode] = useState<'grid' | 'table'>('grid');
-  const [activeTab, setActiveTab] = useState<'reels' | 'flashcards'>('reels');
 
   // Debounce search query to guarantee 60fps performance on fuzzy Levenshtein calculations
   useEffect(() => {
@@ -97,7 +95,7 @@ export default function VaultPage() {
   // Reset pagination on filter or search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedDomain, selectedSubdomain, debouncedSearchQuery, feedViewMode, activeTab]);
+  }, [selectedDomain, selectedSubdomain, debouncedSearchQuery, feedViewMode]);
 
   // Compute Categories, Subcategories, and Counts
   const {
@@ -332,24 +330,21 @@ export default function VaultPage() {
 
   const handleEntityClick = (entity: string) => {
     setSearchQuery(entity);
-    setActiveTab('reels');
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-brand-600 selection:text-white">
-      {/* Top Static Navbar (Reels | Tools | Flashcards) */}
+    <div className="min-h-screen bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-600 selection:text-white">
+      {/* Top Navbar */}
       <Navbar
         onOpenSync={() => setIsSyncOpen(true)}
         onOpenExport={() => setIsExportOpen(true)}
         uniqueVisitors={uniqueVisitors}
         isExtensionConnected={isExtensionConnected}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
       />
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-7">
-        {/* Metric Cards Banner (4 Static Vault Metrics) */}
+        {/* Metric Cards Banner */}
         <StatsCounter
           totalReels={reels.length}
           totalDomains={domains.length}
@@ -357,210 +352,179 @@ export default function VaultPage() {
           totalEntities={totalEntitiesCount}
         />
 
-        {/* Professional Dismissible Partner Banner */}
+        {/* Dismissible Partner Banner */}
         <TopBannerAdSpot />
 
-        {/* Tabs Content Container (Guaranteed Min Height to prevent footer jumps) */}
-        <div className="flex-1 flex flex-col min-h-[560px]">
-          {/* 1. Saved Reels Feed View */}
-          <div className={activeTab === 'reels' ? 'block flex-1' : 'hidden'}>
-            <div className="flex flex-col lg:flex-row items-start gap-7 min-h-[520px]">
-              {/* Category Sidebar */}
-              <DomainSidebar
-                domains={domains}
-                selectedDomain={selectedDomain}
-                onSelectDomain={(d) => {
-                  setSelectedDomain(d);
-                  setSelectedSubdomain('All');
-                }}
-                domainCounts={domainCounts}
-                totalCount={reels.length}
-              />
+        {/* Knowledge Feed */}
+        <div className="flex flex-col lg:flex-row items-start gap-7 min-h-[520px]">
+          {/* Category Sidebar */}
+          <DomainSidebar
+            domains={domains}
+            selectedDomain={selectedDomain}
+            onSelectDomain={(d) => {
+              setSelectedDomain(d);
+              setSelectedSubdomain('All');
+            }}
+            domainCounts={domainCounts}
+            totalCount={reels.length}
+          />
 
-              {/* Feed Section */}
-              <section className="flex-1 w-full min-w-0 flex flex-col justify-between min-h-[500px]">
-                <div>
-                  {/* Toolbar: Search + Filter Count + Grid/Table Toggle (Static & Grounded) */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
-                    {/* Search Input */}
-                    <div className="relative flex-1">
-                      <Search
-                        className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2"
-                        strokeWidth={1.5}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Search by topic, tools (Docker, Tailwind), or keyword..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-16 py-2.5 rounded-xl bg-zinc-900/60 border border-white/[0.08] focus:border-brand-500 text-xs text-white placeholder-zinc-500 outline-none transition-colors duration-150"
-                      />
-                      {searchQuery && (
-                        <button
-                          onClick={() => setSearchQuery('')}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 hover:text-zinc-200"
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Right controls: Filter Counter + View Mode Toggle */}
-                    <div className="flex items-center gap-2 flex-shrink-0 flex-wrap sm:flex-nowrap">
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-900/50 border border-white/[0.08] text-xs text-zinc-400">
-                        <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400" strokeWidth={1.5} />
-                        <span>
-                          <strong className="text-white font-mono">{filteredReels.length}</strong> reels
-                        </span>
-                      </div>
-
-                      {/* Grid vs Table View Mode Toggle */}
-                      <div className="flex items-center p-1 rounded-xl bg-zinc-900/80 border border-white/[0.08]">
-                        <button
-                          onClick={() => setFeedViewMode('grid')}
-                          title="Grid View"
-                          aria-label="Grid View"
-                          className={`p-1.5 rounded-lg text-xs transition-colors duration-150 ${
-                            feedViewMode === 'grid'
-                              ? 'bg-zinc-800 text-white shadow-sm font-semibold'
-                              : 'text-zinc-400 hover:text-zinc-200'
-                          }`}
-                        >
-                          <LayoutGrid className="w-4 h-4" strokeWidth={1.5} />
-                        </button>
-                        <button
-                          onClick={() => setFeedViewMode('table')}
-                          title="Table View"
-                          aria-label="Table View"
-                          className={`p-1.5 rounded-lg text-xs transition-colors duration-150 ${
-                            feedViewMode === 'table'
-                              ? 'bg-zinc-800 text-white shadow-sm font-semibold'
-                              : 'text-zinc-400 hover:text-zinc-200'
-                          }`}
-                        >
-                          <Table className="w-4 h-4" strokeWidth={1.5} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Subcategory Pills */}
-                  <SubdomainPills
-                    subdomains={subdomainsForDomain}
-                    selectedSubdomain={selectedSubdomain}
-                    onSelectSubdomain={setSelectedSubdomain}
-                    subdomainCounts={subdomainCounts}
-                    totalInDomain={
-                      selectedDomain === 'All' ? reels.length : domainCounts[selectedDomain] || 0
-                    }
+          {/* Feed Section */}
+          <section className="flex-1 w-full min-w-0 flex flex-col justify-between min-h-[500px]">
+            <div>
+              {/* Toolbar: Search + Filter Count + Grid/Table Toggle */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
+                {/* Search Input */}
+                <div className="relative flex-1">
+                  <Search
+                    className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2"
+                    strokeWidth={1.5}
                   />
-
-                  {/* Content Renderers */}
-                  {isHydrating ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-                      {Array.from({ length: 4 }).map((_, i) => (
-                        <SkeletonCard key={i} />
-                      ))}
-                    </div>
-                  ) : feedViewMode === 'table' ? (
-                    <>
-                      <ReelTableView
-                        reels={paginatedReels}
-                        onDelete={handleDeleteReel}
-                      />
-                    </>
-                  ) : (
-                    /* Grid View with auto-rows-fr for uniform card sizing */
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 auto-rows-fr">
-                      {paginatedReels.map((item, idx) => (
-                        <React.Fragment key={item.url}>
-                          <ReelCard
-                            item={item}
-                            onSelect={(reel) => setSelectedReelForModal(reel)}
-                            onEntityClick={handleEntityClick}
-                            onDelete={handleDeleteReel}
-                          />
-                          {/* Native Sponsored Slot - Hidden during search */}
-                          {!searchQuery.trim() && (idx === 3 || (paginatedReels.length < 4 && idx === paginatedReels.length - 1)) && (
-                            <FeedAdSpot
-                              key="feed-sponsor-slot"
-                              sponsorName="DevFlow Cloud"
-                              category="Featured Partner"
-                              title="Automate Full-Stack Deployments & Edge Caching"
-                              description="Build, preview, and deploy high-performance applications with global edge distribution, zero-config CDN, and instant rollbacks."
-                              link="https://github.com"
-                            />
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Actionable Empty State */}
-                  {!isHydrating && filteredReels.length === 0 && (
-                    <div className="text-center py-16 px-6 bg-zinc-900/30 rounded-2xl border border-white/[0.08] mt-4">
-                      <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-zinc-800 text-zinc-400 flex items-center justify-center border border-white/[0.06]">
-                        <Folder className="w-5 h-5" strokeWidth={1.5} />
-                      </div>
-                      <h3 className="text-sm font-semibold text-white mb-1">
-                        No matching reels
-                      </h3>
-                      <p className="text-xs text-zinc-400 max-w-sm mx-auto mb-5">
-                        Try adjusting your search query or category filter.
-                      </p>
-                      <button
-                        onClick={() => {
-                          setSearchQuery('');
-                          setSelectedDomain('All');
-                          setSelectedSubdomain('All');
-                        }}
-                        className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-white border border-white/[0.08] transition-colors duration-150 active:scale-[0.98]"
-                      >
-                        Reset Filters
-                      </button>
-                    </div>
+                  <input
+                    type="text"
+                    placeholder="Search notes, frameworks, concepts, or tags..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-16 py-2.5 rounded-lg bg-[#12131a] border border-white/[0.06] focus:border-indigo-500 text-xs text-zinc-100 placeholder-zinc-500 outline-none transition-colors"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 hover:text-zinc-200"
+                    >
+                      Clear
+                    </button>
                   )}
                 </div>
 
-                {/* Grounded Pagination */}
-                {!isHydrating && filteredReels.length > 0 && (
-                  <div className="mt-8">
-                    <Pagination
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      totalItems={filteredReels.length}
-                      pageSize={pageSize}
-                      onPageChange={setCurrentPage}
-                    />
+                {/* Right controls: Filter Counter + View Mode Toggle */}
+                <div className="flex items-center gap-2 flex-shrink-0 flex-wrap sm:flex-nowrap">
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#12131a] border border-white/[0.06] text-xs text-zinc-400">
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400" strokeWidth={1.5} />
+                    <span>
+                      <strong className="text-zinc-200 font-mono">{filteredReels.length}</strong> notes
+                    </span>
                   </div>
-                )}
-              </section>
-            </div>
-          </div>
 
-          {/* 2. Flashcards Focus Study Tab */}
-          <div className={activeTab === 'flashcards' ? 'block flex-1' : 'hidden'}>
-            <FlashcardViewer
-              reels={filteredReels}
-              domains={domains}
-              selectedDomain={selectedDomain}
-              onSelectDomain={(domain) => {
-                setSelectedDomain(domain);
-                setSelectedSubdomain('All');
-              }}
-              onResetFilters={() => {
-                setSearchQuery('');
-                setSelectedDomain('All');
-                setSelectedSubdomain('All');
-              }}
-              onSwitchToReels={() => {
-                setSearchQuery('');
-                setSelectedDomain('All');
-                setSelectedSubdomain('All');
-                setActiveTab('reels');
-              }}
-            />
-          </div>
+                  {/* Grid vs Table View Mode Toggle */}
+                  <div className="flex items-center p-1 rounded-lg bg-[#14151e] border border-white/[0.06]">
+                    <button
+                      onClick={() => setFeedViewMode('grid')}
+                      title="Grid View"
+                      aria-label="Grid View"
+                      className={`p-1.5 rounded-md text-xs transition-colors ${
+                        feedViewMode === 'grid'
+                          ? 'bg-indigo-600 text-white shadow-sm font-semibold'
+                          : 'text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      <LayoutGrid className="w-4 h-4" strokeWidth={1.5} />
+                    </button>
+                    <button
+                      onClick={() => setFeedViewMode('table')}
+                      title="Table View"
+                      aria-label="Table View"
+                      className={`p-1.5 rounded-md text-xs transition-colors ${
+                        feedViewMode === 'table'
+                          ? 'bg-indigo-600 text-white shadow-sm font-semibold'
+                          : 'text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      <Table className="w-4 h-4" strokeWidth={1.5} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Subcategory Pills */}
+              <SubdomainPills
+                subdomains={subdomainsForDomain}
+                selectedSubdomain={selectedSubdomain}
+                onSelectSubdomain={setSelectedSubdomain}
+                subdomainCounts={subdomainCounts}
+                totalInDomain={
+                  selectedDomain === 'All' ? reels.length : domainCounts[selectedDomain] || 0
+                }
+              />
+
+              {/* Content Renderers */}
+              {isHydrating ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <SkeletonCard key={i} />
+                  ))}
+                </div>
+              ) : feedViewMode === 'table' ? (
+                <ReelTableView
+                  reels={paginatedReels}
+                  onDelete={handleDeleteReel}
+                />
+              ) : (
+                /* Grid View with auto-rows-fr for uniform card sizing */
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 auto-rows-fr">
+                  {paginatedReels.map((item, idx) => (
+                    <React.Fragment key={item.url}>
+                      <ReelCard
+                        item={item}
+                        onSelect={(reel) => setSelectedReelForModal(reel)}
+                        onEntityClick={handleEntityClick}
+                        onDelete={handleDeleteReel}
+                      />
+                      {/* Native Sponsored Slot - Hidden during search */}
+                      {!searchQuery.trim() && (idx === 3 || (paginatedReels.length < 4 && idx === paginatedReels.length - 1)) && (
+                        <FeedAdSpot
+                          key="feed-sponsor-slot"
+                          sponsorName="DevFlow Cloud"
+                          category="Featured Partner"
+                          title="Automate Full-Stack Deployments & Edge Caching"
+                          description="Build, preview, and deploy high-performance applications with global edge distribution, zero-config CDN, and instant rollbacks."
+                          link="https://github.com"
+                        />
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
+
+              {/* Actionable Empty State */}
+              {!isHydrating && filteredReels.length === 0 && (
+                <div className="text-center py-16 px-6 bg-[#12131a] rounded-xl border border-white/[0.06] mt-4">
+                  <div className="w-10 h-10 mx-auto mb-3 rounded-lg bg-white/[0.04] text-zinc-400 flex items-center justify-center border border-white/[0.06]">
+                    <Folder className="w-5 h-5" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-sm font-semibold text-zinc-100 mb-1">
+                    No matching knowledge notes
+                  </h3>
+                  <p className="text-xs text-zinc-400 max-w-sm mx-auto mb-5">
+                    Try adjusting your search query or topic filter.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSelectedDomain('All');
+                      setSelectedSubdomain('All');
+                    }}
+                    className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white transition-colors active:scale-[0.98]"
+                  >
+                    Reset Filters
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {!isHydrating && filteredReels.length > 0 && (
+              <div className="mt-8">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={filteredReels.length}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
+          </section>
         </div>
       </main>
 
@@ -593,9 +557,9 @@ export default function VaultPage() {
       />
 
       {/* Clean Footer */}
-      <footer className="border-t border-white/[0.08] py-6 bg-zinc-950 text-center text-xs text-zinc-500 mt-12">
+      <footer className="border-t border-white/[0.06] py-6 bg-[#0b0c10] text-center text-xs text-zinc-500 mt-12">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>Reel Analyzer &bull; Video Knowledge Vault</span>
+          <span>Reel Analyzer Studio &bull; Video Knowledge Vault</span>
           <span className="text-[11px] text-zinc-600">
             Personal Knowledge Management System
           </span>
