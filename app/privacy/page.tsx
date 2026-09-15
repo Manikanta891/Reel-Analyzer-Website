@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -126,7 +126,7 @@ export default function PrivacyPage() {
             </div>
             <h3 className="font-semibold text-sm text-white">Total Data Portability</h3>
             <p className="text-zinc-400 leading-relaxed">
-              Export your knowledge base to Markdown Obsidian Vaults (<code className="text-zinc-300 font-mono">.zip</code>) or JSON anytime. Delete everything with 1-click.
+              Export your knowledge base to structured Markdown Obsidian Vaults (<code className="text-zinc-300 font-mono">.zip</code>) or Playbooks (<code className="text-zinc-300 font-mono">.md</code>) anytime. Delete everything with 1-click.
             </p>
           </div>
         </div>
@@ -269,13 +269,13 @@ export default function PrivacyPage() {
               <span className="text-emerald-400">5.</span> Data Storage, Transmission & Third-Party AI
             </h2>
             <p>
-              <strong>Zero External Tracking Servers:</strong> We do not operate external logging servers, behavioral trackers, or advertising telemetry for the extension. Your summaries and taxonomy never leave your machine to any database owned by us.
+              <strong>Zero Chrome Extension Telemetry:</strong> The Reel Analyzer Chrome Extension operates 100% locally. It contains no tracking scripts, ad networks, or background telemetry. Your summaries and taxonomy never leave your machine to any database owned by us.
             </p>
             <p>
-              <strong>Third-Party AI Services:</strong> When you generate notes, prompts are submitted directly inside your personal, authenticated web session on <a href="https://www.meta.ai" target="_blank" rel="noopener noreferrer" className="text-brand-400 hover:underline">Meta AI</a>. Your interaction with Meta AI is governed by Meta&apos;s Privacy Policy and Terms of Service. Reel Analyzer does not act as a proxy or middleman.
+              <strong>Third-Party AI Services:</strong> When you generate notes, prompts are submitted directly inside your personal, authenticated web session on <a href="https://www.meta.ai" target="_blank" rel="noopener noreferrer" className="text-brand-400 hover:underline">Meta AI</a>. Your interaction with Meta AI is governed by Meta&apos;s Privacy Policy and Terms of Service. Reel Analyzer does not act as an AI proxy or middleman.
             </p>
             <p>
-              <strong>Website Analytics (Web Dashboard Only):</strong> The companion web app at <code className="text-zinc-300 font-mono">reelanalyzer.manikanta.co.in</code> collects aggregated, non-personally identifiable page view counts to monitor server load. If you voluntarily submit an uninstall or feedback survey, your message is recorded solely to improve product usability.
+              <strong>Website Analytics (Web Dashboard Only):</strong> When visiting the companion web app at <code className="text-zinc-300 font-mono">reelanalyzer.manikanta.co.in</code>, aggregate page views and unique visitor counters are calculated using a privacy-preserving, one-way cryptographic hash (<code className="text-zinc-300 font-mono">SHA-256(IP + UserAgent)</code>). <strong>Raw IP addresses are never stored in the database.</strong> If you voluntarily submit a message via the feedback/uninstall form, only the message text and any optional email you supply are stored to assist with product development.
             </p>
           </section>
 
@@ -289,10 +289,10 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-disc list-inside space-y-2 text-zinc-400 text-xs sm:text-sm pl-2">
               <li>
-                <strong>Obsidian Vault Export:</strong> Download an offline-ready ZIP archive containing your structured <code className="text-zinc-300 font-mono">Domain/Subdomain.md</code> playbooks with internal tables of contents and a wiki-linked <code className="text-zinc-300 font-mono">00_Master_Index.md</code>.
+                <strong>Obsidian Vault Export (.zip):</strong> Download an offline-ready ZIP archive containing your structured <code className="text-zinc-300 font-mono">Domain/Subdomain.md</code> playbooks with internal tables of contents and a wiki-linked <code className="text-zinc-300 font-mono">00_Master_Index.md</code>.
               </li>
               <li>
-                <strong>JSON Export:</strong> Export your raw structured notes as a standard JSON file anytime.
+                <strong>Markdown Playbook (.md):</strong> Export formatted markdown playbooks by domain/category directly from the web dashboard.
               </li>
               <li>
                 <strong>Immediate Permanent Deletion:</strong> You can purge all saved notes, taxonomy, and settings instantly by clicking the <strong>&ldquo;Clear All&rdquo;</strong> button in the extension popup, or by uninstalling the extension from Chrome.
