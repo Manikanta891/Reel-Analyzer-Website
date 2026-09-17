@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans, Fira_Code } from 'next/font/google';
 import Script from 'next/script';
+import JsonLd from '@/components/seo/JsonLd';
 import './globals.css';
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -26,20 +27,40 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://reelanalyzer.manikanta.co.in'),
   title: {
-    default: 'Reel Analyzer — Turn Instagram Reels into Structured Knowledge',
+    default: 'Reel Analyzer — Instagram Reels AI Summarizer & Obsidian Notes',
     template: '%s | Reel Analyzer',
   },
-  description: 'Turn fast-paced Instagram Reels into permanent, structured knowledge notes, Obsidian Markdown vaults, and interactive study flashcards.',
+  description:
+    'Extract Instagram Reels into permanent, structured knowledge notes, Obsidian Markdown vaults, and interactive study flashcards. 100% Free, Local-First, Zero API Keys required.',
   keywords: [
     'Instagram Reels Summarizer',
+    'Instagram Reels AI Notes',
     'Obsidian Vault Export',
     'Video to Markdown',
+    'Meta AI Reel Notes',
     'Personal Knowledge Management',
-    'Developer Notes',
-    'AI Note Taking',
+    'AI Note Taking Chrome Extension',
+    'Developer Reels Bookmarks',
+    'Social Media Knowledge Base',
+    'Local First Video Summaries',
   ],
   authors: [{ name: 'Manikanta' }],
   creator: 'Manikanta',
+  publisher: 'Reel Analyzer',
+  alternates: {
+    canonical: 'https://reelanalyzer.manikanta.co.in',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon: '/logos/icon-32.png',
     shortcut: '/logos/icon-16.png',
@@ -49,23 +70,26 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://reelanalyzer.manikanta.co.in',
-    title: 'Reel Analyzer — Turn Instagram Reels into Structured Knowledge',
-    description: 'Turn fast-paced Instagram Reels into permanent, structured knowledge notes and Obsidian Markdown vaults.',
+    title: 'Reel Analyzer — Instagram Reels AI Summarizer & Obsidian Notes',
+    description:
+      'Extract Instagram Reels into structured knowledge notes, Obsidian Markdown vaults, and study flashcards. 100% Free & Local-First.',
     siteName: 'Reel Analyzer',
     images: [
       {
-        url: '/phone-card.png',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Reel Analyzer Knowledge Vault',
+        alt: 'Reel Analyzer — Turn Instagram Reels into Structured Knowledge & Obsidian Vaults',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Reel Analyzer — Turn Instagram Reels into Structured Knowledge',
-    description: 'Turn fast-paced Instagram Reels into permanent, structured knowledge notes and Obsidian Markdown vaults.',
-    images: ['/phone-card.png'],
+    title: 'Reel Analyzer — Instagram Reels AI Summarizer & Obsidian Notes',
+    description:
+      'Extract Instagram Reels into structured knowledge notes, Obsidian Markdown vaults, and study flashcards. 100% Free & Local-First.',
+    images: ['/og-image.png'],
+    creator: '@Manikanta',
   },
 };
 
@@ -77,6 +101,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${plusJakarta.variable} ${firaCode.variable}`}>
       <head>
+        <JsonLd />
         {/* Google Analytics (gtag.js) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-VLYBXXKDZ4"
