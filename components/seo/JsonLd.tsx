@@ -29,24 +29,61 @@ export const FAQ_ITEMS = [
 ];
 
 export default function JsonLd() {
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Reel Analyzer',
+    alternateName: ['Reel Analyzer Studio', 'ReelAnalyzer'],
+    url: 'https://reelanalyzer.manikanta.co.in',
+    description:
+      'Extract Instagram Reels into permanent, structured knowledge notes, Obsidian Markdown vaults, and interactive study flashcards.',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: 'https://reelanalyzer.manikanta.co.in/vault?q={search_term_string}',
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Reel Analyzer',
+    url: 'https://reelanalyzer.manikanta.co.in',
+    logo: 'https://reelanalyzer.manikanta.co.in/logos/icon-128.png',
+    sameAs: [
+      'https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci',
+      'https://github.com/Manikanta891/Reel-Analyzer-Website',
+    ],
+  };
+
   const softwareSchema = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
     name: 'Reel Analyzer',
-    applicationCategory: 'MultimediaApplication, Productivity',
-    operatingSystem: 'Google Chrome, Microsoft Edge, Brave, Web',
+    applicationCategory: 'MultimediaApplication, Productivity, EducationalApplication',
+    operatingSystem: 'Google Chrome, Microsoft Edge, Brave, Web Browser',
     url: 'https://reelanalyzer.manikanta.co.in',
     downloadUrl:
-      'https://chromewebstore.google.com/detail/reel-analyzer/nfoegekloemokpjdmhbkfaihnokfecci',
+      'https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci?utm_source=item-share-cb',
     image: 'https://reelanalyzer.manikanta.co.in/og-image.png',
     screenshot: 'https://reelanalyzer.manikanta.co.in/og-image.png',
     description:
-      'Extract Instagram Reels into permanent, structured knowledge notes, Obsidian Markdown vaults, and interactive study flashcards.',
-    softwareVersion: '1.1',
+      'Extract Instagram Reels into permanent, structured knowledge notes, Obsidian Markdown vaults, and interactive study flashcards. 100% Free & Local-First.',
+    softwareVersion: '1.2.0',
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '5.0',
+      ratingCount: '24',
+      bestRating: '5',
+      worstRating: '1',
+    },
     author: {
       '@type': 'Person',
       name: 'Manikanta',
-      url: 'https://reelanalyzer.manikanta.co.in',
+      url: 'https://manikanta.co.in',
     },
     offers: {
       '@type': 'Offer',
@@ -71,6 +108,14 @@ export default function JsonLd() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}

@@ -32,10 +32,17 @@ export const metadata: Metadata = {
     template: '%s | Reel Analyzer',
   },
   description:
-    'Extract Instagram Reels into permanent, structured knowledge notes, Obsidian Markdown vaults, and interactive study flashcards. 100% Free, Local-First, Zero API Keys required.',
+    'Reel Analyzer is the free, local-first AI Chrome extension and knowledge vault that extracts actionable insights, transcripts, frameworks, and Obsidian Markdown notes from Instagram Reels.',
+  applicationName: 'Reel Analyzer',
   keywords: [
+    'Reel Analyzer',
+    'Reel Analyzer Studio',
+    'reelanalyzer',
     'Instagram Reels Summarizer',
-    'Instagram Reels AI Notes',
+    'Instagram Reels AI Summarizer',
+    'Instagram Reels to Obsidian',
+    'AI Note Taking for Instagram',
+    'Instagram Video Transcriber',
     'Obsidian Vault Export',
     'Video to Markdown',
     'Meta AI Reel Notes',
@@ -44,16 +51,19 @@ export const metadata: Metadata = {
     'Developer Reels Bookmarks',
     'Social Media Knowledge Base',
     'Local First Video Summaries',
+    'Instagram Study Flashcards',
   ],
-  authors: [{ name: 'Manikanta' }],
+  authors: [{ name: 'Manikanta', url: 'https://manikanta.co.in' }],
   creator: 'Manikanta',
   publisher: 'Reel Analyzer',
+  category: 'Productivity & AI Tools',
   alternates: {
     canonical: 'https://reelanalyzer.manikanta.co.in',
   },
   robots: {
     index: true,
     follow: true,
+    nocache: false,
     googleBot: {
       index: true,
       follow: true,
@@ -63,7 +73,10 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/logos/icon-32.png',
+    icon: [
+      { url: '/logos/icon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/logos/icon-48.png', sizes: '48x48', type: 'image/png' },
+    ],
     shortcut: '/logos/icon-16.png',
     apple: '/logos/icon-128.png',
   },
@@ -73,7 +86,7 @@ export const metadata: Metadata = {
     url: 'https://reelanalyzer.manikanta.co.in',
     title: 'Reel Analyzer — Instagram Reels AI Summarizer & Obsidian Notes',
     description:
-      'Extract Instagram Reels into structured knowledge notes, Obsidian Markdown vaults, and study flashcards. 100% Free & Local-First.',
+      'Turn Instagram Reels into structured knowledge notes, Obsidian Markdown vaults, and study flashcards. 100% Free, Local-First, Zero API Keys required.',
     siteName: 'Reel Analyzer',
     images: [
       {
@@ -88,9 +101,12 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Reel Analyzer — Instagram Reels AI Summarizer & Obsidian Notes',
     description:
-      'Extract Instagram Reels into structured knowledge notes, Obsidian Markdown vaults, and study flashcards. 100% Free & Local-First.',
+      'Turn Instagram Reels into structured knowledge notes, Obsidian Markdown vaults, and study flashcards. 100% Free & Local-First.',
     images: ['/og-image.png'],
     creator: '@Manikanta',
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
   },
 };
 

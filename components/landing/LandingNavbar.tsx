@@ -108,43 +108,43 @@ export const LandingNavbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Full Mobile Menu Overlay */}
+      {/* Full Mobile Menu Overlay (Solid 100% Opaque Background) */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-x-0 top-16 bottom-0 z-50 bg-[#0b0c10]/95 backdrop-blur-2xl border-b border-white/[0.08] px-5 py-6 flex flex-col justify-between md:hidden animate-in fade-in slide-in-from-top-2 duration-150">
-          <nav className="flex flex-col space-y-2 text-sm font-medium">
+        <div className="fixed inset-x-0 top-16 bottom-0 z-50 bg-[#090a0f] border-b border-white/[0.08] px-5 py-6 flex flex-col justify-between md:hidden overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-150 shadow-2xl">
+          <nav className="flex flex-col space-y-2.5 text-sm font-medium">
             <a
               href="#how-it-works"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] text-zinc-200 border border-white/[0.04] transition-colors"
+              className="flex items-center justify-between p-3.5 rounded-xl bg-[#12131b] hover:bg-[#181924] text-zinc-100 border border-white/[0.06] transition-colors"
             >
-              <span>How It Works</span>
-              <ArrowRight className="w-4 h-4 text-zinc-500" />
+              <span className="font-semibold text-xs">How It Works</span>
+              <ArrowRight className="w-4 h-4 text-zinc-400" />
             </a>
             <a
               href="#features"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] text-zinc-200 border border-white/[0.04] transition-colors"
+              className="flex items-center justify-between p-3.5 rounded-xl bg-[#12131b] hover:bg-[#181924] text-zinc-100 border border-white/[0.06] transition-colors"
             >
-              <span>Features &amp; Notes</span>
-              <ArrowRight className="w-4 h-4 text-zinc-500" />
+              <span className="font-semibold text-xs">Features &amp; Notes</span>
+              <ArrowRight className="w-4 h-4 text-zinc-400" />
             </a>
             <Link
               href="/privacy"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] text-zinc-200 border border-white/[0.04] transition-colors"
+              className="flex items-center justify-between p-3.5 rounded-xl bg-[#12131b] hover:bg-[#181924] text-zinc-100 border border-white/[0.06] transition-colors"
             >
-              <span>Privacy Policy</span>
-              <ArrowRight className="w-4 h-4 text-zinc-500" />
+              <span className="font-semibold text-xs">Privacy Policy</span>
+              <ArrowRight className="w-4 h-4 text-zinc-400" />
             </Link>
           </nav>
 
           {/* Bottom Action Cards */}
-          <div className="space-y-3 pt-4 border-t border-white/[0.06]">
+          <div className="space-y-3 pt-6 border-t border-white/[0.06]">
             <a
               href={CHROME_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25"
+              className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 active:scale-[0.98] transition-all"
             >
               <span>Add to Chrome &mdash; Free</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -153,7 +153,7 @@ export const LandingNavbar: React.FC = () => {
             <Link
               href="/vault"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="w-full py-3 px-4 rounded-xl bg-[#14151e] hover:bg-[#1a1c26] text-zinc-200 text-xs font-bold border border-white/[0.08] flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-4 rounded-xl bg-[#12131b] hover:bg-[#1a1c26] text-zinc-200 text-xs font-bold border border-white/[0.08] flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
             >
               <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
               <span>Explore Knowledge Vault</span>
