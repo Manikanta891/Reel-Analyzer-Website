@@ -12,7 +12,7 @@ import {
 interface NavbarProps {
   onOpenSync: () => void;
   onOpenExport: () => void;
-  uniqueVisitors: number;
+  uniqueVisitors?: number | null;
   isExtensionConnected: boolean;
   totalNotesCount?: number;
 }
