@@ -12,17 +12,16 @@ import {
   Trash2,
   List,
   FolderGit2,
-  FileText,
   BookOpen,
-  Brain,
   Download,
-  RotateCw,
   Clock,
+  Shield,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ReelItem } from '@/types';
 import { ErrorBoundary } from './ErrorBoundary';
+import { extractMetadataFromText, sanitizeSummary } from '@/lib/summaryParser';
 
 interface ReelDetailModalProps {
   reel: ReelItem | null;
@@ -59,23 +58,35 @@ export const ReelDetailModal: React.FC<ReelDetailModalProps> = ({
 
   if (!reel) return null;
 
+  // Dynamically extract any metadata embedded in summary or aiResponse if missing on the reel object
+  const rawText = reel.summary || reel.aiResponse || '';
+  const parsedMeta = extractMetadataFromText(rawText);
+
+  const displayDomain = reel.domain || parsedMeta.domain || 'General';
+  const displaySubdomain = reel.subdomain || parsedMeta.subdomain || 'General';
+  const displaySubject = reel.subject || parsedMeta.subject || 'Actionable Video Insight';
+  const displayUtility = reel.personalUtility || parsedMeta.personalUtility || '';
+  const displayEntities = reel.entities || parsedMeta.entities || '';
+  const displayTags = reel.tags || parsedMeta.tags || '';
+  const cleanedSummary = sanitizeSummary(rawText);
+
   const rawMarkdown = `---
-title: "${(reel.subject || 'Video Note').replace(/"/g, '\\"')}"
-domain: "${reel.domain || 'General'}"
-subdomain: "${reel.subdomain || 'General'}"
+title: "${displaySubject.replace(/"/g, '\\"')}"
+domain: "${displayDomain}"
+subdomain: "${displaySubdomain}"
 creator: "${reel.creator || ''}"
-takeaway: "${(reel.personalUtility || '').replace(/"/g, '\\"')}"
-tools: [${(reel.entities || '').split(',').map((e) => `"${e.trim()}"`).filter((e) => e !== '""').join(', ')}]
-tags: [${(reel.tags || '').split(/[,\s]+/).map((t) => `"#${t.replace(/^#/, '')}"`).filter((t) => t !== '"#"').join(', ')}]
+takeaway: "${displayUtility.replace(/"/g, '\\"')}"
+tools: [${displayEntities.split(',').map((e) => `"${e.trim()}"`).filter((e) => e !== '""').join(', ')}]
+tags: [${displayTags.split(/[,\s]+/).map((t) => `"#${t.replace(/^#/, '')}"`).filter((t) => t !== '"#"').join(', ')}]
 url: "${reel.url || ''}"
 date: "${new Date().toISOString().split('T')[0]}"
 ---
 
-# ${reel.subject || 'Actionable Video Insight'}
+# ${displaySubject}
 
-> **Core Takeaway:** ${reel.personalUtility || reel.summary?.slice(0, 150) || 'Key learning from reel'}
+${displayUtility ? `> **Core Takeaway:** ${displayUtility}\n` : ''}
 
-${reel.summary || ''}
+${cleanedSummary || 'No detailed summary provided.'}
 
 ---
 *Source Reel:* [Instagram Reel](${reel.url})
@@ -94,7 +105,7 @@ ${reel.summary || ''}
   const handleDownloadMarkdown = () => {
     try {
       const blob = new Blob([rawMarkdown], { type: 'text/markdown;charset=utf-8' });
-      const filename = `${(reel.subject || 'reel-note').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`;
+      const filename = `${displaySubject.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`;
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -112,7 +123,7 @@ ${reel.summary || ''}
     if (!onDelete) return;
     const confirmMsg =
       `⚠️ Remove Reel from Vault?\n\n` +
-      `Are you sure you want to delete "${reel.subject || 'this insight'}"?\n` +
+      `Are you sure you want to delete "${displaySubject}"?\n` +
       `This will permanently remove it from your local storage.`;
 
     if (confirm(confirmMsg)) {
@@ -121,24 +132,29 @@ ${reel.summary || ''}
     }
   };
 
-  const entityList = reel.entities
-    ? reel.entities
+  // Tools list
+  const toolList = displayEntities
+    ? displayEntities
         .split(',')
-        .map((e) => e.trim())
+        .map((e) => e.trim().replace(/^["'\[]+|["'\]]+$/g, ''))
         .filter(Boolean)
     : [];
 
-  const rawTags = reel.tags
-    ? reel.tags
+  const visibleTools = showAllTools ? toolList : toolList.slice(0, 4);
+  const hiddenToolsCount = toolList.length - 4;
+
+  // Tags list
+  const tagList = displayTags
+    ? displayTags
         .split(/[,\s]+/)
-        .map((t) => t.trim().replace(/^#/, ''))
+        .map((t) => t.trim().replace(/^["'\[#]+|["'\]]+$/g, ''))
         .filter(Boolean)
     : [];
 
-  const visibleTags = showAllTags ? rawTags : rawTags.slice(0, 6);
-  const hiddenTagsCount = rawTags.length - 6;
+  const visibleTags = showAllTags ? tagList : tagList.slice(0, 5);
+  const hiddenTagsCount = tagList.length - 5;
 
-  const wordCount = (reel.summary || '').split(/\s+/).length;
+  const wordCount = (cleanedSummary || '').split(/\s+/).filter(Boolean).length;
   const readTime = Math.max(1, Math.ceil(wordCount / 120));
 
   return (
@@ -156,10 +172,10 @@ ${reel.summary || ''}
           <div className="p-3.5 sm:p-4 border-b border-white/[0.06] bg-[#0d0e13] flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-white/[0.04] text-indigo-400 border border-white/[0.06]">
-                {reel.domain}
+                {displayDomain}
               </span>
               <span className="text-xs text-zinc-400 font-medium truncate max-w-[200px] sm:max-w-[320px]">
-                {reel.subject || 'Knowledge Note'}
+                {displaySubject}
               </span>
             </div>
 
@@ -240,56 +256,136 @@ ${reel.summary || ''}
           {/* Scrollable Content Body */}
           <div className="p-5 sm:p-7 overflow-y-auto space-y-6">
             {activeTab === 'note' && (
-              <div className="space-y-5">
-                {/* Header Title & Reading Metric */}
-                <div className="space-y-2 border-b border-white/[0.06] pb-4">
-                  <h1 className="text-xl sm:text-2xl font-bold text-zinc-100 tracking-tight leading-tight">
-                    {reel.subject || 'Actionable Video Insight'}
-                  </h1>
-                  <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {readTime} min read
-                    </span>
-                    <span>&bull;</span>
-                    <span>{wordCount} words</span>
-                    {reel.creator && (
-                      <>
-                        <span>&bull;</span>
-                        <span className="text-indigo-400">{reel.creator}</span>
-                      </>
-                    )}
+              <div className="space-y-6">
+                {/* 1. NOTION / OBSIDIAN METADATA PROPERTY CARD (Matches Requested Design) */}
+                <div className="rounded-2xl bg-[#0c0d12] border border-white/[0.08] p-5 sm:p-6 space-y-4 shadow-xl">
+                  {/* Subject Row */}
+                  <div className="flex items-start gap-4">
+                    <div className="w-24 sm:w-28 flex items-center gap-2 text-zinc-400 text-xs font-medium shrink-0 pt-0.5">
+                      <List className="w-3.5 h-3.5 text-zinc-500" />
+                      <span>subject</span>
+                    </div>
+                    <div className="flex-1 flex items-center gap-2 text-zinc-100 font-bold text-sm sm:text-base leading-snug">
+                      <span className="text-indigo-400">🛡️</span>
+                      <span>{displaySubject}</span>
+                    </div>
                   </div>
+
+                  {/* Domain Row */}
+                  <div className="flex items-start gap-4">
+                    <div className="w-24 sm:w-28 flex items-center gap-2 text-zinc-400 text-xs font-medium shrink-0 pt-0.5">
+                      <FolderGit2 className="w-3.5 h-3.5 text-zinc-500" />
+                      <span>domain</span>
+                    </div>
+                    <div className="flex-1">
+                      <span className="inline-flex items-center px-3 py-1 rounded-lg bg-[#181924] text-zinc-200 border border-white/[0.08] font-medium text-xs shadow-sm">
+                        {displayDomain}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Subdomain Row */}
+                  {displaySubdomain && (
+                    <div className="flex items-start gap-4">
+                      <div className="w-24 sm:w-28 flex items-center gap-2 text-zinc-400 text-xs font-medium shrink-0 pt-0.5">
+                        <FolderGit2 className="w-3.5 h-3.5 text-zinc-500" />
+                        <span>subdomain</span>
+                      </div>
+                      <div className="flex-1">
+                        <span className="inline-flex items-center px-3 py-1 rounded-lg bg-[#181924] text-zinc-300 border border-white/[0.08] font-medium text-xs shadow-sm">
+                          {displaySubdomain}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tools Row */}
+                  {toolList.length > 0 && (
+                    <div className="flex items-start gap-4">
+                      <div className="w-24 sm:w-28 flex items-center gap-2 text-zinc-400 text-xs font-medium shrink-0 pt-0.5">
+                        <Wrench className="w-3.5 h-3.5 text-zinc-500" />
+                        <span>tools</span>
+                      </div>
+                      <div className="flex-1 flex items-center gap-1.5 flex-wrap">
+                        {visibleTools.map((tool, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => onEntityClick?.(tool)}
+                            className="inline-flex items-center px-2.5 py-1 rounded-lg bg-[#181924] hover:bg-[#202230] text-zinc-200 border border-white/[0.08] font-medium text-xs transition-colors shadow-sm"
+                          >
+                            {tool}
+                          </button>
+                        ))}
+                        {hiddenToolsCount > 0 && (
+                          <button
+                            onClick={() => setShowAllTools(!showAllTools)}
+                            className="text-xs text-indigo-400 hover:text-indigo-300 px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 font-medium transition-colors"
+                          >
+                            {showAllTools ? 'Show less' : `+${hiddenToolsCount} more`}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tags Row */}
+                  {tagList.length > 0 && (
+                    <div className="flex items-start gap-4">
+                      <div className="w-24 sm:w-28 flex items-center gap-2 text-zinc-400 text-xs font-medium shrink-0 pt-0.5">
+                        <Tag className="w-3.5 h-3.5 text-zinc-500" />
+                        <span>tags</span>
+                      </div>
+                      <div className="flex-1 flex items-center gap-1.5 flex-wrap">
+                        {visibleTags.map((tag, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-[#181924] hover:bg-[#202230] text-zinc-300 hover:text-zinc-100 border border-white/[0.08] hover:border-white/[0.16] text-xs font-medium shadow-sm transition-colors"
+                          >
+                            <span className="text-zinc-500 mr-1">#</span>{tag}
+                          </span>
+                        ))}
+                        {hiddenTagsCount > 0 && (
+                          <button
+                            onClick={() => setShowAllTags(!showAllTags)}
+                            className="text-xs text-indigo-400 hover:text-indigo-300 px-2.5 py-0.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 font-medium transition-colors"
+                          >
+                            {showAllTags ? 'Show less' : `+${hiddenTagsCount} more`}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Core Takeaway Highlight Box */}
-                {(reel.personalUtility || reel.summary) && (
+                {/* 2. CORE TAKEAWAY HIGHLIGHT BOX */}
+                {displayUtility && (
                   <div className="p-4 rounded-xl bg-[#0e0f14] border-l-3 border-indigo-500 border border-white/[0.06] text-xs sm:text-sm text-zinc-300 leading-relaxed">
                     <div className="flex items-start gap-2.5">
                       <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-400" strokeWidth={1.5} />
                       <div>
                         <strong className="text-zinc-100">Core Takeaway:</strong>{' '}
-                        <span className="text-zinc-300">{reel.personalUtility || reel.summary?.slice(0, 200)}</span>
+                        <span className="text-zinc-300">{displayUtility}</span>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Notion/Obsidian Markdown Body */}
-                <div className="p-5 rounded-xl bg-[#0e0f14] border border-white/[0.06] text-[#e2e8f0] text-xs sm:text-sm leading-relaxed overflow-x-auto select-text font-sans">
+                {/* 3. CLEAN NOTION/OBSIDIAN MARKDOWN BODY */}
+                <div className="p-5 sm:p-6 rounded-xl bg-[#0e0f14] border border-white/[0.06] text-[#e2e8f0] text-xs sm:text-sm leading-relaxed overflow-x-auto select-text font-sans">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
                       h1: ({ node, ...props }) => (
-                        <h1 className="text-lg font-bold text-zinc-100 mt-5 mb-2 pb-1 border-b border-white/[0.06]" {...props} />
+                        <h1 className="text-lg sm:text-xl font-bold text-zinc-100 mt-5 mb-2 pb-1.5 border-b border-white/[0.08]" {...props} />
                       ),
                       h2: ({ node, ...props }) => (
-                        <h2 className="text-base font-bold text-zinc-100 mt-4 mb-2 flex items-center gap-1.5" {...props} />
+                        <h2 className="text-base sm:text-lg font-bold text-zinc-100 mt-4 mb-2 flex items-center gap-1.5" {...props} />
                       ),
                       h3: ({ node, ...props }) => (
                         <h3 className="text-sm font-semibold text-indigo-300 mt-3 mb-1" {...props} />
                       ),
                       p: ({ node, ...props }) => (
-                        <p className="leading-relaxed text-zinc-300 my-2" {...props} />
+                        <div className="leading-relaxed text-zinc-300 my-2.5" {...props} />
                       ),
                       ul: ({ node, ...props }) => (
                         <ul className="list-disc pl-5 space-y-1.5 my-2.5 text-zinc-300" {...props} />
@@ -303,18 +399,24 @@ ${reel.summary || ''}
                       blockquote: ({ node, ...props }) => (
                         <blockquote className="border-l-2 border-indigo-500/70 pl-3.5 py-1 text-zinc-400 bg-[#161822] rounded-r-lg my-3 italic" {...props} />
                       ),
-                      code: ({ node, inline, className, children, ...props }: any) => {
-                        if (inline) {
+                      pre: ({ node, ...props }) => (
+                        <pre className="p-4 bg-[#08090d] text-zinc-100 rounded-xl border border-white/[0.08] font-mono text-xs overflow-x-auto my-3.5 leading-relaxed shadow-inner" {...props} />
+                      ),
+                      code: ({ node, className, children, ...props }: any) => {
+                        const strChild = String(children || '');
+                        if (strChild.trim() === '') return null;
+                        const isBlock = className?.includes('language-') || strChild.includes('\n');
+                        if (isBlock) {
                           return (
-                            <code className="px-1.5 py-0.5 bg-[#171822] text-indigo-300 font-mono text-[11px] rounded border border-white/[0.06]" {...props}>
+                            <code className="text-zinc-100 font-mono text-xs leading-relaxed block font-normal" {...props}>
                               {children}
                             </code>
                           );
                         }
                         return (
-                          <pre className="p-4 bg-[#0a0b0e] text-zinc-200 rounded-xl border border-white/[0.08] font-mono text-xs overflow-x-auto my-3 leading-relaxed">
-                            <code {...props}>{children}</code>
-                          </pre>
+                          <code className="px-1.5 py-0.5 bg-[#171822] text-indigo-300 font-mono text-[11px] rounded border border-white/[0.06] font-medium" {...props}>
+                            {children}
+                          </code>
                         );
                       },
                       table: ({ node, ...props }) => (
@@ -339,7 +441,7 @@ ${reel.summary || ''}
                       ),
                     }}
                   >
-                    {reel.summary || '*No detailed summary provided.*'}
+                    {cleanedSummary || '*No detailed summary provided.*'}
                   </ReactMarkdown>
                 </div>
               </div>
@@ -354,7 +456,7 @@ ${reel.summary || ''}
                       subject
                     </div>
                     <div className="flex-1 text-zinc-100 font-semibold">
-                      {reel.subject || 'Actionable Video Insight'}
+                      {displaySubject}
                     </div>
                   </div>
 
@@ -364,32 +466,32 @@ ${reel.summary || ''}
                       domain
                     </div>
                     <div className="flex-1 text-zinc-300">
-                      {reel.domain || 'General'}
+                      {displayDomain}
                     </div>
                   </div>
 
                   {/* Subdomain */}
-                  {reel.subdomain && (
+                  {displaySubdomain && (
                     <div className="flex items-start gap-3">
                       <div className="w-24 text-zinc-500 font-mono text-[11px] pt-0.5 flex-shrink-0">
                         subdomain
                       </div>
                       <div className="flex-1 text-zinc-400">
-                        {reel.subdomain}
+                        {displaySubdomain}
                       </div>
                     </div>
                   )}
 
                   {/* Tools */}
-                  {entityList.length > 0 && (
+                  {toolList.length > 0 && (
                     <div className="flex items-start gap-3">
                       <div className="w-24 text-zinc-500 font-mono text-[11px] pt-0.5 flex-shrink-0">
                         tools
                       </div>
                       <div className="flex-1 flex items-center gap-1.5 flex-wrap">
-                        {entityList.map((ent) => (
+                        {toolList.map((ent, idx) => (
                           <span
-                            key={ent}
+                            key={idx}
                             className="text-[11px] font-mono px-2 py-0.5 rounded bg-white/[0.04] text-zinc-300 border border-white/[0.06]"
                           >
                             {ent}
@@ -400,15 +502,15 @@ ${reel.summary || ''}
                   )}
 
                   {/* Tags */}
-                  {rawTags.length > 0 && (
+                  {tagList.length > 0 && (
                     <div className="flex items-start gap-3">
                       <div className="w-24 text-zinc-500 font-mono text-[11px] pt-0.5 flex-shrink-0">
                         tags
                       </div>
                       <div className="flex-1 flex items-center gap-1.5 flex-wrap">
-                        {visibleTags.map((t) => (
+                        {tagList.map((t, idx) => (
                           <span
-                            key={t}
+                            key={idx}
                             className="text-[11px] font-mono px-2 py-0.5 rounded bg-white/[0.04] text-zinc-300 border border-white/[0.06]"
                           >
                             #{t}

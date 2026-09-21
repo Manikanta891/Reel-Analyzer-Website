@@ -1,92 +1,131 @@
 /**
  * summaryParser.ts - Robust markdown sanitizer and structured section parser
- * Handles edge cases, missing fields, and unformatted raw outputs safely.
+ * Handles edge cases, missing fields, inline/fenced YAML, and unformatted raw outputs safely.
  */
 
-export interface ParsedSummary {
-  isStructured: boolean;
-  cleanedFull: string;
-  premise: string | null;
-  breakdown: string | null;
-  entitiesSection: string | null;
-  goldenNugget: string | null;
+export interface ExtractedMeta {
+  domain: string | null;
+  subdomain: string | null;
+  subject: string | null;
+  personalUtility: string | null;
+  entities: string | null;
+  tags: string | null;
 }
 
 /**
- * Safely cleans raw markdown by removing leaked single-line metadata headers
+ * Extracts structured metadata fields from raw markdown or summary text
+ */
+export function extractMetadataFromText(raw: string | undefined | null): ExtractedMeta {
+  const result: ExtractedMeta = {
+    domain: null,
+    subdomain: null,
+    subject: null,
+    personalUtility: null,
+    entities: null,
+    tags: null,
+  };
+
+  if (!raw || typeof raw !== 'string') return result;
+
+  const extractField = (aliases: string[]): string | null => {
+    for (const alias of aliases) {
+      // Matches both line-by-line YAML and inline "key: value"
+      const pattern = new RegExp(
+        `(?:^|[\\n#*\\s|,-])\\*?\\*?${alias}\\*?\\*?\\s*:\\s*` +
+        `((?:\\[[^\\]]*\\]|"[^"]*"|'[^']*'|[^\\n|]+?))` +
+        `(?=(?:\\s+\\*?\\*?(?:domain|subdomain|sub-domain|topic|subcategory|subject|title|personal_utility|personal\\s+utility|utility|takeaway|entities|tools|tech|tags|hashtags)\\*?\\*?\\s*:)|\\n|---|$)`,
+        'i'
+      );
+
+      const m = raw.match(pattern);
+      if (m && m[1]) {
+        let clean = m[1].trim();
+        clean = clean.replace(/^["']|["']$/g, '').trim();
+
+        if (clean.startsWith('[') && clean.endsWith(']')) {
+          try {
+            const parsed = JSON.parse(clean);
+            if (Array.isArray(parsed)) {
+              clean = parsed.join(', ');
+            }
+          } catch {
+            clean = clean.replace(/^\[|\]$/g, '').replace(/["']/g, '').trim();
+          }
+        }
+        clean = clean.replace(/^\[|\]$/g, '').trim();
+        clean = clean.replace(/^\*+|\*+$/g, '').trim();
+        clean = clean.replace(/^[|:-]+\s*/, '').trim();
+
+        if (clean && clean.toLowerCase() !== 'none' && !clean.includes('---') && clean.length > 0) {
+          return clean;
+        }
+      }
+    }
+    return null;
+  };
+
+  result.domain = extractField(['domain', 'Domain', 'Category', 'Super-Category']);
+  result.subdomain = extractField(['subdomain', 'Subdomain', 'Sub-domain', 'Topic', 'Subcategory']);
+  result.subject = extractField(['subject', 'Subject', 'Title', 'Topic Title']);
+  result.personalUtility = extractField([
+    'personal_utility',
+    'personalUtility',
+    'Personal Utility',
+    'utility',
+    'takeaway',
+    'Core Takeaway',
+    'Key Value',
+  ]);
+  result.entities = extractField(['entities', 'Entities', 'tools', 'Tools', 'Tech', 'Tools & Tech', 'Tools & Frameworks']);
+  result.tags = extractField(['tags', 'Tags', 'hashtags', 'Hashtags']);
+
+  return result;
+}
+
+/**
+ * Safely cleans raw markdown by removing YAML frontmatter, prompt preambles, and leaked metadata lines
  */
 export function sanitizeSummary(raw: string | undefined | null): string {
   if (!raw || typeof raw !== 'string') return '';
   try {
     let cleaned = raw.trim();
-    // Strip prompt preamble echoes if any
+
+    // 1. Strip prompt preamble echoes if any
     cleaned = cleaned.replace(/^Analyze the attached Instagram Reel[\s\S]*?---\n?/i, '');
-    // Strip standard YAML fenced block: --- ... ---
-    cleaned = cleaned.replace(/^---[\s\S]*?---\n?/i, '');
-    // Strip leading raw metadata lines if present
+    cleaned = cleaned.replace(/^Extract this Reel[\s\S]*?---\n?/i, '');
+    cleaned = cleaned.replace(/^I will be sending you[\s\S]*?---\n?/i, '');
+
+    // 2. Strip standard YAML fenced block: --- ... --- strictly line-anchored
+    cleaned = cleaned.replace(/^---[ \t]*\n[\s\S]*?\n---[ \t]*(?:\n|$)/i, '');
+
+    // 2b. Strip any leaked "10 lines hidden" or similar code-folding button text artifacts
+    cleaned = cleaned.replace(/\n*\b\d+\s*lines?\s*hidden\b\n*/gi, '\n');
+
+    // 3. Strip any leaked inline or multiline metadata headers at the beginning
     cleaned = cleaned.replace(
-      /^(?:(?:\*?\*?(?:creator|author|domain|subdomain|subject|personal_utility|utility|entities|tools|tags|hashtags)\*?\*?:\s*[^\n]*\n*)+)/i,
+      /^(?:(?:\*?\*?(?:creator|author|domain|subdomain|sub-domain|subject|title|personal_utility|personal\s+utility|utility|takeaway|entities|tools|tech|tags|hashtags)\*?\*?\s*:\s*(?:\[[^\]]*\]|"[^"]*"|'[^']*'|[^\n]+)\s*)+)/i,
       ''
     );
+
+    // 4. Strip inline metadata blob if leaked as a single line (e.g. domain: "..." subdomain: "..." ...)
+    cleaned = cleaned.replace(
+      /^(?:domain\s*:\s*["'][^"']+["']\s+subdomain\s*:\s*["'][^"']+["'][\s\S]*?(?:tags\s*:\s*(?:\[[^\]]*\]|#[^\n]+)))\s*\n?/i,
+      ''
+    );
+
+    // 5. Clean up any empty/whitespace-only code blocks or backtick artifacts like `   `
+    cleaned = cleaned.replace(/`\s+`/g, '');
+    cleaned = cleaned.replace(/```\s*```/g, '');
+
+    // 6. Clean up stray/duplicate language names preceding code blocks (e.g. "Python\n\npython\n\n```")
+    cleaned = cleaned.replace(
+      /(?:^|\n)[ \t]*(?:Python|JavaScript|TypeScript|JSON|Bash|Shell|HTML|CSS|SQL|YAML|Rust|Go|C\+\+|C#)\s*\n+[ \t]*(?:python|javascript|typescript|json|bash|shell|html|css|sql|yaml|rust|go|c\+\+|c#)?\s*\n+[ \t]*(```\w*)/gi,
+      '\n\n$1'
+    );
+
     return cleaned.trim();
   } catch (err) {
     console.error('Error sanitizing summary:', err);
     return String(raw || '');
-  }
-}
-
-/**
- * Safely parses summary markdown into structured sections
- */
-export function parseStructuredSections(text: string | undefined | null): ParsedSummary {
-  const defaultResult: ParsedSummary = {
-    isStructured: false,
-    cleanedFull: '',
-    premise: null,
-    breakdown: null,
-    entitiesSection: null,
-    goldenNugget: null,
-  };
-
-  if (!text || typeof text !== 'string') return defaultResult;
-
-  try {
-    const cleaned = sanitizeSummary(text);
-    if (!cleaned) return defaultResult;
-
-    // Identify standard 4-point sections
-    const premiseMatch = cleaned.match(
-      /(?:1\.\s*🎯?\s*Core Premise[^\n]*\n)([\s\S]*?)(?=(?:2\.\s*📜?\s*Complete Breakdown|3\.\s*🔍?\s*Named Entities|4\.\s*💎?\s*Golden Nugget|$))/i
-    );
-    const breakdownMatch = cleaned.match(
-      /(?:2\.\s*📜?\s*Complete Breakdown[^\n]*\n)([\s\S]*?)(?=(?:3\.\s*🔍?\s*Named Entities|4\.\s*💎?\s*Golden Nugget|$))/i
-    );
-    const entitiesMatch = cleaned.match(
-      /(?:3\.\s*🔍?\s*Named Entities[^\n]*\n)([\s\S]*?)(?=(?:4\.\s*💎?\s*Golden Nugget|$))/i
-    );
-    const goldenMatch = cleaned.match(
-      /(?:4\.\s*💎?\s*Golden Nugget[^\n]*\n)([\s\S]*?)$/i
-    );
-
-    const isStructured = Boolean(premiseMatch || breakdownMatch || goldenMatch);
-
-    return {
-      isStructured,
-      cleanedFull: cleaned,
-      premise: premiseMatch ? premiseMatch[1].trim() : null,
-      breakdown: breakdownMatch ? breakdownMatch[1].trim() : null,
-      entitiesSection: entitiesMatch ? entitiesMatch[1].trim() : null,
-      goldenNugget: goldenMatch ? goldenMatch[1].trim() : null,
-    };
-  } catch (err) {
-    console.error('Error parsing structured sections:', err);
-    return {
-      isStructured: false,
-      cleanedFull: String(text || ''),
-      premise: null,
-      breakdown: null,
-      entitiesSection: null,
-      goldenNugget: null,
-    };
   }
 }

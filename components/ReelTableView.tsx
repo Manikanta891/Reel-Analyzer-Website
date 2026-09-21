@@ -148,7 +148,7 @@ export const ReelTableView: React.FC<ReelTableViewProps> = ({ reels, onDelete })
                                 <h3 className="text-xs font-semibold text-indigo-300 mt-3 mb-1" {...props} />
                               ),
                               p: ({ node, ...props }) => (
-                                <p className="leading-relaxed text-zinc-300 my-1.5 text-xs" {...props} />
+                                <div className="leading-relaxed text-zinc-300 my-1.5 text-xs" {...props} />
                               ),
                               ul: ({ node, ...props }) => (
                                 <ul className="list-disc pl-5 space-y-1 my-2 text-zinc-300 text-xs" {...props} />
@@ -162,18 +162,24 @@ export const ReelTableView: React.FC<ReelTableViewProps> = ({ reels, onDelete })
                               blockquote: ({ node, ...props }) => (
                                 <blockquote className="border-l-2 border-indigo-500 pl-3 py-1 italic text-zinc-400 bg-[#161822] rounded-r-lg my-2.5 text-xs" {...props} />
                               ),
-                              code: ({ node, inline, className, children, ...props }: any) => {
-                                if (inline) {
+                              pre: ({ node, ...props }) => (
+                                <pre className="p-3 bg-[#08090d] text-zinc-100 rounded-xl border border-white/[0.08] font-mono text-xs overflow-x-auto my-2.5 leading-relaxed shadow-inner" {...props} />
+                              ),
+                              code: ({ node, className, children, ...props }: any) => {
+                                const strChild = String(children || '');
+                                if (strChild.trim() === '') return null;
+                                const isBlock = className?.includes('language-') || strChild.includes('\n');
+                                if (isBlock) {
                                   return (
-                                    <code className="px-1.5 py-0.5 bg-[#171822] text-indigo-300 font-mono text-[11px] rounded border border-white/[0.06]" {...props}>
+                                    <code className="text-zinc-100 font-mono text-xs leading-relaxed block font-normal" {...props}>
                                       {children}
                                     </code>
                                   );
                                 }
                                 return (
-                                  <pre className="p-3 bg-[#0a0b0e] text-zinc-200 rounded-xl border border-white/[0.08] font-mono text-xs overflow-x-auto my-2.5 leading-relaxed">
-                                    <code {...props}>{children}</code>
-                                  </pre>
+                                  <code className="px-1.5 py-0.5 bg-[#171822] text-indigo-300 font-mono text-[11px] rounded border border-white/[0.06] font-medium" {...props}>
+                                    {children}
+                                  </code>
                                 );
                               },
                               hr: ({ node, ...props }) => (

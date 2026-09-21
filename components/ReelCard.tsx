@@ -11,8 +11,10 @@ import {
   Clock,
   BookOpen,
   Tag,
+  Wrench,
 } from 'lucide-react';
 import { ReelItem } from '@/types';
+import { extractMetadataFromText, sanitizeSummary } from '@/lib/summaryParser';
 
 interface ReelCardProps {
   item: ReelItem;
@@ -30,15 +32,25 @@ export const ReelCard: React.FC<ReelCardProps> = ({
   const [copied, setCopied] = useState(false);
   const [showAllTools, setShowAllTools] = useState(false);
 
+  const rawText = item.summary || item.aiResponse || '';
+  const parsedMeta = extractMetadataFromText(rawText);
+
+  const displayDomain = item.domain || parsedMeta.domain || 'General';
+  const displaySubdomain = item.subdomain || parsedMeta.subdomain || 'General';
+  const displaySubject = item.subject || parsedMeta.subject || 'Actionable Video Insight';
+  const displayUtility = item.personalUtility || parsedMeta.personalUtility || '';
+  const displayEntities = item.entities || parsedMeta.entities || '';
+  const cleanedSummary = sanitizeSummary(rawText);
+
   const handleCopyMarkdown = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const text = `### ${item.subject}
-**Category:** ${item.domain} > ${item.subdomain || 'General'}
-${item.personalUtility ? `**Key Takeaway:** ${item.personalUtility}\n` : ''}
-${item.entities ? `**Tools & Frameworks:** ${item.entities}\n` : ''}
+    const text = `### ${displaySubject}
+**Category:** ${displayDomain} > ${displaySubdomain}
+${displayUtility ? `**Key Takeaway:** ${displayUtility}\n` : ''}
+${displayEntities ? `**Tools & Frameworks:** ${displayEntities}\n` : ''}
 
 #### Summary
-${item.summary}
+${cleanedSummary}
 
 [View Original Reel](${item.url})
 `;
@@ -52,7 +64,7 @@ ${item.summary}
     if (!onDelete) return;
     const confirmMsg =
       `⚠️ Remove Reel from Vault?\n\n` +
-      `Are you sure you want to delete "${item.subject || 'this insight'}"?\n` +
+      `Are you sure you want to delete "${displaySubject}"?\n` +
       `This will remove the summary and takeaway from your local knowledge library.`;
 
     if (confirm(confirmMsg)) {
@@ -60,10 +72,10 @@ ${item.summary}
     }
   };
 
-  const entityList = item.entities
-    ? item.entities
+  const entityList = displayEntities
+    ? displayEntities
         .split(',')
-        .map((e) => e.trim())
+        .map((e) => e.trim().replace(/^["'\[]+|["'\]]+$/g, ''))
         .filter(Boolean)
     : [];
 
@@ -71,7 +83,7 @@ ${item.summary}
   const hiddenCount = entityList.length - 3;
 
   // Calculate estimated reading time based on summary length
-  const wordCount = (item.summary || '').split(/\s+/).length;
+  const wordCount = (cleanedSummary || '').split(/\s+/).filter(Boolean).length;
   const readTime = Math.max(1, Math.ceil(wordCount / 120));
 
   return (
@@ -83,12 +95,12 @@ ${item.summary}
         {/* Top Header & Metadata */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-white/[0.04] text-zinc-300 border border-white/[0.06]">
-              {item.domain}
+            <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-[#181924] text-zinc-200 border border-white/[0.08]">
+              {displayDomain}
             </span>
-            {item.subdomain && (
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-white/[0.02] text-zinc-400">
-                {item.subdomain}
+            {displaySubdomain && (
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[#14151f] text-zinc-400 border border-white/[0.04]">
+                {displaySubdomain}
               </span>
             )}
           </div>
@@ -136,17 +148,17 @@ ${item.summary}
 
         {/* Subject Title */}
         <h3 className="text-[15px] font-semibold text-zinc-100 tracking-tight leading-snug mb-3 group-hover:text-indigo-400 transition-colors">
-          {item.subject || 'Actionable Video Insight'}
+          {displaySubject}
         </h3>
 
         {/* Core Takeaway / Insight Callout Box */}
-        {(item.personalUtility || item.summary) && (
+        {(displayUtility || cleanedSummary) && (
           <div className="mb-3.5 p-3 rounded-lg bg-[#0e0f14] border-l-2 border-indigo-500/70 border border-white/[0.04]">
             <div className="flex items-start gap-2 text-xs text-zinc-300 leading-relaxed">
               <Lightbulb className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-amber-400" strokeWidth={1.5} />
               <div className="line-clamp-2">
                 <span className="font-medium text-zinc-200">Core Takeaway:</span>{' '}
-                <span className="text-zinc-400">{item.personalUtility || item.summary}</span>
+                <span className="text-zinc-400">{displayUtility || cleanedSummary}</span>
               </div>
             </div>
           </div>
@@ -155,17 +167,17 @@ ${item.summary}
         {/* Concept / Tool Chips */}
         {entityList.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap mb-2">
-            <Tag className="w-3 h-3 text-zinc-500 flex-shrink-0" strokeWidth={1.5} />
-            {visibleTools.map((ent) => (
+            <Wrench className="w-3 h-3 text-zinc-500 flex-shrink-0" strokeWidth={1.5} />
+            {visibleTools.map((ent, idx) => (
               <button
-                key={ent}
+                key={idx}
                 onClick={(e) => {
                   e.stopPropagation();
                   onEntityClick?.(ent);
                 }}
-                className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-[#0e0f14] hover:bg-[#1a1c26] text-zinc-400 hover:text-zinc-200 border border-white/[0.05] transition-colors"
+                className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-[#181924] hover:bg-[#202230] text-zinc-300 hover:text-zinc-100 border border-white/[0.06] transition-colors"
               >
-                #{ent}
+                {ent}
               </button>
             ))}
             {!showAllTools && hiddenCount > 0 && (

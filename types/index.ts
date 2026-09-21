@@ -10,6 +10,7 @@ export interface ReelItem {
   entities?: string;
   tags?: string;
   summary: string;
+  aiResponse?: string;
   caption?: string;
   date?: string;
   postedDate?: string;
