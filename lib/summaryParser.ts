@@ -101,17 +101,16 @@ export function sanitizeSummary(raw: string | undefined | null): string {
     // 2b. Strip any leaked "10 lines hidden" or similar code-folding button text artifacts
     cleaned = cleaned.replace(/\n*\b\d+\s*lines?\s*hidden\b\n*/gi, '\n');
 
-    // 3. Strip any leaked inline or multiline metadata headers at the beginning
+    // 3. Strip metadata key-value lines (e.g. ## domain: "..." / subdomain: "..." / tags: [...]) anywhere
     cleaned = cleaned.replace(
-      /^(?:(?:\*?\*?(?:creator|author|domain|subdomain|sub-domain|subject|title|personal_utility|personal\s+utility|utility|takeaway|entities|tools|tech|tags|hashtags)\*?\*?\s*:\s*(?:\[[^\]]*\]|"[^"]*"|'[^']*'|[^\n]+)\s*)+)/i,
+      /(?:^|\n)[ \t]*(?:#{1,6}\s*|\*+|\b)(?:creator|author|domain|subdomain|sub-domain|topic|subcategory|subject|title|personal_utility|personal\s+utility|utility|takeaway|entities|tools|tech|tags|hashtags)\s*:\s*(?:\[[^\]]*\]|"[^"]*"|'[^']*'|[^\n]+)(?=\n|$)/gi,
       ''
     );
 
-    // 4. Strip inline metadata blob if leaked as a single line (e.g. domain: "..." subdomain: "..." ...)
-    cleaned = cleaned.replace(
-      /^(?:domain\s*:\s*["'][^"']+["']\s+subdomain\s*:\s*["'][^"']+["'][\s\S]*?(?:tags\s*:\s*(?:\[[^\]]*\]|#[^\n]+)))\s*\n?/i,
-      ''
-    );
+    // 4. Strip leftover empty horizontal rules or multiple dividers
+    cleaned = cleaned.replace(/^(?:[ \t]*---[ \t]*\n+)+/, '');
+    cleaned = cleaned.replace(/\n(?:[ \t]*---[ \t]*\n){2,}/g, '\n---\n');
+    cleaned = cleaned.replace(/(?:\n[ \t]*---[ \t]*)+(?=\s*\n###|\s*\n##|\s*$)/g, '');
 
     // 5. Clean up any empty/whitespace-only code blocks or backtick artifacts like `   `
     cleaned = cleaned.replace(/`\s+`/g, '');
@@ -122,6 +121,9 @@ export function sanitizeSummary(raw: string | undefined | null): string {
       /(?:^|\n)[ \t]*(?:Python|JavaScript|TypeScript|JSON|Bash|Shell|HTML|CSS|SQL|YAML|Rust|Go|C\+\+|C#)\s*\n+[ \t]*(?:python|javascript|typescript|json|bash|shell|html|css|sql|yaml|rust|go|c\+\+|c#)?\s*\n+[ \t]*(```\w*)/gi,
       '\n\n$1'
     );
+
+    // 7. Clean up extra whitespace
+    cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
 
     return cleaned.trim();
   } catch (err) {

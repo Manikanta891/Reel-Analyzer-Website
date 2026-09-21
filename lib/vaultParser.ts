@@ -119,12 +119,10 @@ export function parseMarkdownPlaybook(
     summaryBody = summaryBody.replace(/###\s*📖\s*Summary\s*(?:&|and)?\s*Directives\s*\n?/gi, '');
     summaryBody = summaryBody.replace(/^---\s*\n?/gm, '');
     // Clean up duplicate YAML frontmatter lines inside summary if echoed
-    summaryBody = summaryBody.replace(/##\s*domain:\s*"[^"]+"\n?/gi, '');
-    summaryBody = summaryBody.replace(/subdomain:\s*"[^"]+"\n?/gi, '');
-    summaryBody = summaryBody.replace(/subject:\s*"[^"]+"\n?/gi, '');
-    summaryBody = summaryBody.replace(/personal_utility:\s*"[^"]+"\n?/gi, '');
-    summaryBody = summaryBody.replace(/entities:\s*\[[^\]]+\]\n?/gi, '');
-    summaryBody = summaryBody.replace(/tags:\s*\[[^\]]+\]\n?/gi, '');
+    summaryBody = summaryBody.replace(
+      /(?:^|\n)[ \t]*(?:#{1,6}\s*|\*+|\b)(?:creator|author|domain|subdomain|sub-domain|topic|subcategory|subject|title|personal_utility|personal\s+utility|utility|takeaway|entities|tools|tech|tags|hashtags)\s*:\s*(?:\[[^\]]*\]|"[^"]*"|'[^']*'|[^\n]+)(?=\n|$)/gi,
+      ''
+    );
     summaryBody = summaryBody.replace(/<div align="center">[\s\S]*?<\/div>/gi, '');
     summaryBody = summaryBody.replace(/<br>\s*$/gi, '');
     summaryBody = summaryBody.replace(/\n---\s*$/g, '');
