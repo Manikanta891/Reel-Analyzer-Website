@@ -1,8 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { Search, SlidersHorizontal, Folder, LayoutGrid, Table, X, Users } from 'lucide-react';
-import { ReelItem, ViewMode } from '@/types';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import Image from 'next/image';
+import {
+  Search,
+  Folder,
+  LayoutGrid,
+  Table,
+  ArrowUpDown,
+} from 'lucide-react';
+import { ReelItem } from '@/types';
 import {
   getStoredReels,
   saveStoredReels,
@@ -11,9 +18,7 @@ import {
 import { INITIAL_SAMPLE_REELS } from '@/lib/sampleData';
 
 import { Navbar } from '@/components/Navbar';
-import { StatsCounter } from '@/components/StatsCounter';
 import { DomainSidebar } from '@/components/DomainSidebar';
-import { SubdomainPills } from '@/components/SubdomainPills';
 import { ReelCard } from '@/components/ReelCard';
 import { ReelTableView } from '@/components/ReelTableView';
 import { SyncModal } from '@/components/SyncModal';
@@ -21,8 +26,6 @@ import { PlaybookExportModal } from '@/components/PlaybookExportModal';
 import { ReelDetailModal } from '@/components/ReelDetailModal';
 import { Pagination } from '@/components/Pagination';
 import { SkeletonCard } from '@/components/SkeletonCard';
-import { TopBannerAdSpot } from '@/components/ads/TopBannerAdSpot';
-import { FeedAdSpot } from '@/components/ads/FeedAdSpot';
 
 export default function VaultPage() {
   const [reels, setReels] = useState<ReelItem[]>([]);
@@ -30,9 +33,12 @@ export default function VaultPage() {
   const [selectedSubdomain, setSelectedSubdomain] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
-  const [feedViewMode, setFeedViewMode] = useState<'grid' | 'table'>('grid');
+  const [feedViewMode, setFeedViewMode] = useState<'grid' | 'table'>('table'); // Table view as default
+  const [sortBy, setSortBy] = useState<'default' | 'title' | 'domain'>('default');
 
-  // Debounce search query to guarantee 60fps performance on fuzzy Levenshtein calculations
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Debounce search query for 60fps performance
   useEffect(() => {
     if (!searchQuery.trim()) {
       setDebouncedSearchQuery('');
@@ -44,6 +50,23 @@ export default function VaultPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Global Keyboard Shortcut: '/' or 'Ctrl+K' / 'Cmd+K' to focus search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === '/' && document.activeElement !== searchInputRef.current) {
+        if (!['INPUT', 'TEXTAREA'].includes((document.activeElement?.tagName || ''))) {
+          e.preventDefault();
+          searchInputRef.current?.focus();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const [selectedReelForModal, setSelectedReelForModal] = useState<ReelItem | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isHydrating, setIsHydrating] = useState<boolean>(true);
@@ -51,22 +74,30 @@ export default function VaultPage() {
   const [isSyncOpen, setIsSyncOpen] = useState<boolean>(false);
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
 
-  const [uniqueVisitors, setUniqueVisitors] = useState<number>(1420);
-  const [isMongoConnected, setIsMongoConnected] = useState<boolean>(false);
+  const [uniqueVisitors, setUniqueVisitors] = useState<number | null>(null);
   const [isExtensionConnected, setIsExtensionConnected] = useState<boolean>(false);
 
-  const PAGE_SIZE_GRID = 6;
-  const PAGE_SIZE_TABLE = 10;
+  const PAGE_SIZE_GRID = 8;
+  const PAGE_SIZE_TABLE = 12;
   const pageSize = feedViewMode === 'table' ? PAGE_SIZE_TABLE : PAGE_SIZE_GRID;
 
   // Initialize data and track analytics
   useEffect(() => {
-    // 1. Load cached reels from localStorage or sample
+    // 1. Read cached visitor count to prevent jump on refresh
+    try {
+      const cachedVisitors = localStorage.getItem('cached_unique_visitors');
+      if (cachedVisitors) {
+        const parsed = parseInt(cachedVisitors, 10);
+        if (!isNaN(parsed)) setUniqueVisitors(parsed);
+      }
+    } catch {}
+
+    // 2. Load cached reels from localStorage or sample
     const loaded = getStoredReels();
     setReels(loaded);
     setIsHydrating(false);
 
-    // 2. Subscribe to Chrome Extension direct bridge
+    // 3. Subscribe to Chrome Extension direct bridge
     const unsubscribe = subscribeToExtensionBridge(
       (extensionReels) => {
         setIsExtensionConnected(true);
@@ -78,13 +109,15 @@ export default function VaultPage() {
       }
     );
 
-    // 3. Log unique visitor to MongoDB Atlas
+    // 4. Log unique visitor to MongoDB Atlas (non-blocking)
     fetch('/api/analytics/view', { method: 'POST' })
       .then((res) => res.json())
       .then((data) => {
         if (data && data.uniqueVisitors) {
           setUniqueVisitors(data.uniqueVisitors);
-          setIsMongoConnected(Boolean(data.connected));
+          try {
+            localStorage.setItem('cached_unique_visitors', String(data.uniqueVisitors));
+          } catch {}
         }
       })
       .catch((err) => console.log('Analytics logging fallback:', err));
@@ -95,20 +128,18 @@ export default function VaultPage() {
   // Reset pagination on filter or search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedDomain, selectedSubdomain, debouncedSearchQuery, feedViewMode]);
+  }, [selectedDomain, selectedSubdomain, debouncedSearchQuery, feedViewMode, sortBy]);
 
-  // Compute Categories, Subcategories, and Counts
+  // Compute Categories, Subcategories, and Counts for Hierarchical Tree
   const {
     domains,
     domainCounts,
-    subdomainsForDomain,
-    subdomainCounts,
+    subdomainMap,
     totalEntitiesCount,
     totalSubtopicsCount,
   } = useMemo(() => {
     const dCounts: { [d: string]: number } = {};
-    const subMap: { [d: string]: Set<string> } = {};
-    const subCounts: { [s: string]: number } = {};
+    const subMap: { [d: string]: { [s: string]: number } } = {};
     const entitySet = new Set<string>();
     const allSubtopicsSet = new Set<string>();
 
@@ -118,13 +149,9 @@ export default function VaultPage() {
 
       dCounts[d] = (dCounts[d] || 0) + 1;
 
-      if (!subMap[d]) subMap[d] = new Set();
-      subMap[d].add(s);
+      if (!subMap[d]) subMap[d] = {};
+      subMap[d][s] = (subMap[d][s] || 0) + 1;
       allSubtopicsSet.add(`${d}-${s}`);
-
-      if (selectedDomain === 'All' || r.domain === selectedDomain) {
-        subCounts[s] = (subCounts[s] || 0) + 1;
-      }
 
       if (r.entities) {
         r.entities
@@ -136,20 +163,15 @@ export default function VaultPage() {
     });
 
     const domainList = Object.keys(dCounts).sort();
-    const currentSubSet =
-      selectedDomain === 'All'
-        ? Array.from(new Set(reels.map((r) => r.subdomain || 'General'))).sort()
-        : Array.from(subMap[selectedDomain] || []).sort();
 
     return {
       domains: domainList,
       domainCounts: dCounts,
-      subdomainsForDomain: currentSubSet,
-      subdomainCounts: subCounts,
+      subdomainMap: subMap,
       totalEntitiesCount: entitySet.size,
       totalSubtopicsCount: allSubtopicsSet.size,
     };
-  }, [reels, selectedDomain]);
+  }, [reels]);
 
   // Levenshtein edit distance for typo-tolerant fuzzy matching
   const levenshtein = (a: string, b: string): number => {
@@ -179,10 +201,8 @@ export default function VaultPage() {
     const lowerField = fieldStr.toLowerCase();
     const lowerToken = token.toLowerCase();
 
-    // 1. Direct substring match
     if (lowerField.includes(lowerToken)) return true;
 
-    // 2. Token / word-level typo-tolerant check
     const words = lowerField.split(/[\s,./\-_|()#]+/);
     const maxDistance = lowerToken.length <= 3 ? 0 : lowerToken.length <= 6 ? 1 : 2;
 
@@ -197,7 +217,7 @@ export default function VaultPage() {
     return false;
   };
 
-  // Relevance scoring to guarantee highest relevance (and closest typo matches) rank first
+  // Relevance scoring
   const calculateRelevanceScore = (r: ReelItem, query: string, tokens: string[]): number => {
     let score = 0;
     const lowerQuery = query.toLowerCase().trim();
@@ -209,12 +229,10 @@ export default function VaultPage() {
     const summary = (r.summary || '').toLowerCase();
     const utility = (r.personalUtility || '').toLowerCase();
 
-    // 1. Exact full phrase matches
     if (subject.includes(lowerQuery)) score += 100;
     if (domain.includes(lowerQuery) || subdomain.includes(lowerQuery)) score += 60;
     if (entities.includes(lowerQuery) || tags.includes(lowerQuery)) score += 50;
 
-    // 2. Token-by-token scoring (exact match vs. close typo matches)
     for (const t of tokens) {
       if (subject.includes(t)) {
         score += 40;
@@ -223,8 +241,8 @@ export default function VaultPage() {
         for (const w of subWords) {
           if (w.length >= 3) {
             const dist = levenshtein(w, t);
-            if (dist === 1) score += 25; // 1-letter typo in title
-            else if (dist === 2 && t.length >= 6) score += 15; // 2-letter typo in title
+            if (dist === 1) score += 25;
+            else if (dist === 2 && t.length >= 6) score += 15;
           }
         }
       }
@@ -254,37 +272,45 @@ export default function VaultPage() {
   const filteredReels = useMemo(() => {
     const rawTokens = debouncedSearchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
 
-    return reels
-      .filter((r) => {
-        const domainMatch = selectedDomain === 'All' || r.domain === selectedDomain;
-        const subMatch = selectedSubdomain === 'All' || r.subdomain === selectedSubdomain;
+    let result = reels.filter((r) => {
+      const domainMatch = selectedDomain === 'All' || r.domain === selectedDomain;
+      const subMatch = selectedSubdomain === 'All' || r.subdomain === selectedSubdomain;
 
-        if (!domainMatch || !subMatch) return false;
-        if (rawTokens.length === 0) return true;
+      if (!domainMatch || !subMatch) return false;
+      if (rawTokens.length === 0) return true;
 
-        const searchableFields = [
-          r.subject || '',
-          r.domain || '',
-          r.subdomain || '',
-          r.personalUtility || '',
-          r.entities || '',
-          r.tags || '',
-          r.summary || '',
-          r.caption || '',
-        ];
+      const searchableFields = [
+        r.subject || '',
+        r.domain || '',
+        r.subdomain || '',
+        r.personalUtility || '',
+        r.entities || '',
+        r.tags || '',
+        r.summary || '',
+        r.caption || '',
+      ];
 
-        // Every token typed by user must match at least one field (fuzzy or substring)
-        return rawTokens.every((token) =>
-          searchableFields.some((field) => matchesTokenFuzzy(field, token))
-        );
-      })
-      .sort((a, b) => {
-        if (rawTokens.length === 0) return 0;
+      return rawTokens.every((token) =>
+        searchableFields.some((field) => matchesTokenFuzzy(field, token))
+      );
+    });
+
+    if (rawTokens.length > 0) {
+      result = result.sort((a, b) => {
         const scoreA = calculateRelevanceScore(a, debouncedSearchQuery, rawTokens);
         const scoreB = calculateRelevanceScore(b, debouncedSearchQuery, rawTokens);
-        return scoreB - scoreA; // Highest relevance score always ranks first
+        return scoreB - scoreA;
       });
-  }, [reels, selectedDomain, selectedSubdomain, debouncedSearchQuery]);
+    } else {
+      if (sortBy === 'title') {
+        result = result.sort((a, b) => (a.subject || '').localeCompare(b.subject || ''));
+      } else if (sortBy === 'domain') {
+        result = result.sort((a, b) => (a.domain || '').localeCompare(b.domain || ''));
+      }
+    }
+
+    return result;
+  }, [reels, selectedDomain, selectedSubdomain, debouncedSearchQuery, sortBy]);
 
   // Paginated Slices
   const totalPages = Math.ceil(filteredReels.length / pageSize) || 1;
@@ -332,6 +358,8 @@ export default function VaultPage() {
     setSearchQuery(entity);
   };
 
+  const hasActiveFilters = selectedDomain !== 'All' || selectedSubdomain !== 'All' || searchQuery.trim() !== '';
+
   return (
     <div className="min-h-screen bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-600 selection:text-white">
       {/* Top Navbar */}
@@ -340,116 +368,156 @@ export default function VaultPage() {
         onOpenExport={() => setIsExportOpen(true)}
         uniqueVisitors={uniqueVisitors}
         isExtensionConnected={isExtensionConnected}
+        totalNotesCount={reels.length}
       />
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-7">
-        {/* Metric Cards Banner */}
-        <StatsCounter
-          totalReels={reels.length}
-          totalDomains={domains.length}
-          totalSubtopics={totalSubtopicsCount}
-          totalEntities={totalEntitiesCount}
-        />
-
-        {/* Dismissible Partner Banner */}
-        <TopBannerAdSpot />
-
-        {/* Knowledge Feed */}
-        <div className="flex flex-col lg:flex-row items-start gap-7 min-h-[520px]">
-          {/* Category Sidebar */}
+      {/* Main Workspace Layout */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex flex-col lg:flex-row items-start gap-6 min-h-[600px]">
+          {/* Left Hierarchical Sidebar */}
           <DomainSidebar
             domains={domains}
             selectedDomain={selectedDomain}
-            onSelectDomain={(d) => {
-              setSelectedDomain(d);
-              setSelectedSubdomain('All');
-            }}
+            selectedSubdomain={selectedSubdomain}
+            onSelectDomain={setSelectedDomain}
+            onSelectSubdomain={setSelectedSubdomain}
             domainCounts={domainCounts}
+            subdomainMap={subdomainMap}
             totalCount={reels.length}
           />
 
-          {/* Feed Section */}
-          <section className="flex-1 w-full min-w-0 flex flex-col justify-between min-h-[500px]">
+          {/* Main Knowledge Canvas */}
+          <section className="flex-1 w-full min-w-0 flex flex-col justify-between min-h-[550px]">
             <div>
-              {/* Toolbar: Search + Filter Count + Grid/Table Toggle */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
-                {/* Search Input */}
-                <div className="relative flex-1">
-                  <Search
-                    className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2"
-                    strokeWidth={1.5}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Search notes, frameworks, concepts, or tags..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-16 py-2.5 rounded-lg bg-[#12131a] border border-white/[0.06] focus:border-indigo-500 text-xs text-zinc-100 placeholder-zinc-500 outline-none transition-colors"
-                  />
-                  {searchQuery && (
+              {/* Unified Command & Search Bar */}
+              <div className="rounded-2xl bg-[#111218] border border-white/[0.08] p-3 sm:p-4 mb-5 shadow-xl space-y-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
+                  {/* Search Input with Shortcut Badge */}
+                  <div className="relative flex-1">
+                    <Search
+                      className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                      strokeWidth={1.5}
+                    />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder="Search knowledge notes, frameworks, concepts... (Press /)"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-16 sm:pr-20 py-2 sm:py-2.5 rounded-xl bg-[#0c0d12] border border-white/[0.06] focus:border-indigo-500 text-xs text-zinc-100 placeholder-zinc-500 outline-none transition-all shadow-inner"
+                    />
+                    {searchQuery ? (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-zinc-200"
+                      >
+                        Clear
+                      </button>
+                    ) : (
+                      <kbd className="hidden sm:inline-block absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.04] text-zinc-500 border border-white/[0.06]">
+                        Ctrl+K
+                      </kbd>
+                    )}
+                  </div>
+
+                  {/* Right Toolbar Controls */}
+                  <div className="flex items-center justify-between sm:justify-start gap-2 flex-shrink-0">
+                    {/* Sort Dropdown */}
+                    <div className="relative flex-1 sm:flex-initial flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0c0d12] border border-white/[0.06] text-xs text-zinc-400 focus-within:border-indigo-500/50 transition-colors">
+                      <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 pointer-events-none shrink-0" />
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as any)}
+                        className="w-full sm:w-auto bg-transparent text-zinc-300 outline-none cursor-pointer text-xs pr-1"
+                      >
+                        <option value="default" className="bg-[#111218] text-zinc-200">Relevance / Recent</option>
+                        <option value="title" className="bg-[#111218] text-zinc-200">Sort by Title</option>
+                        <option value="domain" className="bg-[#111218] text-zinc-200">Sort by Category</option>
+                      </select>
+                    </div>
+
+                    {/* Grid vs Table View Mode Toggle */}
+                    <div className="flex items-center p-1 rounded-xl bg-[#0c0d12] border border-white/[0.06] shrink-0">
+                      <button
+                        onClick={() => setFeedViewMode('table')}
+                        title="Table / List View"
+                        aria-label="Table / List View"
+                        className={`p-1.5 rounded-lg text-xs transition-all ${
+                          feedViewMode === 'table'
+                            ? 'bg-indigo-600 text-white shadow-sm font-semibold'
+                            : 'text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        <Table className="w-4 h-4" strokeWidth={1.5} />
+                      </button>
+                      <button
+                        onClick={() => setFeedViewMode('grid')}
+                        title="Grid View"
+                        aria-label="Grid View"
+                        className={`p-1.5 rounded-lg text-xs transition-all ${
+                          feedViewMode === 'grid'
+                            ? 'bg-indigo-600 text-white shadow-sm font-semibold'
+                            : 'text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        <LayoutGrid className="w-4 h-4" strokeWidth={1.5} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Active Filter Indicators Bar */}
+                <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/[0.04] text-xs">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[11px] text-zinc-500">Showing:</span>
+                    <span className="font-mono text-xs font-semibold text-zinc-200">
+                      {filteredReels.length} {filteredReels.length === 1 ? 'note' : 'notes'}
+                    </span>
+
+                    {selectedDomain !== 'All' && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-[11px]">
+                        <span>{selectedDomain}</span>
+                        {selectedSubdomain !== 'All' && <span>&gt; {selectedSubdomain}</span>}
+                        <button
+                          onClick={() => {
+                            setSelectedDomain('All');
+                            setSelectedSubdomain('All');
+                          }}
+                          className="hover:text-white ml-0.5"
+                        >
+                          &times;
+                        </button>
+                      </span>
+                    )}
+
+                    {searchQuery && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-[11px]">
+                        <span>&quot;{searchQuery}&quot;</span>
+                        <button onClick={() => setSearchQuery('')} className="hover:text-white ml-0.5">
+                          &times;
+                        </button>
+                      </span>
+                    )}
+                  </div>
+
+                  {hasActiveFilters && (
                     <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 hover:text-zinc-200"
+                      onClick={() => {
+                        setSelectedDomain('All');
+                        setSelectedSubdomain('All');
+                        setSearchQuery('');
+                      }}
+                      className="text-[11px] text-indigo-400 hover:text-indigo-300 hover:underline shrink-0"
                     >
-                      Clear
+                      Reset all filters
                     </button>
                   )}
                 </div>
-
-                {/* Right controls: Filter Counter + View Mode Toggle */}
-                <div className="flex items-center gap-2 flex-shrink-0 flex-wrap sm:flex-nowrap">
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#12131a] border border-white/[0.06] text-xs text-zinc-400">
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400" strokeWidth={1.5} />
-                    <span>
-                      <strong className="text-zinc-200 font-mono">{filteredReels.length}</strong> notes
-                    </span>
-                  </div>
-
-                  {/* Grid vs Table View Mode Toggle */}
-                  <div className="flex items-center p-1 rounded-lg bg-[#14151e] border border-white/[0.06]">
-                    <button
-                      onClick={() => setFeedViewMode('grid')}
-                      title="Grid View"
-                      aria-label="Grid View"
-                      className={`p-1.5 rounded-md text-xs transition-colors ${
-                        feedViewMode === 'grid'
-                          ? 'bg-indigo-600 text-white shadow-sm font-semibold'
-                          : 'text-zinc-400 hover:text-zinc-200'
-                      }`}
-                    >
-                      <LayoutGrid className="w-4 h-4" strokeWidth={1.5} />
-                    </button>
-                    <button
-                      onClick={() => setFeedViewMode('table')}
-                      title="Table View"
-                      aria-label="Table View"
-                      className={`p-1.5 rounded-md text-xs transition-colors ${
-                        feedViewMode === 'table'
-                          ? 'bg-indigo-600 text-white shadow-sm font-semibold'
-                          : 'text-zinc-400 hover:text-zinc-200'
-                      }`}
-                    >
-                      <Table className="w-4 h-4" strokeWidth={1.5} />
-                    </button>
-                  </div>
-                </div>
               </div>
 
-              {/* Subcategory Pills */}
-              <SubdomainPills
-                subdomains={subdomainsForDomain}
-                selectedSubdomain={selectedSubdomain}
-                onSelectSubdomain={setSelectedSubdomain}
-                subdomainCounts={subdomainCounts}
-                totalInDomain={
-                  selectedDomain === 'All' ? reels.length : domainCounts[selectedDomain] || 0
-                }
-              />
-
-              {/* Content Renderers */}
+              {/* Dynamic Content Views */}
               {isHydrating ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 auto-rows-fr">
                   {Array.from({ length: 4 }).map((_, i) => (
                     <SkeletonCard key={i} />
                   ))}
@@ -457,46 +525,37 @@ export default function VaultPage() {
               ) : feedViewMode === 'table' ? (
                 <ReelTableView
                   reels={paginatedReels}
+                  onSelect={(reel) => setSelectedReelForModal(reel)}
                   onDelete={handleDeleteReel}
                 />
               ) : (
-                /* Grid View with auto-rows-fr for uniform card sizing */
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 auto-rows-fr">
-                  {paginatedReels.map((item, idx) => (
-                    <React.Fragment key={item.url}>
-                      <ReelCard
-                        item={item}
-                        onSelect={(reel) => setSelectedReelForModal(reel)}
-                        onEntityClick={handleEntityClick}
-                        onDelete={handleDeleteReel}
-                      />
-                      {/* Native Sponsored Slot - Hidden during search */}
-                      {!searchQuery.trim() && (idx === 3 || (paginatedReels.length < 4 && idx === paginatedReels.length - 1)) && (
-                        <FeedAdSpot
-                          key="feed-sponsor-slot"
-                          sponsorName="DevFlow Cloud"
-                          category="Featured Partner"
-                          title="Automate Full-Stack Deployments & Edge Caching"
-                          description="Build, preview, and deploy high-performance applications with global edge distribution, zero-config CDN, and instant rollbacks."
-                          link="https://github.com"
-                        />
-                      )}
-                    </React.Fragment>
+                /* Grid View */
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 auto-rows-fr">
+                  {paginatedReels.map((item) => (
+                    <ReelCard
+                      key={item.url}
+                      item={item}
+                      onSelect={(reel) => setSelectedReelForModal(reel)}
+                      onEntityClick={handleEntityClick}
+                      onDelete={handleDeleteReel}
+                    />
                   ))}
                 </div>
               )}
 
               {/* Actionable Empty State */}
               {!isHydrating && filteredReels.length === 0 && (
-                <div className="text-center py-16 px-6 bg-[#12131a] rounded-xl border border-white/[0.06] mt-4">
-                  <div className="w-10 h-10 mx-auto mb-3 rounded-lg bg-white/[0.04] text-zinc-400 flex items-center justify-center border border-white/[0.06]">
-                    <Folder className="w-5 h-5" strokeWidth={1.5} />
+                <div className="text-center py-20 px-6 bg-[#111218] rounded-2xl border border-white/[0.08] mt-4 shadow-xl">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-[#181924] text-zinc-400 flex items-center justify-center border border-white/[0.08]">
+                    <Folder className="w-6 h-6 text-indigo-400" strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-sm font-semibold text-zinc-100 mb-1">
-                    No matching knowledge notes
+                  <h3 className="text-sm font-bold text-zinc-100 mb-1">
+                    No matching knowledge notes found
                   </h3>
                   <p className="text-xs text-zinc-400 max-w-sm mx-auto mb-5">
-                    Try adjusting your search query or topic filter.
+                    {searchQuery
+                      ? `No notes match "${searchQuery}". Try a different search term or reset filters.`
+                      : 'No notes available in this category.'}
                   </p>
                   <button
                     onClick={() => {
@@ -504,15 +563,15 @@ export default function VaultPage() {
                       setSelectedDomain('All');
                       setSelectedSubdomain('All');
                     }}
-                    className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white transition-colors active:scale-[0.98]"
+                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white transition-all shadow-md shadow-indigo-600/20 active:scale-[0.98]"
                   >
-                    Reset Filters
+                    Reset All Filters
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Pagination */}
+            {/* Pagination Controls */}
             {!isHydrating && filteredReels.length > 0 && (
               <div className="mt-8">
                 <Pagination
@@ -528,7 +587,7 @@ export default function VaultPage() {
         </div>
       </main>
 
-      {/* Reader Modal */}
+      {/* Reader Modal (100% Preserved Markdown Rendering) */}
       <ReelDetailModal
         reel={selectedReelForModal}
         onClose={() => setSelectedReelForModal(null)}
@@ -536,7 +595,7 @@ export default function VaultPage() {
         onDelete={handleDeleteReel}
       />
 
-      {/* Sync & Export Modals */}
+      {/* Sync & Import Modal */}
       <SyncModal
         isOpen={isSyncOpen}
         onClose={() => setIsSyncOpen(false)}
@@ -547,6 +606,7 @@ export default function VaultPage() {
         existingReels={reels}
       />
 
+      {/* Playbook Export Modal */}
       <PlaybookExportModal
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
@@ -556,13 +616,34 @@ export default function VaultPage() {
         domains={domains}
       />
 
-      {/* Clean Footer */}
-      <footer className="border-t border-white/[0.06] py-6 bg-[#0b0c10] text-center text-xs text-zinc-500 mt-12">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>Reel Analyzer Studio &bull; Video Knowledge Vault</span>
-          <span className="text-[11px] text-zinc-600">
-            Personal Knowledge Management System
-          </span>
+      {/* Minimal Footer with Option 4 Visitors Counter + Logo */}
+      <footer className="border-t border-white/[0.06] py-6 bg-[#0b0c10] text-xs text-zinc-500 mt-12">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-zinc-400 font-medium">Reel Analyzer Studio</span>
+            <span className="text-zinc-600">&bull;</span>
+            <span className="text-[11px] text-zinc-500 font-mono">Personal Knowledge Vault</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-[11px] font-mono text-zinc-300 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] shadow-sm">
+            <div className="w-4 h-4 rounded-md overflow-hidden shrink-0 border border-white/[0.1] bg-[#12131a] flex items-center justify-center">
+              <Image
+                src="/logos/icon-48.png"
+                alt="Reel Analyzer"
+                width={16}
+                height={16}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            {uniqueVisitors !== null ? (
+              <span>{uniqueVisitors.toLocaleString()} Website Visitors</span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-6 h-3 bg-white/10 rounded animate-pulse inline-block" />
+                <span>Website Visitors</span>
+              </span>
+            )}
+          </div>
         </div>
       </footer>
     </div>

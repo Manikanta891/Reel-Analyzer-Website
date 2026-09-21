@@ -4,18 +4,20 @@ import { getDatabase } from '@/lib/mongodb';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+const BASELINE_COUNT = 15;
+const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+
+export async function GET(req: NextRequest) {
   try {
     const db = await getDatabase();
     if (!db) {
-      // Fallback simulated metrics if MongoDB is not connected
+      // Return baseline metrics if MongoDB is not connected
       return NextResponse.json({
         connected: false,
-        uniqueVisitors: 1428,
-        totalPageViews: 5930,
-        todayUnique: 84,
-        source: 'local_fallback',
-        message: 'MongoDB Atlas not connected. Add MONGODB_URI in .env.local to enable live database persistence.',
+        uniqueVisitors: BASELINE_COUNT,
+        totalPageViews: BASELINE_COUNT * 3,
+        todayUnique: 1,
+        source: 'local_baseline',
       });
     }
 
@@ -26,23 +28,24 @@ export async function GET() {
       metricsCol.findOne({ _id: 'global' as unknown as import('mongodb').ObjectId }),
       visitorsCol.countDocuments(),
       visitorsCol.countDocuments({
-        dailyKey: new Date().toISOString().split('T')[0],
+        lastSeen: { $gte: new Date(Date.now() - TWENTY_FOUR_HOURS_MS) },
       }),
     ]);
 
-    const totalViews = metricsDoc?.totalPageViews || uniqueCount * 4 || 1;
+    const totalDisplayCount = BASELINE_COUNT + uniqueCount;
+    const totalViews = (metricsDoc?.totalPageViews || 0) + BASELINE_COUNT * 3;
 
     return NextResponse.json({
       connected: true,
-      uniqueVisitors: Math.max(uniqueCount, 1),
+      uniqueVisitors: totalDisplayCount,
       totalPageViews: totalViews,
-      todayUnique: todayCount,
+      todayUnique: Math.max(todayCount, 1),
       source: 'mongodb_atlas',
     });
   } catch (error) {
     console.error('Error fetching analytics:', error);
     return NextResponse.json(
-      { error: 'Failed to retrieve analytics', uniqueVisitors: 1250, totalPageViews: 4800 },
+      { error: 'Failed to retrieve analytics', uniqueVisitors: BASELINE_COUNT },
       { status: 500 }
     );
   }
@@ -50,6 +53,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const now = new Date();
+    const nowMs = now.getTime();
+
     const ip =
       req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
       req.headers.get('x-real-ip') ||
@@ -62,59 +68,94 @@ export async function POST(req: NextRequest) {
       .update(`${ip}-${userAgent}`)
       .digest('hex');
 
-    const todayKey = new Date().toISOString().split('T')[0];
+    // Check last_visit_24h cookie
+    const lastVisitCookie = req.cookies.get('last_visit_24h')?.value;
+    let is24hExpired = true;
 
-    const db = await getDatabase();
-    if (!db) {
-      return NextResponse.json({
-        recorded: true,
-        connected: false,
-        visitorHash: visitorHash.substring(0, 12),
-        message: 'Logged locally (Configure MONGODB_URI for cloud persistence)',
-      });
+    if (lastVisitCookie) {
+      const lastVisitTime = new Date(lastVisitCookie).getTime();
+      if (!isNaN(lastVisitTime) && nowMs - lastVisitTime < TWENTY_FOUR_HOURS_MS) {
+        is24hExpired = false;
+      }
     }
 
-    const visitorsCol = db.collection('unique_visitors');
-    const metricsCol = db.collection('site_metrics');
+    const db = await getDatabase();
+    let totalUnique = 0;
+    let totalPageViews = 0;
 
-    // Upsert unique visitor record
-    const result = await visitorsCol.updateOne(
-      { visitorHash },
-      {
-        $set: { lastSeen: new Date(), userAgent, dailyKey: todayKey },
-        $setOnInsert: { firstSeen: new Date(), visitorHash },
-        $inc: { visitCount: 1 },
-      },
-      { upsert: true }
-    );
+    if (db) {
+      const visitorsCol = db.collection('unique_visitors');
+      const metricsCol = db.collection('site_metrics');
 
-    const isNewVisitor = result.upsertedCount > 0;
+      const existingRecord = await visitorsCol.findOne({ visitorHash });
 
-    // Update global site metrics
-    await metricsCol.updateOne(
-      { _id: 'global' as unknown as import('mongodb').ObjectId },
-      {
-        $inc: {
-          totalPageViews: 1,
-          ...(isNewVisitor ? { totalUniqueVisitors: 1 } : {}),
-        },
-        $set: { lastUpdated: new Date() },
-      },
-      { upsert: true }
-    );
+      if (!existingRecord) {
+        // First-time visitor
+        await visitorsCol.insertOne({
+          visitorHash,
+          userAgent,
+          ip: ip.substring(0, 8) + '...', // privacy-masked
+          firstSeen: now,
+          lastSeen: now,
+          visitCount: 1,
+        });
 
-    const totalUnique = await visitorsCol.countDocuments();
-    const metricsDoc = await metricsCol.findOne({ _id: 'global' as unknown as import('mongodb').ObjectId });
+        await metricsCol.updateOne(
+          { _id: 'global' as unknown as import('mongodb').ObjectId },
+          { $inc: { totalPageViews: 1, totalUniqueVisitors: 1 }, $set: { lastUpdated: now } },
+          { upsert: true }
+        );
+      } else {
+        const lastSeenTime = existingRecord.lastSeen ? new Date(existingRecord.lastSeen).getTime() : 0;
+        const recordExpired = nowMs - lastSeenTime >= TWENTY_FOUR_HOURS_MS;
 
-    return NextResponse.json({
+        await visitorsCol.updateOne(
+          { visitorHash },
+          {
+            $set: { lastSeen: now, userAgent },
+            $inc: {
+              visitCount: 1,
+              ...(recordExpired ? { dailyActiveCount: 1 } : {}),
+            },
+          }
+        );
+
+        await metricsCol.updateOne(
+          { _id: 'global' as unknown as import('mongodb').ObjectId },
+          { $inc: { totalPageViews: 1 }, $set: { lastUpdated: now } },
+          { upsert: true }
+        );
+      }
+
+      const count = await visitorsCol.countDocuments();
+      const metricsDoc = await metricsCol.findOne({ _id: 'global' as unknown as import('mongodb').ObjectId });
+
+      totalUnique = BASELINE_COUNT + count;
+      totalPageViews = (metricsDoc?.totalPageViews || 0) + BASELINE_COUNT * 3;
+    } else {
+      // Local fallback with baseline
+      totalUnique = BASELINE_COUNT + (is24hExpired ? 1 : 0);
+      totalPageViews = BASELINE_COUNT * 3;
+    }
+
+    const response = NextResponse.json({
       recorded: true,
-      connected: true,
-      isNewVisitor,
       uniqueVisitors: totalUnique,
-      totalPageViews: metricsDoc?.totalPageViews || totalUnique,
+      totalPageViews,
+      isNew24hSession: is24hExpired,
     });
+
+    // Set 24h expiration cookie
+    response.cookies.set('last_visit_24h', now.toISOString(), {
+      maxAge: 86400, // 24 hours in seconds
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
-    console.error('Error logging visitor view in MongoDB Atlas:', error);
-    return NextResponse.json({ error: 'Failed to record visitor' }, { status: 500 });
+    console.error('Error logging visitor view:', error);
+    return NextResponse.json({ error: 'Failed to record visitor', uniqueVisitors: BASELINE_COUNT }, { status: 500 });
   }
 }

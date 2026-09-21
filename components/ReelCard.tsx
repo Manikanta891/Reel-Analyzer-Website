@@ -6,11 +6,7 @@ import {
   Copy,
   Check,
   Lightbulb,
-  ArrowRight,
   Trash2,
-  Clock,
-  BookOpen,
-  Tag,
   Wrench,
 } from 'lucide-react';
 import { ReelItem } from '@/types';
@@ -82,35 +78,27 @@ ${cleanedSummary}
   const visibleTools = showAllTools ? entityList : entityList.slice(0, 3);
   const hiddenCount = entityList.length - 3;
 
-  // Calculate estimated reading time based on summary length
-  const wordCount = (cleanedSummary || '').split(/\s+/).filter(Boolean).length;
-  const readTime = Math.max(1, Math.ceil(wordCount / 120));
-
   return (
     <div
       onClick={() => onSelect(item)}
-      className="group rounded-xl bg-[#12131a] hover:bg-[#161822] border border-white/[0.06] hover:border-white/[0.14] p-5 transition-all duration-150 cursor-pointer flex flex-col justify-between shadow-md select-none"
+      className="group relative rounded-2xl bg-[#111218] hover:bg-[#151722] border border-white/[0.08] hover:border-indigo-500/30 p-5 transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-lg hover:shadow-indigo-500/5 select-none"
     >
       <div>
-        {/* Top Header & Metadata */}
+        {/* Top Header: Topic Tag & Quick Actions */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-[#181924] text-zinc-200 border border-white/[0.08]">
+            <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-lg bg-[#181924] text-zinc-200 border border-white/[0.08] shadow-sm">
               {displayDomain}
             </span>
             {displaySubdomain && (
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[#14151f] text-zinc-400 border border-white/[0.04]">
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-lg bg-[#14151f] text-zinc-400 border border-white/[0.04]">
                 {displaySubdomain}
               </span>
             )}
           </div>
 
+          {/* Quick Action Icons */}
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <span className="text-[10px] text-zinc-500 font-mono flex items-center gap-1 mr-1">
-              <Clock className="w-3 h-3" />
-              {readTime}m read
-            </span>
-
             <button
               onClick={handleCopyMarkdown}
               title="Copy Summary"
@@ -123,6 +111,7 @@ ${cleanedSummary}
                 <Copy className="w-3.5 h-3.5" strokeWidth={1.5} />
               )}
             </button>
+
             <a
               href={item.url}
               target="_blank"
@@ -133,6 +122,7 @@ ${cleanedSummary}
             >
               <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
             </a>
+
             {onDelete && (
               <button
                 onClick={handleDelete}
@@ -147,26 +137,26 @@ ${cleanedSummary}
         </div>
 
         {/* Subject Title */}
-        <h3 className="text-[15px] font-semibold text-zinc-100 tracking-tight leading-snug mb-3 group-hover:text-indigo-400 transition-colors">
+        <h3 className="text-[15px] font-bold text-zinc-100 tracking-tight leading-snug mb-3 group-hover:text-indigo-400 transition-colors line-clamp-2">
           {displaySubject}
         </h3>
 
-        {/* Core Takeaway / Insight Callout Box */}
+        {/* Core Takeaway Callout */}
         {(displayUtility || cleanedSummary) && (
-          <div className="mb-3.5 p-3 rounded-lg bg-[#0e0f14] border-l-2 border-indigo-500/70 border border-white/[0.04]">
-            <div className="flex items-start gap-2 text-xs text-zinc-300 leading-relaxed">
+          <div className="mb-3.5 p-3 rounded-xl bg-[#0d0e13] border-l-2 border-indigo-500/80 border border-white/[0.04]">
+            <div className="flex items-start gap-2.5 text-xs text-zinc-300 leading-relaxed">
               <Lightbulb className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-amber-400" strokeWidth={1.5} />
               <div className="line-clamp-2">
-                <span className="font-medium text-zinc-200">Core Takeaway:</span>{' '}
+                <span className="font-semibold text-zinc-200">Key Insight:</span>{' '}
                 <span className="text-zinc-400">{displayUtility || cleanedSummary}</span>
               </div>
             </div>
           </div>
         )}
 
-        {/* Concept / Tool Chips */}
+        {/* Tool Chips */}
         {entityList.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap mb-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <Wrench className="w-3 h-3 text-zinc-500 flex-shrink-0" strokeWidth={1.5} />
             {visibleTools.map((ent, idx) => (
               <button
@@ -175,7 +165,7 @@ ${cleanedSummary}
                   e.stopPropagation();
                   onEntityClick?.(ent);
                 }}
-                className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-[#181924] hover:bg-[#202230] text-zinc-300 hover:text-zinc-100 border border-white/[0.06] transition-colors"
+                className="text-[11px] font-mono px-2 py-0.5 rounded-lg bg-[#181924] hover:bg-[#202230] text-zinc-300 hover:text-zinc-100 border border-white/[0.06] transition-colors"
               >
                 {ent}
               </button>
@@ -204,18 +194,6 @@ ${cleanedSummary}
             )}
           </div>
         )}
-      </div>
-
-      {/* Bottom Action Footer */}
-      <div className="border-t border-white/[0.05] pt-3 mt-3 flex items-center justify-between text-xs text-zinc-400 group-hover:text-zinc-200 transition-colors">
-        <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-400">
-          <BookOpen className="w-3 h-3 text-indigo-400" />
-          <span>Knowledge Note</span>
-        </div>
-        <div className="flex items-center gap-1 text-indigo-400 font-medium text-xs">
-          <span>Read Note</span>
-          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" strokeWidth={1.5} />
-        </div>
       </div>
     </div>
   );

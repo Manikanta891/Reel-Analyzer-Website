@@ -14,8 +14,6 @@ import {
   FolderGit2,
   BookOpen,
   Download,
-  Clock,
-  Shield,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -166,90 +164,107 @@ ${cleanedSummary || 'No detailed summary provided.'}
         {/* Modal Container */}
         <div
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-3xl max-h-[92vh] bg-[#111218] border border-white/[0.08] rounded-2xl shadow-2xl flex flex-col overflow-hidden z-10"
+          className="relative w-full max-w-3xl h-[92vh] sm:h-auto sm:max-h-[90vh] bg-[#111218] border border-white/[0.08] rounded-2xl shadow-2xl flex flex-col overflow-hidden z-10"
         >
           {/* Top Control Bar */}
-          <div className="p-3.5 sm:p-4 border-b border-white/[0.06] bg-[#0d0e13] flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-white/[0.04] text-indigo-400 border border-white/[0.06]">
-                {displayDomain}
-              </span>
-              <span className="text-xs text-zinc-400 font-medium truncate max-w-[200px] sm:max-w-[320px]">
-                {displaySubject}
-              </span>
-            </div>
+          <div className="p-3 sm:p-4 border-b border-white/[0.06] bg-[#0d0e13] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 shrink-0">
+            {/* Top row / Left section */}
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-[10px] sm:text-[11px] font-mono px-2 py-0.5 rounded bg-white/[0.04] text-indigo-400 border border-white/[0.06] shrink-0 font-semibold">
+                  {displayDomain}
+                </span>
+                <span className="text-xs text-zinc-300 font-semibold truncate max-w-[150px] sm:max-w-[260px]">
+                  {displaySubject}
+                </span>
+              </div>
 
-            {/* Tab Selector */}
-            <div className="flex items-center gap-1 bg-[#171822] p-1 rounded-lg border border-white/[0.06]">
-              <button
-                onClick={() => setActiveTab('note')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-all ${
-                  activeTab === 'note'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>Note Reader</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('yaml')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-all ${
-                  activeTab === 'yaml'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <FolderGit2 className="w-3.5 h-3.5" />
-                <span>Properties &amp; Export</span>
-              </button>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              <button
-                onClick={handleCopyMarkdown}
-                title="Copy Markdown"
-                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06] transition-colors"
-              >
-                {copied ? (
-                  <Check className="w-3.5 h-3.5 text-emerald-400" strokeWidth={1.5} />
-                ) : (
-                  <Copy className="w-3.5 h-3.5" strokeWidth={1.5} />
-                )}
-              </button>
-              <button
-                onClick={handleDownloadMarkdown}
-                title="Download .md File"
-                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06] transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" strokeWidth={1.5} />
-              </button>
-              <a
-                href={reel.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="View on Instagram"
-                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06] transition-colors"
-              >
-                <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
-              </a>
-              {onDelete && (
+              {/* Close Button on mobile top right */}
+              <div className="flex sm:hidden items-center gap-1">
                 <button
-                  onClick={handleDelete}
-                  title="Delete from Vault"
-                  className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-red-500/20 text-zinc-400 hover:text-red-400 border border-white/[0.06] hover:border-red-500/30 transition-colors"
+                  onClick={onClose}
+                  title="Close (Esc)"
+                  className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06] transition-colors"
                 >
-                  <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  <X className="w-3.5 h-3.5" strokeWidth={1.5} />
                 </button>
-              )}
-              <button
-                onClick={onClose}
-                title="Close (Esc)"
-                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06] transition-colors"
-              >
-                <X className="w-3.5 h-3.5" strokeWidth={1.5} />
-              </button>
+              </div>
+            </div>
+
+            {/* Bottom Row on mobile / Right Section on Desktop */}
+            <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+              {/* Tab Selector */}
+              <div className="flex items-center gap-1 bg-[#171822] p-1 rounded-lg border border-white/[0.06]">
+                <button
+                  onClick={() => setActiveTab('note')}
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded text-xs font-medium transition-all ${
+                    activeTab === 'note'
+                      ? 'bg-indigo-600 text-white shadow-sm font-semibold'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Note</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('yaml')}
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded text-xs font-medium transition-all ${
+                    activeTab === 'yaml'
+                      ? 'bg-indigo-600 text-white shadow-sm font-semibold'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <FolderGit2 className="w-3.5 h-3.5" />
+                  <span>Properties</span>
+                </button>
+              </div>
+
+              {/* Actions Toolbar */}
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <button
+                  onClick={handleCopyMarkdown}
+                  title={copied ? 'Copied to clipboard' : 'Copy markdown note'}
+                  className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06] transition-colors"
+                >
+                  {copied ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-400" strokeWidth={1.5} />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  )}
+                </button>
+                <button
+                  onClick={handleDownloadMarkdown}
+                  title="Download .md file"
+                  className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06] transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" strokeWidth={1.5} />
+                </button>
+                <a
+                  href={reel.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="View original Instagram Reel"
+                  className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06] transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
+                </a>
+                {onDelete && (
+                  <button
+                    onClick={handleDelete}
+                    title="Delete from Vault"
+                    className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-red-500/20 text-zinc-400 hover:text-red-400 border border-white/[0.06] hover:border-red-500/30 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  title="Close (Esc)"
+                  className="hidden sm:inline-flex p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06] transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" strokeWidth={1.5} />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -257,7 +272,7 @@ ${cleanedSummary || 'No detailed summary provided.'}
           <div className="p-5 sm:p-7 overflow-y-auto space-y-6">
             {activeTab === 'note' && (
               <div className="space-y-6">
-                {/* 1. NOTION / OBSIDIAN METADATA PROPERTY CARD (Matches Requested Design) */}
+                {/* 1. NOTION / OBSIDIAN METADATA PROPERTY CARD */}
                 <div className="rounded-2xl bg-[#0c0d12] border border-white/[0.08] p-5 sm:p-6 space-y-4 shadow-xl">
                   {/* Subject Row */}
                   <div className="flex items-start gap-4">
@@ -359,7 +374,7 @@ ${cleanedSummary || 'No detailed summary provided.'}
 
                 {/* 2. CORE TAKEAWAY HIGHLIGHT BOX */}
                 {displayUtility && (
-                  <div className="p-4 rounded-xl bg-[#0e0f14] border-l-3 border-indigo-500 border border-white/[0.06] text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                  <div className="p-4 rounded-xl bg-[#0e0f14] border-l-3 border-indigo-500 border border-white/[0.06] text-xs sm:text-sm text-zinc-300 leading-relaxed shadow-inner">
                     <div className="flex items-start gap-2.5">
                       <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-400" strokeWidth={1.5} />
                       <div>
@@ -370,8 +385,8 @@ ${cleanedSummary || 'No detailed summary provided.'}
                   </div>
                 )}
 
-                {/* 3. CLEAN NOTION/OBSIDIAN MARKDOWN BODY */}
-                <div className="p-5 sm:p-6 rounded-xl bg-[#0e0f14] border border-white/[0.06] text-[#e2e8f0] text-xs sm:text-sm leading-relaxed overflow-x-auto select-text font-sans">
+                {/* 3. CLEAN NOTION/OBSIDIAN MARKDOWN BODY (Identical Markdown Rendering Engine) */}
+                <div className="p-5 sm:p-6 rounded-xl bg-[#0e0f14] border border-white/[0.06] text-[#e2e8f0] text-xs sm:text-sm leading-relaxed overflow-x-auto select-text font-sans shadow-inner">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
@@ -534,28 +549,14 @@ ${cleanedSummary || 'No detailed summary provided.'}
             )}
           </div>
 
-          {/* Sticky Footer */}
+          {/* Minimalist Footer (Clean status & Esc hint - No duplicate action buttons) */}
           <div className="p-3.5 px-5 bg-[#0d0e13] border-t border-white/[0.06] flex items-center justify-between text-xs text-zinc-400">
             <span className="font-mono text-[11px] text-zinc-500">
               Press <kbd className="px-1.5 py-0.5 rounded bg-white/[0.04] text-zinc-300 font-mono border border-white/[0.06]">Esc</kbd> to close
             </span>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleCopyMarkdown}
-                className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
-              >
-                {copied ? 'Copied to Clipboard!' : 'Copy Note'}
-              </button>
-              <a
-                href={reel.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
-              >
-                <span>Original Video</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
+            <span className="text-[11px] text-zinc-500 font-mono">
+              {wordCount} words &bull; {readTime} min read
+            </span>
           </div>
         </div>
       </div>
