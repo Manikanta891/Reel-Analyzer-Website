@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import {
   ArrowRight,
   ExternalLink,
@@ -15,8 +16,16 @@ const CHROME_STORE_URL =
   'https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci?utm_source=item-share-cb';
 
 export const LandingNavbar: React.FC = () => {
+  const router = useRouter();
   const [isExtensionConnected, setIsExtensionConnected] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleAddToChrome = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsMobileMenuOpen(false);
+    window.open(CHROME_STORE_URL, '_blank', 'noopener,noreferrer');
+    router.push('/vault');
+  };
 
   useEffect(() => {
     const unsubscribe = subscribeToExtensionBridge(
@@ -130,9 +139,8 @@ export const LandingNavbar: React.FC = () => {
             <div className="pt-2 border-t border-white/[0.04]">
               <a
                 href={CHROME_STORE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 transition-colors"
+                onClick={handleAddToChrome}
+                className="flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 transition-colors cursor-pointer"
               >
                 <span>Add to Chrome &mdash; Free</span>
                 <ExternalLink className="w-3.5 h-3.5" />

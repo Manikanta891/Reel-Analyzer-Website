@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ArrowRight,
   ShieldCheck,
@@ -32,8 +33,15 @@ const HERO_HIGHLIGHTS = [
 ];
 
 export const HeroSection: React.FC = () => {
+  const router = useRouter();
   const [activeHighlightIndex, setActiveHighlightIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+
+  const handleAddToChrome = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.open(CHROME_STORE_URL, '_blank', 'noopener,noreferrer');
+    router.push('/vault');
+  };
 
   // Auto-advance timer (3.5 seconds)
   useEffect(() => {
@@ -77,9 +85,8 @@ export const HeroSection: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 pt-2 max-w-sm sm:max-w-none mx-auto">
             <a
               href={CHROME_STORE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 transition-all duration-150 active:scale-[0.98]"
+              onClick={handleAddToChrome}
+              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 transition-all duration-150 active:scale-[0.98] cursor-pointer"
             >
               <span>Add to Chrome &mdash; Free</span>
               <ArrowRight className="w-4 h-4" strokeWidth={1.5} />

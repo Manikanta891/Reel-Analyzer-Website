@@ -98,8 +98,8 @@ export const LandingFooter: React.FC = () => {
         </div>
 
         <div className="border-t border-white/[0.04] mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-zinc-600">
-          <span>&copy; {new Date().getFullYear()} Reel Analyzer. Local-first personal knowledge management.</span>
-          <span>100% Free &bull; No API Keys Required</span>
+          <span>&copy; {new Date().getFullYear()} Reel Analyzer. Built with ❤️ by <a href="https://manikanta.co.in" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-indigo-400 transition-colors underline underline-offset-2">Manikanta Sandula</a>.</span>
+          <span>100% Free &bull; Local-First &bull; No API Keys Required</span>
         </div>
       </div>
     </footer>

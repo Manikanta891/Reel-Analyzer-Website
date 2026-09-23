@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   MessageSquare,
   Send,
@@ -20,11 +21,18 @@ const CHROME_STORE_URL =
   'https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci?utm_source=item-share-cb';
 
 export const CreatorContactSection: React.FC = () => {
+  const router = useRouter();
   const [topic, setTopic] = useState<'feature' | 'bug' | 'feedback' | 'other'>('feature');
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSent, setIsSent] = useState(false);
+
+  const handleAddToChrome = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.open(CHROME_STORE_URL, '_blank', 'noopener,noreferrer');
+    router.push('/vault');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,9 +93,8 @@ export const CreatorContactSection: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center lg:justify-start pt-2 max-w-sm sm:max-w-none mx-auto">
             <a
               href={CHROME_STORE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/25 transition-all active:scale-[0.98]"
+              onClick={handleAddToChrome}
+              className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/25 transition-all active:scale-[0.98] cursor-pointer"
             >
               <span>Add to Chrome &mdash; Free</span>
               <ArrowRight className="w-3.5 h-3.5" />
