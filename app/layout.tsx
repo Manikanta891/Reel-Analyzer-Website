@@ -28,11 +28,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://reelanalyzer.manikanta.co.in'),
   title: {
-    default: 'Reel Analyzer — Instagram Reels AI Summarizer & Obsidian Notes by Manikanta Sandula',
+    default: 'Reel Analyzer: Instagram Reels AI Summarizer & Obsidian',
     template: '%s | Reel Analyzer',
   },
   description:
-    'Reel Analyzer by Manikanta Sandula is the free, local-first AI Chrome extension and knowledge vault that extracts actionable insights, transcripts, frameworks, and Obsidian Markdown notes from Instagram Reels.',
+    'Extract structured AI summaries, transcripts, frameworks, and Obsidian notes from Instagram Reels. 100% free, local-first tool by Manikanta Sandula.',
   applicationName: 'Reel Analyzer',
   keywords: [
     'Manikanta Sandula',
@@ -55,6 +55,14 @@ export const metadata: Metadata = {
     'ChatGPT Instagram Reels Prompt',
     'Cursor IDE Reels Workflow',
     'Personal Knowledge Management PKM',
+    'Instagram Reel Scraper',
+    'Instagram Video Scraper',
+    'Reel Text Scraper',
+    'Instagram Video Transcriber AI',
+    'Extract Text from Instagram Reels',
+    'Free Instagram Reel Scraper Extension',
+    'Local Reel Scraper',
+    'Scrape Instagram Reels without API',
     'AI Note Taking Chrome Extension',
     'Developer Reels Bookmarks',
     'Social Media Knowledge Base',
@@ -95,26 +103,27 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://reelanalyzer.manikanta.co.in',
-    title: 'Reel Analyzer — Instagram Reels AI Summarizer & Obsidian Notes by Manikanta Sandula',
+    title: 'Reel Analyzer: Instagram Reels AI Summarizer & Obsidian',
     description:
-      'Turn Instagram Reels into structured knowledge notes, Obsidian Markdown vaults, and study flashcards. Built by Manikanta Sandula. 100% Free, Local-First, Zero API Keys required.',
+      'Turn Instagram Reels into structured knowledge notes, Obsidian Markdown vaults, and study flashcards. 100% free, local-first tool by Manikanta Sandula.',
     siteName: 'Reel Analyzer',
     images: [
       {
-        url: '/og-image.png',
+        url: 'https://reelanalyzer.manikanta.co.in/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Reel Analyzer — Turn Instagram Reels into Structured Knowledge & Obsidian Vaults by Manikanta Sandula',
+        alt: 'Reel Analyzer: Instagram Reels AI Summarizer & Obsidian by Manikanta Sandula',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Reel Analyzer — Instagram Reels AI Summarizer by Manikanta Sandula',
+    title: 'Reel Analyzer: Instagram Reels AI Summarizer & Obsidian',
     description:
-      'Turn Instagram Reels into structured knowledge notes, Obsidian Markdown vaults, and AI coding prompts. Built by Manikanta Sandula. 100% Free & Local-First.',
-    images: ['/og-image.png'],
-    creator: '@manikanta891',
+      'Turn Instagram Reels into structured knowledge notes, Obsidian Markdown vaults, and AI coding prompts. Free & local-first by Manikanta Sandula.',
+    images: ['https://reelanalyzer.manikanta.co.in/og-image.png'],
+    creator: '@____Manikanta',
+    site: '@____Manikanta',
   },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,

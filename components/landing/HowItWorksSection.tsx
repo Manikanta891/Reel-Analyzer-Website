@@ -74,7 +74,7 @@ export const HowItWorksSection: React.FC = () => {
                   <div className="relative w-[140px] h-[240px] rounded-[24px] overflow-hidden shadow-xl border-4 border-[#1c1e28] bg-black">
                     <Image
                       src="/phone-card.png"
-                      alt="Instagram Reel Phone Card"
+                      alt="Instagram Reel to AI Knowledge extraction preview"
                       fill
                       className="object-cover"
                       priority
@@ -103,7 +103,7 @@ export const HowItWorksSection: React.FC = () => {
                   <div className="w-16 h-16 rounded-2xl overflow-hidden border border-white/[0.1] bg-[#12131a] flex items-center justify-center shadow-lg">
                     <Image
                       src="/logos/icon-128.png"
-                      alt="Reel Analyzer Logo"
+                      alt="Reel Analyzer — Instagram Reels AI Summarizer by Manikanta Sandula"
                       width={64}
                       height={64}
                       className="w-full h-full object-cover"
@@ -182,7 +182,7 @@ export const HowItWorksSection: React.FC = () => {
                 <div className="relative w-[210px] h-[410px] rounded-[38px] overflow-hidden shadow-2xl transition-transform duration-300 group-hover:scale-[1.02] border-4 border-[#1c1e28] bg-black">
                   <Image
                     src="/phone-card.png"
-                    alt="Instagram Reel Phone Card"
+                    alt="Instagram Reel to AI Knowledge extraction preview"
                     fill
                     className="object-cover"
                     priority
@@ -208,7 +208,7 @@ export const HowItWorksSection: React.FC = () => {
                 <div className="w-16 h-16 rounded-2xl overflow-hidden border border-white/[0.1] bg-[#12131a] flex items-center justify-center shadow-lg relative group">
                   <Image
                     src="/logos/icon-128.png"
-                    alt="Reel Analyzer Logo"
+                    alt="Reel Analyzer — Instagram Reels AI Summarizer by Manikanta Sandula"
                     width={64}
                     height={64}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"

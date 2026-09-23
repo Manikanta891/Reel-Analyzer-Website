@@ -35,7 +35,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-white/[0.08] bg-[#12131a] flex items-center justify-center group-hover:border-indigo-500/40 transition-colors shadow-sm shrink-0">
             <Image
               src="/logos/icon-48.png"
-              alt="Reel Analyzer"
+              alt="Reel Analyzer — Instagram Reels AI Summarizer by Manikanta Sandula"
               width={32}
               height={32}
               className="w-full h-full object-cover"

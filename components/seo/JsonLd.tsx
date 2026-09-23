@@ -47,7 +47,7 @@ export default function JsonLd() {
     sameAs: [
       'https://github.com/Manikanta891',
       'https://www.linkedin.com/in/manikantasandula/',
-      'https://x.com/manikanta891',
+      'https://x.com/____Manikanta',
       'https://manikanta.co.in',
     ],
     knowsAbout: [
@@ -123,13 +123,6 @@ export default function JsonLd() {
     description:
       'Extract Instagram Reels into permanent, structured knowledge notes, Obsidian Markdown vaults, and interactive study flashcards. Built by Manikanta Sandula. 100% Free & Local-First.',
     softwareVersion: '1.2.0',
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '5.0',
-      ratingCount: '24',
-      bestRating: '5',
-      worstRating: '1',
-    },
     author: {
       '@type': 'Person',
       name: 'Manikanta Sandula',
