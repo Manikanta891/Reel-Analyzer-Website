@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 
-interface Step {
-  num: number;
+export interface Step {
+  num?: number;
+  number?: string;
   title: string;
   desc: string;
+  badge?: string;
 }
 
-const STEPS: Step[] = [
+const DEFAULT_STEPS: Step[] = [
   {
     num: 1,
     title: 'Browse Saved Reels',
@@ -26,29 +28,34 @@ const STEPS: Step[] = [
   },
 ];
 
-export const StepAutoCarousel: React.FC = () => {
+interface StepAutoCarouselProps {
+  steps?: Step[];
+}
+
+export const StepAutoCarousel: React.FC<StepAutoCarouselProps> = ({ steps }) => {
+  const activeStepsList = steps || DEFAULT_STEPS;
   const [activeStep, setActiveStep] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     if (isPaused) return;
     const interval = setInterval(() => {
-      setActiveStep((prev) => (prev + 1) % STEPS.length);
+      setActiveStep((prev) => (prev + 1) % activeStepsList.length);
     }, 3200);
     return () => clearInterval(interval);
-  }, [isPaused]);
+  }, [isPaused, activeStepsList.length]);
 
   return (
     <div className="space-y-6">
       {/* Desktop View: 3-column grid */}
       <div className="hidden md:grid md:grid-cols-3 gap-6">
-        {STEPS.map((step) => (
+        {activeStepsList.map((step, idx) => (
           <div
-            key={step.num}
+            key={idx}
             className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-3"
           >
             <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center text-sm">
-              {step.num}
+              {step.number || step.num || `0${idx + 1}`}
             </div>
             <h3 className="font-bold text-base text-zinc-100">{step.title}</h3>
             <p className="text-xs text-zinc-400 leading-relaxed">{step.desc}</p>
@@ -67,23 +74,23 @@ export const StepAutoCarousel: React.FC = () => {
         <div className="p-6 rounded-2xl bg-[#12131a] border border-indigo-500/20 shadow-xl space-y-3 transition-all duration-300 min-h-[160px] flex flex-col justify-center">
           <div className="flex items-center justify-between">
             <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 font-bold flex items-center justify-center text-sm">
-              {STEPS[activeStep].num}
+              {activeStepsList[activeStep]?.number || activeStepsList[activeStep]?.num || `0${activeStep + 1}`}
             </div>
             <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">
-              Step {activeStep + 1} of {STEPS.length}
+              Step {activeStep + 1} of {activeStepsList.length}
             </span>
           </div>
           <h3 className="font-bold text-base text-zinc-100">
-            {STEPS[activeStep].title}
+            {activeStepsList[activeStep]?.title}
           </h3>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            {STEPS[activeStep].desc}
+            {activeStepsList[activeStep]?.desc}
           </p>
         </div>
 
         {/* Carousel Dots */}
         <div className="flex justify-center items-center gap-2 pt-1">
-          {STEPS.map((_, idx) => (
+          {activeStepsList.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setActiveStep(idx)}

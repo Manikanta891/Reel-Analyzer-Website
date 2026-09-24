@@ -39,7 +39,7 @@ export const LandingFooter: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-10 border-b border-white/[0.04]">
           {/* Brand Column (5 cols) */}
-          <div className="md:col-span-6 space-y-4">
+          <div className="md:col-span-5 space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl overflow-hidden border border-white/[0.08] bg-[#12131a] flex items-center justify-center shrink-0">
                 <Image
@@ -78,12 +78,12 @@ export const LandingFooter: React.FC = () => {
             </div>
           </div>
 
-          {/* Use Cases Column (3 cols) */}
-          <div className="md:col-span-3 space-y-3">
+          {/* Use Cases Column (4 cols) */}
+          <div className="md:col-span-4 space-y-3">
             <h4 className="font-semibold text-xs uppercase tracking-wider text-zinc-300">
-              Use Cases
+              Use Cases &amp; Workflows
             </h4>
-            <ul className="space-y-2 text-xs">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-2 text-xs">
               <li>
                 <Link
                   href="/use-cases/instagram-to-obsidian"
@@ -106,6 +106,30 @@ export const LandingFooter: React.FC = () => {
                   className="text-zinc-400 hover:text-indigo-300 transition-colors"
                 >
                   Reel Scraper &amp; Transcripts
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/use-cases/instagram-reels-to-flashcards"
+                  className="text-zinc-400 hover:text-indigo-300 transition-colors"
+                >
+                  Study Flashcards &amp; Active Recall
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/use-cases/instagram-to-notion"
+                  className="text-zinc-400 hover:text-indigo-300 transition-colors"
+                >
+                  Notion Database Sync
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/use-cases/extract-code-from-instagram"
+                  className="text-zinc-400 hover:text-indigo-300 transition-colors"
+                >
+                  Extract Code &amp; Snippets
                 </Link>
               </li>
             </ul>

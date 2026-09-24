@@ -34,10 +34,10 @@ export const HowItWorksSection: React.FC = () => {
             <span>Interactive Knowledge Flow</span>
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-zinc-100 tracking-tight">
-            How Video Becomes Structured Insight
+            How to Turn Instagram Reels into Structured Notes in 3 Steps
           </h2>
           <p className="text-xs sm:text-sm text-zinc-400 max-w-xl mx-auto leading-relaxed px-2">
-            From quick video consumption to clean, queryable Markdown notes and study flashcards.
+            From fast-paced <strong className="text-zinc-300">Instagram Reels</strong> to clean, queryable Markdown notes and study flashcards.
           </p>
         </div>
 
@@ -75,6 +75,7 @@ export const HowItWorksSection: React.FC = () => {
                     <Image
                       src="/phone-card.png"
                       alt="Instagram Reel to AI Knowledge extraction preview"
+                      title="Instagram Reels to Structured Markdown Notes"
                       fill
                       className="object-cover"
                       priority
@@ -183,6 +184,7 @@ export const HowItWorksSection: React.FC = () => {
                   <Image
                     src="/phone-card.png"
                     alt="Instagram Reel to AI Knowledge extraction preview"
+                    title="Instagram Reels AI Note Extraction"
                     fill
                     className="object-cover"
                     priority
@@ -209,6 +211,7 @@ export const HowItWorksSection: React.FC = () => {
                   <Image
                     src="/logos/icon-128.png"
                     alt="Reel Analyzer — Instagram Reels AI Summarizer by Manikanta Sandula"
+                    title="Reel Analyzer Instagram Extension"
                     width={64}
                     height={64}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"

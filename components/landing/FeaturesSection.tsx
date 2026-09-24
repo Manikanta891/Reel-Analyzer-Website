@@ -87,10 +87,10 @@ export const FeaturesSection: React.FC = () => {
             <span>Smart Note-Taking</span>
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-zinc-100 tracking-tight">
-            Built for People Who Want to Remember What They Watch
+            Smart Note-Taking &amp; AI Prompts for Instagram Reels
           </h2>
           <p className="text-xs sm:text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
-            Stop losing great tips in your saved feed. Turn short videos into clear, organized notes that you can search anytime.
+            Stop losing valuable tutorials in your saved feed. Turn <strong className="text-zinc-300">Instagram Reels</strong> into clear, organized notes that you can search anytime.
           </p>
         </div>
 

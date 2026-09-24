@@ -68,9 +68,9 @@ export const HeroSection: React.FC = () => {
             </span>
           </div>
 
-          {/* Headline (SEO Optimized for 'Reel Analyzer') */}
+          {/* Headline (SEO Optimized for 'Instagram Reels' & 'Reel Analyzer') */}
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-zinc-100 tracking-tight leading-[1.15] sm:leading-[1.12]">
-            Reel Analyzer &mdash; Turn Video Noise into{' '}
+            Turn <span className="text-indigo-400">Instagram Reels</span> into{' '}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white to-purple-300">
               Permanent Knowledge
             </span>
@@ -78,7 +78,7 @@ export const HeroSection: React.FC = () => {
 
           {/* Subheading */}
           <p className="text-sm sm:text-base md:text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed px-2">
-            The free, local-first Instagram Reels AI Summarizer. Extract structured insights, step-by-step frameworks, and Obsidian Markdown notes directly in your browser.
+            The free, local-first <strong className="text-zinc-200 font-semibold">Instagram Reels AI Summarizer</strong>. Extract structured insights, step-by-step frameworks, and Obsidian Markdown notes directly in your browser.
           </p>
 
           {/* CTAs */}

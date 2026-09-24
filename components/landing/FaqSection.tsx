@@ -27,10 +27,10 @@ export const FaqSection: React.FC = () => {
             <span>Got Questions?</span>
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-zinc-100 tracking-tight">
-            Frequently Asked Questions
+            Frequently Asked Questions About Instagram Reel Summarization
           </h2>
           <p className="text-xs sm:text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
-            Everything you need to know about Reel Analyzer, Meta AI integration, Obsidian exports, and privacy.
+            Everything you need to know about Reel Analyzer, <strong className="text-zinc-300">Instagram Reels</strong> AI extraction, Meta AI integration, Obsidian exports, and privacy.
           </p>
         </div>
 
