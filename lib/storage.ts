@@ -7,12 +7,12 @@ export function getStoredReels(): ReelItem[] {
   if (typeof window === 'undefined') return INITIAL_SAMPLE_REELS;
   try {
     const raw = localStorage.getItem(REELS_STORAGE_KEY);
-    if (!raw) {
+    if (raw === null) {
       localStorage.setItem(REELS_STORAGE_KEY, JSON.stringify(INITIAL_SAMPLE_REELS));
       return INITIAL_SAMPLE_REELS;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_SAMPLE_REELS;
+    return Array.isArray(parsed) ? parsed : INITIAL_SAMPLE_REELS;
   } catch {
     return INITIAL_SAMPLE_REELS;
   }
@@ -22,6 +22,16 @@ export function saveStoredReels(reels: ReelItem[]): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(REELS_STORAGE_KEY, JSON.stringify(reels));
+
+    // Bi-directionally sync deletions & updates to Chrome Extension storage
+    window.postMessage(
+      {
+        source: 'REEL_ANALYZER_WEB',
+        action: 'SAVE_REELS_DATA',
+        payload: reels,
+      },
+      '*'
+    );
   } catch (err) {
     console.error('Failed to save reels in localStorage:', err);
   }

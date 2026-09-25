@@ -132,6 +132,14 @@ export const LandingFooter: React.FC = () => {
                   Extract Code &amp; Snippets
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/use-cases/viral-hooks-swipe-file"
+                  className="text-zinc-400 hover:text-amber-300 transition-colors"
+                >
+                  Viral Hooks &amp; Swipe File
+                </Link>
+              </li>
             </ul>
           </div>
 
