@@ -17,6 +17,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/use-cases/free-instagram-reel-transcript`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
       url: `${baseUrl}/use-cases/coding-agent-prompts`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
@@ -42,12 +48,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}/use-cases/extract-code-from-instagram`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/use-cases/viral-hooks-swipe-file`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.9,

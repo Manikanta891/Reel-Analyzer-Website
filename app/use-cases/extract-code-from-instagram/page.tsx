@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { LandingNavbar } from '@/components/landing/LandingNavbar';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { StepAutoCarousel } from '@/components/landing/StepAutoCarousel';
+import { PillarAutoCarousel } from '@/components/landing/PillarAutoCarousel';
 import {
   Sparkles,
   ArrowRight,
@@ -111,37 +112,34 @@ export default function ExtractCodeFromInstagramPage() {
         </div>
 
         {/* 3 Value Pillars */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-              <Code2 className="w-4 h-4" />
-            </div>
-            <h3 className="text-sm font-bold text-zinc-200">Syntax-Highlighted Blocks</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Auto-formats JavaScript, TypeScript, Python, CSS, SQL, and Shell scripts in clean Markdown.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-              <Cpu className="w-4 h-4" />
-            </div>
-            <h3 className="text-sm font-bold text-zinc-200">Zero Typo Transcription</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Eliminates transcription mistakes in variable names, regex patterns, or API endpoints.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <h3 className="text-sm font-bold text-zinc-200">100% Free &amp; Private</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Runs in your local browser session. No API tokens, subscriptions, or telemetry required.
-            </p>
-          </div>
-        </div>
+        <PillarAutoCarousel
+          pillars={[
+            {
+              iconName: 'code2',
+              title: 'Syntax-Highlighted Blocks',
+              desc: 'Auto-formats JavaScript, TypeScript, Python, CSS, SQL, and Shell scripts in clean Markdown.',
+              iconColor: 'text-indigo-400',
+              iconBg: 'bg-indigo-500/10',
+              iconBorder: 'border-indigo-500/20',
+            },
+            {
+              iconName: 'cpu',
+              title: 'Zero Typo Transcription',
+              desc: 'Eliminates transcription mistakes in variable names, regex patterns, or API endpoints.',
+              iconColor: 'text-indigo-400',
+              iconBg: 'bg-indigo-500/10',
+              iconBorder: 'border-indigo-500/20',
+            },
+            {
+              iconName: 'shieldCheck',
+              title: '100% Free & Private',
+              desc: 'Runs in your local browser session. No API tokens, subscriptions, or telemetry required.',
+              iconColor: 'text-indigo-400',
+              iconBg: 'bg-indigo-500/10',
+              iconBorder: 'border-indigo-500/20',
+            },
+          ]}
+        />
 
         {/* Visual Code Box Preview */}
         <div className="space-y-4">

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { LandingNavbar } from '@/components/landing/LandingNavbar';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { StepAutoCarousel } from '@/components/landing/StepAutoCarousel';
+import { PillarAutoCarousel } from '@/components/landing/PillarAutoCarousel';
 import {
   Sparkles,
   ArrowRight,
@@ -111,37 +112,34 @@ export default function InstagramToFlashcardsPage() {
         </div>
 
         {/* Value Proposition Highlights */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-              <BrainCircuit className="w-4 h-4" />
-            </div>
-            <h3 className="text-sm font-bold text-zinc-200">Active Recall Mode</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Auto-formats key takeaways into question/answer test cards to test your retention instantly.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-              <Layers className="w-4 h-4" />
-            </div>
-            <h3 className="text-sm font-bold text-zinc-200">Topic Categorization</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Group flashcards by domain: Medicine, Engineering, Languages, History, Finance, or Coding.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <h3 className="text-sm font-bold text-zinc-200">100% Offline &amp; Private</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              All flashcards remain on your local machine in IndexedDB. Study anywhere with zero subscriptions.
-            </p>
-          </div>
-        </div>
+        <PillarAutoCarousel
+          pillars={[
+            {
+              iconName: 'brainCircuit',
+              title: 'Active Recall Mode',
+              desc: 'Auto-formats key takeaways into question/answer test cards to test your retention instantly.',
+              iconColor: 'text-indigo-400',
+              iconBg: 'bg-indigo-500/10',
+              iconBorder: 'border-indigo-500/20',
+            },
+            {
+              iconName: 'layers',
+              title: 'Topic Categorization',
+              desc: 'Group flashcards by domain: Medicine, Engineering, Languages, History, Finance, or Coding.',
+              iconColor: 'text-indigo-400',
+              iconBg: 'bg-indigo-500/10',
+              iconBorder: 'border-indigo-500/20',
+            },
+            {
+              iconName: 'shieldCheck',
+              title: '100% Offline & Private',
+              desc: 'All flashcards remain on your local machine in IndexedDB. Study anywhere with zero subscriptions.',
+              iconColor: 'text-indigo-400',
+              iconBg: 'bg-indigo-500/10',
+              iconBorder: 'border-indigo-500/20',
+            },
+          ]}
+        />
 
         {/* Visual Flashcard Example */}
         <div className="space-y-4">

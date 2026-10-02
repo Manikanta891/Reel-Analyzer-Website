@@ -4,7 +4,7 @@ import { getDatabase } from '@/lib/mongodb';
 
 export const dynamic = 'force-dynamic';
 
-const BASELINE_COUNT = 15;
+const BASELINE_COUNT = 0;
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 
 export async function GET(req: NextRequest) {

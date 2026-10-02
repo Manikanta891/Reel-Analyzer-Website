@@ -157,6 +157,35 @@ export default function InstagramToObsidianPage() {
           <StepAutoCarousel />
         </div>
 
+        {/* Related Workflows Cross-linking */}
+        <div className="border-t border-white/[0.06] pt-10 space-y-4">
+          <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+            Explore Related Reel Workflows
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <Link
+              href="/use-cases/free-instagram-reel-transcript"
+              className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-emerald-500/30 hover:bg-white/[0.04] transition-all flex items-center justify-between group"
+            >
+              <div className="space-y-0.5">
+                <span className="text-zinc-200 group-hover:text-emerald-300 font-semibold block">Free Reel Transcript Generator</span>
+                <span className="text-[11px] text-zinc-500">Unlimited verbatim audio-to-text without subscriptions</span>
+              </div>
+              <ArrowRight className="w-4 h-4 text-zinc-500 group-hover:text-emerald-400 transition-colors shrink-0" />
+            </Link>
+            <Link
+              href="/use-cases/instagram-reel-scraper"
+              className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-indigo-500/30 hover:bg-white/[0.04] transition-all flex items-center justify-between group"
+            >
+              <div className="space-y-0.5">
+                <span className="text-zinc-200 group-hover:text-indigo-300 font-semibold block">Browser-Native Reel Scraper</span>
+                <span className="text-[11px] text-zinc-500">Extract structured data without Python or API keys</span>
+              </div>
+              <ArrowRight className="w-4 h-4 text-zinc-500 group-hover:text-indigo-400 transition-colors shrink-0" />
+            </Link>
+          </div>
+        </div>
+
         {/* E-E-A-T Author Card */}
         <div className="p-6 sm:p-8 rounded-2xl bg-[#12131a] border border-white/[0.08] flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
           <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold text-xl shrink-0">

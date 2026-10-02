@@ -86,6 +86,14 @@ export const LandingFooter: React.FC = () => {
             <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-2 text-xs">
               <li>
                 <Link
+                  href="/use-cases/free-instagram-reel-transcript"
+                  className="text-zinc-400 hover:text-emerald-400 transition-colors"
+                >
+                  Free Reel Transcripts
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/use-cases/instagram-to-obsidian"
                   className="text-zinc-400 hover:text-indigo-300 transition-colors"
                 >
@@ -130,14 +138,6 @@ export const LandingFooter: React.FC = () => {
                   className="text-zinc-400 hover:text-indigo-300 transition-colors"
                 >
                   Extract Code &amp; Snippets
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/use-cases/viral-hooks-swipe-file"
-                  className="text-zinc-400 hover:text-amber-300 transition-colors"
-                >
-                  Viral Hooks &amp; Swipe File
                 </Link>
               </li>
             </ul>

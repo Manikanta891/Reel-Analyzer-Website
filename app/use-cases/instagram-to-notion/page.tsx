@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { LandingNavbar } from '@/components/landing/LandingNavbar';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { StepAutoCarousel } from '@/components/landing/StepAutoCarousel';
+import { PillarAutoCarousel } from '@/components/landing/PillarAutoCarousel';
 import {
   Sparkles,
   ArrowRight,
@@ -111,37 +112,34 @@ export default function InstagramToNotionPage() {
         </div>
 
         {/* 3 Core Value Props */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-              <FileSpreadsheet className="w-4 h-4" />
-            </div>
-            <h3 className="text-sm font-bold text-zinc-200">Database Properties</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Auto-extracts Creator Handle, Source URL, Topic Domain, and Date as structured table properties.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-              <FolderTree className="w-4 h-4" />
-            </div>
-            <h3 className="text-sm font-bold text-zinc-200">Drag &amp; Drop Import</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Download your complete `.zip` vault and drag formatted Markdown notes directly into any Notion page.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <h3 className="text-sm font-bold text-zinc-200">Zero Cloud Intermediaries</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Runs locally in your browser. No 3rd-party servers reading your notes or Instagram session.
-            </p>
-          </div>
-        </div>
+        <PillarAutoCarousel
+          pillars={[
+            {
+              iconName: 'fileSpreadsheet',
+              title: 'Database Properties',
+              desc: 'Auto-extracts Creator Handle, Source URL, Topic Domain, and Date as structured table properties.',
+              iconColor: 'text-indigo-400',
+              iconBg: 'bg-indigo-500/10',
+              iconBorder: 'border-indigo-500/20',
+            },
+            {
+              iconName: 'folderTree',
+              title: 'Drag & Drop Import',
+              desc: 'Download your complete .zip vault and drag formatted Markdown notes directly into any Notion page.',
+              iconColor: 'text-indigo-400',
+              iconBg: 'bg-indigo-500/10',
+              iconBorder: 'border-indigo-500/20',
+            },
+            {
+              iconName: 'shieldCheck',
+              title: 'Zero Cloud Intermediaries',
+              desc: 'Runs locally in your browser. No 3rd-party servers reading your notes or Instagram session.',
+              iconColor: 'text-indigo-400',
+              iconBg: 'bg-indigo-500/10',
+              iconBorder: 'border-indigo-500/20',
+            },
+          ]}
+        />
 
         {/* Notion Markdown Representation */}
         <div className="space-y-4">
