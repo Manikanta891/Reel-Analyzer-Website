@@ -1,13 +1,20 @@
-'use client';
+
 
 import React from 'react';
+import type { Metadata } from 'next';
 import { LandingNavbar } from '@/components/landing/LandingNavbar';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { FeaturesSection } from '@/components/landing/FeaturesSection';
+import { MetaVsLegacySection } from '@/components/landing/MetaVsLegacySection';
 import { FaqSection } from '@/components/landing/FaqSection';
 import { CreatorContactSection } from '@/components/landing/CreatorContactSection';
 import { LandingFooter } from '@/components/landing/LandingFooter';
+
+export const metadata: Metadata = {
+  title: 'Instagram Reels Analyzer | Reel Analyzer',
+  description: 'Analyze and extract Instagram Reels into structured AI summaries, transcripts, code blocks, and Obsidian vaults. Free local-first app by Manikanta Sandula.',
+};
 
 export default function HomePage() {
   return (
@@ -15,7 +22,7 @@ export default function HomePage() {
       {/* Top Sticky Navbar */}
       <LandingNavbar />
 
-      {/* 5 Focused Single-Scroll Sections */}
+      {/* Focused Single-Scroll Sections */}
       <main className="flex-1">
         {/* Screen 1: Punchy Hero with Live Transformation Card */}
         <HeroSection />
@@ -26,7 +33,10 @@ export default function HomePage() {
         {/* Screen 3: 4 Core Capabilities */}
         <FeaturesSection />
 
-        {/* Screen 4: Interactive FAQ Section (SEO & Rich Snippets) */}
+        {/* Screen 4: Multimodal Meta AI vs Legacy OCR/Whisper Comparison */}
+        <MetaVsLegacySection />
+
+        {/* Screen 5: Interactive FAQ Section (SEO & Rich Snippets) */}
         <FaqSection />
 
         {/* Screen 5: Call-to-Action & Creator Feedback */}

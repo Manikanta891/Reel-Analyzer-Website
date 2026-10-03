@@ -56,8 +56,8 @@ export default function FreeInstagramReelTranscriptPage() {
     '@context': 'https://schema.org',
     '@graph': [
       {
-        '@type': 'TechArticle',
-        headline: 'How to Extract Unlimited Free Transcripts from Instagram Reels',
+        '@type': 'HowTo',
+        name: 'How to Extract Unlimited Free Transcripts from Instagram Reels',
         description:
           'A comprehensive guide to generating accurate verbatim transcripts, code blocks, and structured summaries from Instagram Reels without monthly subscriptions or token limits.',
         author: {
@@ -210,14 +210,14 @@ export default function FreeInstagramReelTranscriptPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <LandingNavbar />
 
-      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20 space-y-20">
+      <main className="flex-1 w-full max-w-5xl min-w-0 mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16 space-y-10 sm:space-y-16">
         {/* Hero Section */}
         <div className="space-y-6 text-center max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-medium text-emerald-400">
@@ -225,7 +225,7 @@ export default function FreeInstagramReelTranscriptPage() {
             <span>100% Free &amp; Unlimited Audio-to-Text</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight px-2">
             Free Instagram Reel{' '}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white to-purple-300">
               Transcript Generator
@@ -242,16 +242,16 @@ export default function FreeInstagramReelTranscriptPage() {
               href={CHROME_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 transition-all active:scale-[0.98]"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 transition-all active:scale-[0.98] min-h-[44px]"
             >
-              <span>Add to Chrome &mdash; 100% Free</span>
+              <span>Add to Chrome — 100% Free</span>
               <ExternalLink className="w-4 h-4" />
             </a>
             <Link
               href="/vault"
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-[#14151e] hover:bg-[#1a1c26] text-zinc-200 text-xs sm:text-sm font-semibold border border-white/[0.08] flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#14151e] hover:bg-[#1a1c26] text-zinc-200 text-sm font-semibold border border-white/[0.08] flex items-center justify-center gap-2 transition-all active:scale-[0.98] min-h-[44px]"
             >
-              <span>Explore Knowledge Vault</span>
+              <span>View Your Saved Reels</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -287,13 +287,12 @@ export default function FreeInstagramReelTranscriptPage() {
           ]}
         />
 
-        {/* The Comparison Matrix Table */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
               Honest Comparison
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h2 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight">
               Reel Analyzer vs. iShort, Skimming AI &amp; Memories.ai
             </h2>
             <p className="text-xs sm:text-sm text-zinc-400">
@@ -301,41 +300,44 @@ export default function FreeInstagramReelTranscriptPage() {
             </p>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#12131a] shadow-2xl">
-            <table className="w-full text-left text-xs border-collapse min-w-[650px]">
+          {/* Scroll hint on mobile */}
+          <p className="text-[11px] text-zinc-500 text-center sm:hidden">← Scroll to see full comparison →</p>
+
+          <div className="w-full max-w-full min-w-0 overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#12131a] shadow-2xl [overscroll-behavior-x:contain]">
+            <table className="w-full text-left text-xs border-collapse min-w-[560px]">
               <thead>
                 <tr className="border-b border-white/[0.08] bg-[#161822]">
-                  <th className="py-4 px-4 font-semibold text-zinc-400 w-1/4">Feature</th>
-                  <th className="py-4 px-4 font-bold text-indigo-300 bg-indigo-500/[0.08] border-x border-indigo-500/20 w-1/4">
+                  <th className="py-3.5 px-4 font-semibold text-zinc-400 w-[28%]">Feature</th>
+                  <th className="py-3.5 px-4 font-bold text-indigo-300 bg-indigo-500/[0.08] border-x border-indigo-500/20 w-[24%]">
                     <div className="flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
                       <span>Reel Analyzer</span>
                     </div>
                   </th>
-                  <th className="py-4 px-3 font-medium text-zinc-400">iShort (ishort.pro)</th>
-                  <th className="py-4 px-3 font-medium text-zinc-400">Skimming AI</th>
-                  <th className="py-4 px-3 font-medium text-zinc-400">Memories.ai</th>
+                  <th className="py-3.5 px-3 font-medium text-zinc-400">iShort</th>
+                  <th className="py-3.5 px-3 font-medium text-zinc-400">Skimming AI</th>
+                  <th className="py-3.5 px-3 font-medium text-zinc-400">Memories.ai</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
                 {comparisonData.map((row, i) => (
                   <tr key={i} className="hover:bg-white/[0.01] transition-colors">
-                    <td className="py-3.5 px-4 font-medium text-zinc-300">{row.feature}</td>
-                    <td className="py-3.5 px-4 font-semibold text-white bg-indigo-500/[0.05] border-x border-indigo-500/20">
+                    <td className="py-3 px-4 font-medium text-zinc-300">{row.feature}</td>
+                    <td className="py-3 px-4 font-semibold text-white bg-indigo-500/[0.05] border-x border-indigo-500/20">
                       <span className="inline-flex items-center gap-1 text-emerald-400">
                         <Check className="w-3.5 h-3.5 shrink-0" />
                         {row.reelAnalyzer}
                       </span>
                     </td>
-                    <td className="py-3.5 px-3 text-zinc-400">
+                    <td className="py-3 px-3 text-zinc-400">
                       {row.ishort.includes('10') || row.ishort.includes('$') ? (
                         <span className="text-amber-400/90">{row.ishort}</span>
                       ) : (
                         row.ishort
                       )}
                     </td>
-                    <td className="py-3.5 px-3 text-zinc-400">{row.skimming}</td>
-                    <td className="py-3.5 px-3 text-zinc-400">{row.memories}</td>
+                    <td className="py-3 px-3 text-zinc-400">{row.skimming}</td>
+                    <td className="py-3 px-3 text-zinc-400">{row.memories}</td>
                   </tr>
                 ))}
               </tbody>
@@ -376,7 +378,7 @@ export default function FreeInstagramReelTranscriptPage() {
         </div>
 
         {/* Why Most Transcribers Charge & Why Reel Analyzer is Free */}
-        <div className="p-8 rounded-2xl bg-gradient-to-b from-[#141520] to-[#0f1017] border border-white/[0.08] space-y-4">
+        <div className="p-5 sm:p-8 rounded-2xl bg-gradient-to-b from-[#141520] to-[#0f1017] border border-white/[0.08] space-y-4">
           <div className="flex items-center gap-2 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
             <Lock className="w-4 h-4" />
             <span>Architecture &amp; Free Tier Transparency</span>
@@ -423,7 +425,7 @@ export default function FreeInstagramReelTranscriptPage() {
         </div>
 
         {/* Author Card (E-E-A-T) */}
-        <div className="p-6 sm:p-8 rounded-2xl bg-[#12131a] border border-white/[0.08] flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+        <div className="p-5 sm:p-8 rounded-2xl bg-[#12131a] border border-white/[0.08] flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
           <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold text-xl shrink-0">
             MS
           </div>

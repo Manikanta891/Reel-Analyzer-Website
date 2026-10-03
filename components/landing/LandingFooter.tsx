@@ -35,7 +35,7 @@ export const LandingFooter: React.FC = () => {
   }, []);
 
   return (
-    <footer className="border-t border-white/[0.06] pt-12 pb-8 bg-[#08090d] text-xs text-zinc-500">
+    <footer className="snap-start w-full max-w-full overflow-hidden border-t border-white/[0.06] pt-12 pb-8 bg-[#08090d] text-xs text-zinc-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-10 border-b border-white/[0.04]">
           {/* Brand Column (5 cols) */}
@@ -52,16 +52,16 @@ export const LandingFooter: React.FC = () => {
               </div>
               <div>
                 <span className="font-semibold text-sm text-zinc-200">
-                  Reel Analyzer Studio
+                  Reel Analyzer
                 </span>
                 <p className="text-[11px] text-zinc-500">
-                  Personal Video Knowledge Management
+                  Reel Saving & Organization
                 </p>
               </div>
             </div>
 
             <p className="text-xs text-zinc-400 max-w-sm leading-relaxed">
-              Transform saved Instagram Reels into permanent Obsidian vaults, Markdown notes, and AI coding prompts. Free, local-first, zero API keys required.
+              Transform saved Instagram Reels into permanent Obsidian vaults, formatted notes, and AI coding prompts. Free, works privately on your device, no account needed.
             </p>
 
             {/* Live Website Visitors Badge */}
@@ -154,7 +154,7 @@ export const LandingFooter: React.FC = () => {
                   href="/vault"
                   className="text-zinc-400 hover:text-indigo-300 transition-colors"
                 >
-                  Explore Knowledge Vault
+                  View Your Saved Reels
                 </Link>
               </li>
               <li>
@@ -181,7 +181,7 @@ export const LandingFooter: React.FC = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-zinc-600">
+        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-zinc-600 text-center sm:text-left">
           <span>
             &copy; {new Date().getFullYear()} Reel Analyzer. Built with ❤️ by{' '}
             <a
@@ -194,7 +194,7 @@ export const LandingFooter: React.FC = () => {
             </a>
             .
           </span>
-          <span>100% Free &bull; Local-First &bull; No API Keys Required</span>
+          <span className="text-center sm:text-right">100% Free &bull; Works Privately on Your Device &bull; No Account Needed</span>
         </div>
       </div>
     </footer>

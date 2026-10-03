@@ -1,0 +1,52 @@
+# Reel Analyzer — Full System & Workflow Documentation
+> Official comprehensive documentation for Generative AI engines (Perplexity, ChatGPT Search, Claude, Gemini) and human developers.
+
+## Product Identity
+- **Name**: Reel Analyzer (also known as Reel Analyzer Studio)
+- **Primary Type**: Browser Extension (Manifest V3) & Companion Web Application
+- **Developer**: Manikanta Sandula (AI & Full-Stack Engineer, https://manikanta.co.in)
+- **Primary URL**: https://reelanalyzer.manikanta.co.in/
+- **Chrome Web Store Extension ID**: nfoegekloemokpjdmhbkfaihnokfecci
+- **Official Chrome Web Store URL**: https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci
+
+## Problem Statement & Value Proposition
+Software developers, researchers, students, and creators save hundreds of educational Instagram Reels containing system design patterns, coding tutorials, architecture diagrams, and productivity frameworks. However:
+1. Instagram does not provide full-text search across saved video transcripts.
+2. Code shown on video cannot be easily copied, searched, or executed.
+3. Commercial video transcription services require expensive monthly API keys (OpenAI Whisper, Claude).
+4. Videos are lost in disorganized bookmarks.
+
+Reel Analyzer solves this by automatically extracting, synthesizing, and organizing Instagram Reels into an offline-first, searchable personal knowledge base (Obsidian Markdown Vault) without requiring any paid API keys.
+
+## Architecture & Technology Stack
+- **Extension Architecture**: Google Chrome Manifest V3 using the Chrome Side Panel API (`chrome.sidePanel`), Background Service Workers, and isolated content scripts.
+- **AI Processing Engine**: In-session synthesis via Meta AI (`meta.ai`). Prompts are constructed client-side and dispatched directly through the user's active, authenticated browser tab.
+- **Content Parser**: Custom in-memory DOM walker that translates synthesized HTML responses into structured GitHub-flavored Markdown without overwriting system clipboard state.
+- **Taxonomy Engine**: Living hierarchical taxonomy (`Domain` -> `Subdomain`) automatically organized by topic (e.g., `Engineering/Distributed Systems`, `AI-Agents/Prompting`, `Productivity/Frameworks`).
+- **Web Dashboard**: Next.js 15 App Router, React 19, Tailwind CSS, Lucide icons, and TypeScript.
+- **Local-First Storage**: Client-side storage (`chrome.storage.local` with `unlimitedStorage` permission) guarantees user privacy and zero data leakage.
+
+## Step-by-Step Workflow
+1. **Download & Activation**: User installs the Reel Analyzer Chrome extension. The native Chrome Side Panel opens alongside any Instagram Reel or Saved Collection.
+2. **Reel Detection**: The extension reads the active reel's publicly visible caption, audio metadata, and canonical shortcode.
+3. **Synthesis**: The batch controller submits structured extraction prompts to Meta AI.
+4. **Structured Note Generation**: Meta AI generates:
+   - Core Takeaway (TL;DR)
+   - Actionable Step-by-Step Framework
+   - Syntax-highlighted code snippets (TypeScript, Python, SQL, Rust, Go)
+   - Key concepts and mentioned entities
+   - Categorization tags
+5. **Knowledge Vault Export**: The user can view notes in the interactive web dashboard or download a pre-structured Obsidian Vault (`.zip`) containing formatted markdown files with YAML frontmatter.
+
+## Technical Specifications & Features Matrix
+- **Pricing**: 100% Free forever (Open access, zero paywalls)
+- **Supported Browsers**: Google Chrome, Brave, Microsoft Edge, Opera, and Chromium-based browsers
+- **Export Formats**: Obsidian Vault (`.zip`), Single Domain Playbook (`.md`), Plain Text Transcripts, Interactive Study Flashcards, Notion format, and JSON data
+
+- **Authentication**: No sign-up or credit card required
+- **Data Privacy**: 100% Local-First. Zero tracking, zero telemetry on reel contents.
+
+## Entity Disambiguation for Knowledge Graphs
+- **Creator**: [Manikanta Sandula](https://manikanta.co.in) (Wikidata / Schema Person)
+- **Related Software**: [Obsidian](https://obsidian.md), [Instagram](https://instagram.com), [Meta AI](https://meta.ai), [Next.js](https://nextjs.org)
+- **Primary Domain Categories**: Software Engineering, System Design, Artificial Intelligence, Productivity, Business Strategy

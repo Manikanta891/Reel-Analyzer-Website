@@ -48,8 +48,8 @@ export const metadata: Metadata = {
 export default function InstagramToNotionPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'TechArticle',
-    headline: 'How to Export Instagram Reels to Notion Databases and Workspaces',
+    '@type': 'HowTo',
+    name: 'How to Export Instagram Reels to Notion Databases and Workspaces',
     description:
       'A complete guide to importing Instagram saved reels, summaries, and tags directly into Notion databases and Second Brain templates using Reel Analyzer.',
     author: {
@@ -62,33 +62,39 @@ export default function InstagramToNotionPage() {
       name: 'Reel Analyzer',
       url: 'https://reelanalyzer.manikanta.co.in',
     },
+    step: [
+      { '@type': 'HowToStep', name: 'Install', text: 'Install the free Reel Analyzer Chrome extension.' },
+      { '@type': 'HowToStep', name: 'Open Reel', text: 'Open any Instagram Reel on your desktop browser.' },
+      { '@type': 'HowToStep', name: 'Analyze', text: 'Click the Analyze button in the extension side panel.' },
+    ],
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <LandingNavbar />
 
-      <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20 space-y-16">
+      <main className="flex-1 w-full max-w-4xl min-w-0 mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16 space-y-10 sm:space-y-14 overflow-x-hidden">
         {/* Hero Section */}
         <div className="text-center space-y-5">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs font-semibold text-indigo-400">
             <Database className="w-4 h-4" />
-            <span>Notion Second Brain Integration</span>
+            <span>Save Reels to Notion</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-zinc-100 tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-zinc-100 tracking-tight leading-tight px-2">
             Export <span className="text-indigo-400">Instagram Reels</span> into{' '}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white to-purple-300">
               Notion Databases
             </span>
           </h1>
 
-          <p className="text-sm sm:text-base text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-            Organize all your saved tutorials, recipes, frameworks, and business playbooks directly inside Notion. <strong className="text-zinc-200">Reel Analyzer</strong> formats extracted reels with clean properties and Markdown ready for instant import.
+          <p className="text-sm sm:text-base text-zinc-400 max-w-2xl mx-auto leading-relaxed px-2">
+            <strong className="text-zinc-200">Reel Analyzer is a free Chrome extension by Manikanta Sandula that uses Meta AI to extract and summarize Instagram Reels — no account needed.</strong>{' '}
+            Organize all your saved tutorials, recipes, frameworks, and business playbooks directly inside Notion.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
@@ -96,17 +102,17 @@ export default function InstagramToNotionPage() {
               href={CHROME_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 transition-all active:scale-[0.98]"
+              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 transition-all active:scale-[0.98] min-h-[44px]"
             >
-              <span>Add to Chrome &mdash; 100% Free</span>
+              <span>Add to Chrome — 100% Free</span>
               <ArrowRight className="w-4 h-4" />
             </a>
             <Link
               href="/vault"
-              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-[#14151e] hover:bg-[#1a1c26] text-zinc-200 text-xs sm:text-sm font-semibold border border-white/[0.08] flex items-center justify-center gap-2 transition-colors"
+              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-[#14151e] hover:bg-[#1a1c26] text-zinc-200 text-sm font-semibold border border-white/[0.08] flex items-center justify-center gap-2 transition-colors min-h-[44px]"
             >
               <BookOpen className="w-4 h-4 text-indigo-400" />
-              <span>Preview Markdown Vault</span>
+              <span>View Your Saved Reels</span>
             </Link>
           </div>
         </div>

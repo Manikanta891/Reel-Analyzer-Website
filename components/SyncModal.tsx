@@ -258,10 +258,10 @@ export const SyncModal: React.FC<SyncModalProps> = ({
         <div className="flex items-center justify-between pb-4 border-b border-white/[0.08] mb-5">
           <div>
             <span className="text-[11px] font-semibold uppercase tracking-wider text-indigo-400">
-              Knowledge Management
+              Reel Saving & Organization
             </span>
             <h3 className="text-lg font-bold text-white mt-0.5">
-              {inspection ? 'Vault Import Inspection' : 'Sync & Import Reels Vault'}
+              {inspection ? 'Import Inspection' : 'Sync & Import Saved Reels'}
             </h3>
           </div>
           <button

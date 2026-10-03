@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen overflow-y-auto bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200" style={{ scrollSnapType: 'none' }}>
       <LandingNavbar />
 
       {/* Main Content Area */}

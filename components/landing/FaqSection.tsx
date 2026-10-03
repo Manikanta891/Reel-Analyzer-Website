@@ -14,12 +14,12 @@ export const FaqSection: React.FC = () => {
   return (
     <section
       id="faq"
-      className="py-16 sm:py-20 md:py-28 px-4 sm:px-6 lg:px-8 bg-[#090a0f] border-t border-white/[0.06] relative overflow-hidden"
+      className="snap-section py-8 sm:py-10 lg:py-12 px-4 sm:px-6 lg:px-8 bg-[#090a0f] border-t border-white/[0.06] relative overflow-hidden"
     >
       {/* Soft background glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-indigo-600/[0.04] blur-[150px] rounded-full pointer-events-none -z-10" />
 
-      <div className="w-full max-w-4xl mx-auto space-y-10 sm:space-y-12">
+      <div className="w-full max-w-4xl mx-auto space-y-4 sm:space-y-6">
         {/* Section Header */}
         <div className="text-center space-y-3">
           <span className="text-[11px] uppercase font-semibold tracking-wider px-3.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 inline-flex items-center gap-1.5">

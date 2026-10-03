@@ -361,7 +361,7 @@ export default function VaultPage() {
   const hasActiveFilters = selectedDomain !== 'All' || selectedSubdomain !== 'All' || searchQuery.trim() !== '';
 
   return (
-    <div className="min-h-screen bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-600 selection:text-white">
+    <div className="min-h-screen overflow-y-auto bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-600 selection:text-white" style={{ scrollSnapType: 'none' }}>
       {/* Top Navbar */}
       <Navbar
         onOpenSync={() => setIsSyncOpen(true)}
@@ -550,12 +550,12 @@ export default function VaultPage() {
                     <Folder className="w-6 h-6 text-indigo-400" strokeWidth={1.5} />
                   </div>
                   <h3 className="text-sm font-bold text-zinc-100 mb-1">
-                    No matching knowledge notes found
+                    No saved reels found
                   </h3>
                   <p className="text-xs text-zinc-400 max-w-sm mx-auto mb-5">
                     {searchQuery
-                      ? `No notes match "${searchQuery}". Try a different search term or reset filters.`
-                      : 'No notes available in this category.'}
+                      ? `No saved reels match "${searchQuery}". Try a different search term or reset filters.`
+                      : 'No saved reels available in this category.'}
                   </p>
                   <button
                     onClick={() => {
@@ -620,9 +620,9 @@ export default function VaultPage() {
       <footer className="border-t border-white/[0.06] py-6 bg-[#0b0c10] text-xs text-zinc-500 mt-12">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-zinc-400 font-medium">Reel Analyzer Studio</span>
+            <span className="text-zinc-400 font-medium">Reel Analyzer</span>
             <span className="text-zinc-600">&bull;</span>
-            <span className="text-[11px] text-zinc-500 font-mono">Personal Knowledge Vault</span>
+            <span className="text-[11px] text-zinc-500 font-mono">Your Saved Reels</span>
           </div>
           <div className="flex items-center gap-2.5 text-[11px] font-mono text-zinc-300 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] shadow-sm">
             <div className="w-4 h-4 rounded-md overflow-hidden shrink-0 border border-white/[0.1] bg-[#12131a] flex items-center justify-center">

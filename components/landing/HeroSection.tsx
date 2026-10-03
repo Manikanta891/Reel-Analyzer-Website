@@ -9,6 +9,7 @@ import {
   Zap,
   FolderTree,
   BookOpen,
+  Sparkles,
 } from 'lucide-react';
 
 const CHROME_STORE_URL =
@@ -22,13 +23,13 @@ const HERO_HIGHLIGHTS = [
   },
   {
     icon: Zap,
-    title: 'Zero API Keys Needed',
+    title: 'No account or signup required',
     desc: 'Powered by browser integration with zero subscriptions or tokens.',
   },
   {
     icon: FolderTree,
-    title: 'Obsidian-Ready Vault',
-    desc: 'Export clean Markdown files with YAML properties and bi-directional tags.',
+    title: 'Export to your note-taking apps',
+    desc: 'Export clean Markdown files with organized file details and smart cross-linked tags.',
   },
 ];
 
@@ -53,18 +54,25 @@ export const HeroSection: React.FC = () => {
   }, [isPaused]);
 
   return (
-    <section className="relative pt-8 pb-14 sm:pt-12 sm:pb-20 md:pt-16 md:pb-28 overflow-hidden">
+    <section className="snap-section relative py-8 sm:py-10 md:py-12 overflow-hidden">
       {/* Subtle atmospheric ambient glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[450px] bg-indigo-600/[0.07] blur-[160px] rounded-full pointer-events-none -z-10" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Hero Header */}
-        <div className="max-w-3xl mx-auto text-center space-y-5 sm:space-y-6 mb-8 sm:mb-12 md:mb-16">
-          {/* Top Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] sm:text-xs text-zinc-300">
-            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-indigo-400 animate-pulse" />
-            <span className="font-medium text-zinc-300">
-              Personal Knowledge Management for Reels
+        <div className="max-w-3xl mx-auto text-center space-y-4 sm:space-y-5 mb-6 sm:mb-8 md:mb-10">
+          {/* Top Badge: Sleek glassmorphism pill with live pulse beacon */}
+          <div className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full bg-gradient-to-r from-indigo-950/70 via-purple-950/40 to-indigo-950/70 border border-indigo-500/30 text-[11px] sm:text-xs text-zinc-200 shadow-[0_0_22px_rgba(99,102,241,0.18)] backdrop-blur-md">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
+            </span>
+            <span className="font-semibold text-white tracking-wide">
+              Powered by Native Meta AI
+            </span>
+            <span className="text-indigo-400/50 hidden sm:inline">&bull;</span>
+            <span className="text-indigo-200/90 hidden sm:inline font-medium">
+              Deep Visual &amp; Action Understanding
             </span>
           </div>
 
@@ -78,7 +86,7 @@ export const HeroSection: React.FC = () => {
 
           {/* Subheading */}
           <p className="text-sm sm:text-base md:text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed px-2">
-            The free, local-first <strong className="text-zinc-200 font-semibold">Instagram Reels AI Summarizer</strong>. Extract structured insights, step-by-step frameworks, and Obsidian Markdown notes directly in your browser.
+            The multimodal <strong className="text-zinc-200 font-semibold">Instagram Reels AI Summarizer</strong>. Unlike brittle OCR or audio-only transcribers, Reel Analyzer harnesses Meta AI to perceive what is actually shown on video—the creator, their actions, screen workflows, and code.
           </p>
 
           {/* CTAs */}
@@ -97,7 +105,7 @@ export const HeroSection: React.FC = () => {
               className="w-full sm:w-auto px-6 py-3 rounded-lg bg-[#14151e] hover:bg-[#1a1c26] text-zinc-200 text-xs sm:text-sm font-semibold border border-white/[0.08] flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
             >
               <BookOpen className="w-4 h-4 text-indigo-400" strokeWidth={1.5} />
-              <span>Explore Knowledge Vault</span>
+              <span>Explore Saved Reels</span>
             </Link>
           </div>
         </div>

@@ -2,34 +2,39 @@ import React from 'react';
 
 export const FAQ_ITEMS = [
   {
-    question: 'How does Reel Analyzer extract notes and summaries from Instagram Reels?',
+    question: 'What is Reel Analyzer?',
     answer:
-      'Reel Analyzer automatically detects when you open saved Instagram Reels, sends clean transcript and visual cues to Meta AI in a secure, local-first workflow, and extracts structured insights, key takeaways, step-by-step frameworks, and code blocks.',
+      'Reel Analyzer is a 100% free, local-first Chrome extension that automatically summarizes educational Instagram Reels, extracts code, and generates structured notes using Meta AI directly in your browser.',
   },
   {
-    question: 'Do I need my own OpenAI, Gemini, or Claude API keys to use Reel Analyzer?',
+    question: 'Is Reel Analyzer free to use?',
     answer:
-      'No! Reel Analyzer is 100% free and requires zero paid API keys. It leverages your existing browser session with Meta AI for fast, unlimited summarization without monthly API fees or rate limits.',
+      'Yes, Reel Analyzer is completely free and requires zero paid API keys or subscriptions. It leverages your existing browser session with Meta AI for unlimited summarization.',
   },
   {
-    question: 'How does the Obsidian Markdown Vault export work?',
+    question: 'What AI does Reel Analyzer use?',
     answer:
-      'With a single click, you can export your entire collection of summarized reels into a structured, organized `.zip` file containing formatted `.md` Markdown files. These notes include YAML frontmatter, tags, domains, and backlink hooks designed specifically for Obsidian, Logseq, and Notion.',
+      'Reel Analyzer harnesses Meta AI’s native multimodal intelligence. It visually perceives the creator, on-screen coding, tools, and whiteboard diagrams without hallucinations, unlike legacy summarizers that only rely on audio transcripts.',
+  },
+  {
+    question: 'Can I export my notes from Reel Analyzer?',
+    answer:
+      'Yes. With a single click, you can export your entire collection of summarized reels into a structured .zip file containing formatted .md Markdown files with YAML frontmatter, domains, and backlink hooks designed for Obsidian, Logseq, and Notion.',
+  },
+  {
+    question: 'Is my data safe with Reel Analyzer?',
+    answer:
+      'Yes, 100%. Reel Analyzer operates with a strict local-first architecture. All your saved reels, summaries, and transcripts remain on your local device (chrome.storage.local). We never track, store, or transmit your Instagram credentials or personal browsing data.',
+  },
+  {
+    question: 'How do I extract code from Instagram reels?',
+    answer:
+      'Reel Analyzer automatically detects code, system design patterns, and programming syntax inside educational reels, formats the code with syntax highlighting, and exports it into Obsidian markdown or AI prompts.',
   },
   {
     question: 'Who created Reel Analyzer?',
     answer:
       'Reel Analyzer was designed and developed by Manikanta Sandula, an AI and software engineer specializing in browser extensions, personal knowledge management, and AI developer workflows.',
-  },
-  {
-    question: 'Is my personal browsing data or Instagram login private and secure?',
-    answer:
-      'Yes, 100%. Reel Analyzer operates with a strict local-first architecture. All your saved reels, summaries, and transcripts remain on your local device (IndexedDB/Chrome Storage). We do not track, store, or transmit your Instagram credentials or personal data.',
-  },
-  {
-    question: 'Can I search, filter, and organize my reel summaries by topic and creator?',
-    answer:
-      'Yes. The companion Web Dashboard and local vault let you categorize reels by domains (e.g., Technology, Acting, Cooking, Business), filter by specific creators, search through full-text notes, and study them with interactive flashcards.',
   },
 ];
 
@@ -69,6 +74,7 @@ export default function JsonLd() {
       'Reel Analyzer Studio',
       'ReelAnalyzer',
       'Reel Analyzer by Manikanta Sandula',
+      'Instagram Reels AI Summarizer',
     ],
     url: 'https://reelanalyzer.manikanta.co.in',
     description:
@@ -81,6 +87,28 @@ export default function JsonLd() {
     creator: {
       '@id': 'https://manikanta.co.in/#person',
     },
+    about: [
+      {
+        '@type': 'Thing',
+        name: 'Instagram',
+        sameAs: 'https://www.wikidata.org/wiki/Q209330',
+      },
+      {
+        '@type': 'Thing',
+        name: 'Obsidian',
+        sameAs: 'https://www.wikidata.org/wiki/Q105341517',
+      },
+      {
+        '@type': 'Thing',
+        name: 'Personal Knowledge Management',
+        sameAs: 'https://www.wikidata.org/wiki/Q208365',
+      },
+      {
+        '@type': 'Thing',
+        name: 'Markdown',
+        sameAs: 'https://www.wikidata.org/wiki/Q1193600',
+      },
+    ],
     potentialAction: {
       '@type': 'SearchAction',
       target: {
@@ -112,9 +140,10 @@ export default function JsonLd() {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
     name: 'Reel Analyzer',
+    alternateName: ['Reel Analyzer Studio', 'Instagram Reels AI Summarizer'],
     applicationCategory:
-      'MultimediaApplication, Productivity, EducationalApplication',
-    operatingSystem: 'Google Chrome, Microsoft Edge, Brave, Web Browser',
+      'MultimediaApplication, Productivity, EducationalApplication, DeveloperApplication',
+    operatingSystem: 'Google Chrome, Microsoft Edge, Brave, Chromium',
     url: 'https://reelanalyzer.manikanta.co.in',
     downloadUrl:
       'https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci?utm_source=item-share-cb',
@@ -123,6 +152,16 @@ export default function JsonLd() {
     description:
       'Extract Instagram Reels into permanent, structured knowledge notes, Obsidian Markdown vaults, and interactive study flashcards. Built by Manikanta Sandula. 100% Free & Local-First.',
     softwareVersion: '1.2.0',
+    isAccessibleForFree: true,
+    featureList: [
+      '1-Click Instagram Reel Summarization via Meta AI',
+      'Code and syntax extraction (TypeScript, Python, SQL)',
+      'Obsidian Vault export with nested folders and YAML frontmatter',
+      'AI coding prompt generator for Cursor IDE, Claude, and ChatGPT',
+      'Interactive spaced-repetition study flashcards',
+      '100% local-first storage with zero data harvesting',
+    ],
+    browserRequirements: 'Requires Google Chrome, Brave, Microsoft Edge, or Chromium browser',
     author: {
       '@type': 'Person',
       name: 'Manikanta Sandula',

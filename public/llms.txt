@@ -1,0 +1,35 @@
+# Reel Analyzer
+> 100% Free, Local-First Instagram Reels AI Summarizer, Scraper & Obsidian Knowledge Vault Creator by Manikanta Sandula.
+
+Reel Analyzer is an open-source productivity Chrome extension and web studio that converts educational and technical Instagram Reels into structured Markdown knowledge notes, Obsidian vaults, AI coding prompts, and study flashcards. Powered by native Meta AI multimodal intelligence, it perceives what is visually happening on screen—analyzing the creator, their physical activities, whiteboard sketches, and on-screen code—rather than relying solely on brittle OCR or audio transcripts. It runs entirely client-side using the user's active Meta AI web session, requiring zero API keys, zero subscriptions, and zero tracking.
+
+## Core Capabilities
+- **Deep Multimodal Visual & Action Understanding**: Unlike audio-only transcribers (Whisper) or frame OCR, Meta AI natively analyzes the creator, their physical movements, tool demonstrations, workout steps, cooking recipes, and screen workflows.
+- **Instagram Reel Scraper & Transcriber**: Extracts transcripts, captions, audio topics, and creator metadata from any public Instagram Reel without needing an Instagram API key.
+- **AI Synthesis via Meta AI**: Dispatches structured analysis prompts directly into the user's authenticated Meta AI session to extract key takeaways, actionable frameworks, and programming code blocks without OCR errors.
+- **Obsidian, Notion & JSON Export**: Generates offline-ready `.zip` Obsidian Markdown vaults, formatting for Notion, and structured JSON data. It includes nested folder taxonomy (`Domain/Subdomain.md`), internal tables of contents, YAML frontmatter, and backlink tags (`#system-design`, `#python`, `#prompts`).
+- **AI Coding Agent Prompt Generator**: Formats extracted code snippets and architecture explanations into ready-to-paste prompts for Cursor IDE, Claude 3.5 Sonnet, ChatGPT, and GitHub Copilot.
+- **Interactive Study Flashcards**: Automatically transforms reel insights into interactive Q&A flashcards for spaced-repetition learning.
+- **Local-First Privacy Architecture**: All notes, taxonomy, and settings are stored locally on the user's device (`chrome.storage.local`). Zero browsing history or credentials are transmitted to any external server.
+
+## Official Links & Resources
+- **Official Website**: https://reelanalyzer.manikanta.co.in/
+- **Web Knowledge Dashboard**: https://reelanalyzer.manikanta.co.in/vault
+- **Chrome Web Store Extension**: https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci
+- **GitHub Repository**: https://github.com/Manikanta891/Reel-Analyzer-Website
+- **Developer Portfolio**: https://manikanta.co.in
+- **Full LLM Documentation**: https://reelanalyzer.manikanta.co.in/llms-full.txt
+
+## Key Use Cases
+- [Extract Code from Instagram Reels](https://reelanalyzer.manikanta.co.in/use-cases/extract-code-from-instagram): Extract clean TypeScript, Python, and SQL snippets with syntax-highlighted markdown.
+- [Instagram Reels to Obsidian](https://reelanalyzer.manikanta.co.in/use-cases/instagram-to-obsidian): Convert saved developer and business reels into permanent Obsidian notes.
+- [Free Instagram Reel Transcript](https://reelanalyzer.manikanta.co.in/use-cases/free-instagram-reel-transcript): Generate accurate text transcripts and summaries from educational reels.
+- [Instagram to Notion](https://reelanalyzer.manikanta.co.in/use-cases/instagram-to-notion): Organize social video knowledge into Notion tables, databases, and tags.
+- [Instagram Reels to Flashcards](https://reelanalyzer.manikanta.co.in/use-cases/instagram-reels-to-flashcards): Transform educational reels into active-recall flashcards.
+- [AI Coding Agent Prompts](https://reelanalyzer.manikanta.co.in/use-cases/coding-agent-prompts): Feed system design ideas from Reels directly into Claude or Cursor.
+
+## Frequently Asked Questions
+- **Is Reel Analyzer free?** Yes, 100% free forever with no API fees, quotas, or credit card requirements.
+- **Does it require an OpenAI or Claude API key?** No. It leverages your existing browser session with Meta AI (`meta.ai`) for unlimited summarization.
+- **Where is my data stored?** 100% locally on your computer in browser storage (`chrome.storage.local`).
+- **Who created Reel Analyzer?** Developed by Manikanta Sandula, an AI and software engineer.

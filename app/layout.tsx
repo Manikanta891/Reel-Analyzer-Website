@@ -28,11 +28,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://reelanalyzer.manikanta.co.in'),
   title: {
-    default: 'Reel Analyzer: Instagram Reels AI Summarizer & Obsidian',
+    default: 'Reel Analyzer: Free Instagram Reels AI Summarizer & Scraper',
     template: '%s | Reel Analyzer',
   },
   description:
-    'Extract structured AI summaries, transcripts, frameworks, and Obsidian notes from Instagram Reels. 100% free, local-first tool by Manikanta Sandula.',
+    'Extract Instagram Reels into structured AI summaries, transcripts, code blocks, and Obsidian vaults. 100% free, local-first reel analyzer app by Manikanta Sandula.',
   applicationName: 'Reel Analyzer',
   keywords: [
     'Manikanta Sandula',
@@ -103,9 +103,9 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://reelanalyzer.manikanta.co.in',
-    title: 'Reel Analyzer: Instagram Reels AI Summarizer & Obsidian',
+    title: 'Reel Analyzer: Free Instagram Reels AI Summarizer & Scraper',
     description:
-      'Turn Instagram Reels into structured knowledge notes, Obsidian Markdown vaults, and study flashcards. 100% free, local-first tool by Manikanta Sandula.',
+      'Extract Instagram Reels into structured knowledge notes, Obsidian Markdown vaults, and AI coding prompts. 100% free & local-first by Manikanta Sandula.',
     siteName: 'Reel Analyzer',
     images: [
       {
@@ -118,9 +118,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Reel Analyzer: Instagram Reels AI Summarizer & Obsidian',
+    title: 'Reel Analyzer: Free Instagram Reels AI Summarizer & Scraper',
     description:
-      'Turn Instagram Reels into structured knowledge notes, Obsidian Markdown vaults, and AI coding prompts. Free & local-first by Manikanta Sandula.',
+      'Extract Instagram Reels into structured knowledge notes, Obsidian Markdown vaults, and AI coding prompts. Free & local-first by Manikanta Sandula.',
     images: ['https://reelanalyzer.manikanta.co.in/og-image.png'],
     creator: '@____Manikanta',
     site: '@____Manikanta',

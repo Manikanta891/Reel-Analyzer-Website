@@ -47,8 +47,8 @@ export const metadata: Metadata = {
 export default function InstagramToObsidianPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'TechArticle',
-    headline: 'How to Export Instagram Reels to Obsidian Markdown Notes',
+    '@type': 'HowTo',
+    name: 'How to Export Instagram Reels to Obsidian Markdown Notes',
     description:
       'A complete step-by-step guide to turning Instagram video tutorials into structured, searchable Obsidian notes using Reel Analyzer.',
     author: {
@@ -61,33 +61,38 @@ export default function InstagramToObsidianPage() {
       name: 'Reel Analyzer',
       url: 'https://reelanalyzer.manikanta.co.in',
     },
+    step: [
+      { '@type': 'HowToStep', name: 'Install', text: 'Install the free Reel Analyzer Chrome extension.' },
+      { '@type': 'HowToStep', name: 'Open Reel', text: 'Open any Instagram Reel on your desktop browser.' },
+      { '@type': 'HowToStep', name: 'Analyze', text: 'Click the Analyze button in the extension side panel.' },
+    ],
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <LandingNavbar />
 
-      <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20 space-y-16">
+      <main className="flex-1 w-full max-w-4xl min-w-0 mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16 space-y-10 sm:space-y-14 overflow-x-hidden">
         {/* Hero Section */}
-        <div className="space-y-6 text-center">
+        <div className="space-y-5 text-center">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs font-medium text-indigo-300">
             <FolderTree className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Personal Knowledge Management (PKM)</span>
+            <span>Save Reels as Notes</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight px-2">
             Turn Saved Instagram Reels into{' '}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white to-purple-300">
               Obsidian Markdown Notes
             </span>
           </h1>
 
-          <p className="text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-            Stop letting valuable tutorials, system design breakdowns, and frameworks get trapped inside video. Reel Analyzer transforms any Instagram Reel into clean, structured Markdown ready for Obsidian.
+          <p className="text-sm sm:text-base text-zinc-400 max-w-2xl mx-auto leading-relaxed px-2">
+            Stop letting valuable tutorials, system design breakdowns, and frameworks get trapped inside video. Reel Analyzer transforms any Instagram Reel into clean, structured notes ready for Obsidian.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -95,16 +100,16 @@ export default function InstagramToObsidianPage() {
               href={CHROME_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 transition-all"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 transition-all min-h-[44px]"
             >
-              <span>Add to Chrome &mdash; Free</span>
+              <span>Add to Chrome — Free</span>
               <ExternalLink className="w-4 h-4" />
             </a>
             <Link
               href="/vault"
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#14151e] hover:bg-[#1a1c26] text-zinc-200 text-xs sm:text-sm font-semibold border border-white/[0.08] flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#14151e] hover:bg-[#1a1c26] text-zinc-200 text-sm font-semibold border border-white/[0.08] flex items-center justify-center gap-2 min-h-[44px]"
             >
-              <span>Explore Knowledge Vault</span>
+              <span>View Your Saved Reels</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -112,15 +117,15 @@ export default function InstagramToObsidianPage() {
 
         {/* Live YAML Frontmatter Preview */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between text-xs text-zinc-400">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-zinc-400">
             <span className="font-semibold text-zinc-200 flex items-center gap-2">
               <FileText className="w-4 h-4 text-indigo-400" />
-              Standard Obsidian Export Format (.md)
+              Sample Note Export Format (.md)
             </span>
-            <span className="font-mono text-[11px] text-indigo-300">YAML Frontmatter + Markdown</span>
+            <span className="font-mono text-[11px] text-indigo-300">With tags & metadata</span>
           </div>
 
-          <div className="rounded-2xl bg-[#111218] border border-white/[0.08] p-5 sm:p-7 font-mono text-xs sm:text-sm text-zinc-300 shadow-2xl relative overflow-x-auto leading-relaxed">
+          <div className="rounded-2xl bg-[#111218] border border-white/[0.08] p-4 sm:p-6 font-mono text-[11px] sm:text-xs text-zinc-300 shadow-2xl relative overflow-x-auto leading-relaxed">
             <div className="text-zinc-500">---</div>
             <div><span className="text-indigo-400">title:</span> &quot;FastAPI Authentication &amp; JWT Tokens Guide&quot;</div>
             <div><span className="text-indigo-400">creator:</span> &quot;@techlead_dev&quot;</div>

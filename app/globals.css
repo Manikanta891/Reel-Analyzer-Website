@@ -14,15 +14,37 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 4rem;
   color-scheme: dark;
+  /* Smooth proximity snapping for all devices: magnetic & fluid without trapping scroll */
+  scroll-snap-type: y proximity;
+  overflow-x: clip;
+  max-width: 100vw;
+}
+
+/* Full mandatory snap on large desktop screens with ample vertical height */
+@media (min-width: 1024px) and (min-height: 700px) {
+  html {
+    scroll-snap-type: y mandatory;
+  }
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-plus-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  overflow-x: hidden;
+  overflow-x: clip;
   background-image: radial-gradient(circle at 50% -20%, rgba(94, 106, 210, 0.08) 0%, transparent 70%);
+}
+
+/* Universal Cross-Device Snap Section */
+.snap-section {
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+  min-height: calc(100dvh - 4rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* Subtle Custom Scrollbar */

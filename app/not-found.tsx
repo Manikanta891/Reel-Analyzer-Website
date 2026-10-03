@@ -16,7 +16,7 @@ export default function NotFound() {
           href="/"
           className="inline-flex px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow-sm shadow-indigo-500/20 transition-all duration-150 active:scale-[0.98]"
         >
-          Return to Knowledge Studio
+          Go to Home
         </Link>
       </div>
     </div>

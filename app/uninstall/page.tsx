@@ -52,7 +52,7 @@ export default function UninstallFeedbackPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0c10] text-zinc-100 flex flex-col justify-between font-sans selection:bg-indigo-600 selection:text-white">
+    <div className="min-h-screen overflow-y-auto bg-[#0b0c10] text-zinc-100 flex flex-col justify-between font-sans selection:bg-indigo-600 selection:text-white" style={{ scrollSnapType: 'none' }}>
       {/* Header */}
       <header className="w-full border-b border-white/[0.08] bg-[#0b0c10]/80 backdrop-blur-xl py-4 px-6">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -75,7 +75,7 @@ export default function UninstallFeedbackPage() {
             href="/vault"
             className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
           >
-            <span>Open Web Vault</span>
+            <span>Open Saved Reels</span>
             <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
           </Link>
         </div>

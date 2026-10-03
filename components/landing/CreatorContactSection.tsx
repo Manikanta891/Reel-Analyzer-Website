@@ -69,7 +69,7 @@ export const CreatorContactSection: React.FC = () => {
   return (
     <section
       id="contact"
-      className="py-14 sm:py-20 md:py-28 px-4 sm:px-6 lg:px-8 bg-[#090a0f] border-t border-white/[0.06] relative overflow-hidden"
+      className="snap-section py-8 sm:py-10 lg:py-12 px-4 sm:px-6 lg:px-8 bg-[#090a0f] border-t border-white/[0.06] relative overflow-hidden"
     >
       {/* Ambient glow */}
       <div className="absolute -top-32 right-1/4 w-[600px] h-[300px] bg-indigo-600/[0.07] blur-[150px] rounded-full pointer-events-none -z-10" />
@@ -104,7 +104,7 @@ export const CreatorContactSection: React.FC = () => {
               href="/vault"
               className="px-6 py-3 rounded-xl bg-[#14151e] hover:bg-[#1a1c26] text-zinc-200 text-xs font-bold border border-white/[0.08] flex items-center justify-center gap-2 transition-colors"
             >
-              <span>Explore Web Vault</span>
+              <span>Explore Saved Reels</span>
             </Link>
           </div>
 

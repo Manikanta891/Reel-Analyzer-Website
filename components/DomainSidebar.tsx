@@ -71,7 +71,7 @@ export const DomainSidebar: React.FC<DomainSidebarProps> = ({
           <div className="flex items-center gap-2 text-zinc-200">
             <Database className="w-4 h-4 text-indigo-400 shrink-0" />
             <span className="text-xs font-bold uppercase tracking-wider">
-              Knowledge Topics
+              Topics
             </span>
             <span className="text-xs font-mono px-2 py-0.5 rounded-md bg-white/[0.06] text-zinc-300 font-semibold border border-white/[0.08]">
               {domains.length}
@@ -110,7 +110,7 @@ export const DomainSidebar: React.FC<DomainSidebarProps> = ({
           >
             <div className="flex items-center gap-2.5">
               <Layers className="w-4 h-4 text-indigo-400 shrink-0" strokeWidth={1.5} />
-              <span>All Knowledge Notes</span>
+              <span>All Saved Reels</span>
             </div>
             <span
               className={`text-xs font-mono px-2 py-0.5 rounded-md font-semibold ${
@@ -224,26 +224,26 @@ export const DomainSidebar: React.FC<DomainSidebarProps> = ({
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
           <span>Storage &amp; Privacy</span>
         </div>
-        <div className="space-y-2 bg-[#0c0d12] p-3 rounded-xl border border-white/[0.06]">
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-zinc-300 font-medium">Local Vault</span>
-            <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold text-[11px]">
-              Active (Offline-first)
-            </span>
+          <div className="space-y-2 bg-[#0c0d12] p-3 rounded-xl border border-white/[0.06]">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-zinc-300 font-medium">Saved on Device</span>
+              <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold text-[11px]">
+                Active (Offline-first)
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/[0.04]">
+              <span className="text-zinc-300 font-medium">Format</span>
+              <span className="font-mono text-zinc-100 font-semibold text-[11px]">
+                Notes & Tags
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/[0.04]">
+              <span className="text-zinc-300 font-medium">Export To</span>
+              <span className="text-indigo-300 font-semibold text-[11px]">
+                Obsidian / Notion
+              </span>
+            </div>
           </div>
-          <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/[0.04]">
-            <span className="text-zinc-300 font-medium">Data Format</span>
-            <span className="font-mono text-zinc-100 font-semibold text-[11px]">
-              Markdown / YAML
-            </span>
-          </div>
-          <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/[0.04]">
-            <span className="text-zinc-300 font-medium">Export Target</span>
-            <span className="text-indigo-300 font-semibold text-[11px]">
-              Obsidian / Notion
-            </span>
-          </div>
-        </div>
       </div>
     </aside>
   );

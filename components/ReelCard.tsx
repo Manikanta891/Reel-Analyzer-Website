@@ -61,7 +61,7 @@ ${cleanedSummary}
     const confirmMsg =
       `⚠️ Remove Reel from Vault?\n\n` +
       `Are you sure you want to delete "${displaySubject}"?\n` +
-      `This will remove the summary and takeaway from your local knowledge library.`;
+      `This will remove the summary and takeaway from your saved reels library.`;
 
     if (confirm(confirmMsg)) {
       onDelete(item);

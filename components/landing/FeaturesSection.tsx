@@ -51,7 +51,7 @@ const FEATURES = [
   {
     icon: Lock,
     title: '100% Private & On Your Device',
-    desc: 'Everything stays safely in your local browser. No cloud databases, no accounts required, and zero tracking.',
+    desc: 'Everything stays safely and privately on your device. No cloud databases, no accounts required, and zero tracking.',
     snippet: (
       <div className="rounded-xl bg-[#0e0f14] p-2.5 sm:p-3 border border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-zinc-400">
         <span className="text-indigo-300 font-semibold">🔒 100% Local Storage</span>
@@ -77,7 +77,7 @@ export const FeaturesSection: React.FC = () => {
   return (
     <section
       id="features"
-      className="py-12 md:py-16 px-4 sm:px-6 lg:px-8 bg-[#0b0c10] border-t border-white/[0.06] relative min-h-0 md:min-h-screen md:flex md:items-center md:justify-center"
+      className="snap-section py-6 sm:py-8 lg:py-10 px-4 sm:px-6 lg:px-8 bg-[#0b0c10] border-t border-white/[0.06] relative"
     >
       <div className="w-full max-w-5xl mx-auto space-y-6 md:space-y-8">
         {/* Header */}
@@ -200,7 +200,7 @@ export const FeaturesSection: React.FC = () => {
             href="/vault"
             className="inline-flex items-center gap-2 text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
           >
-            <span>Launch Knowledge Studio Vault</span>
+            <span>Launch Your Saved Reels</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>

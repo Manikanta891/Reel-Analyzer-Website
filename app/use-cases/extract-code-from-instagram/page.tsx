@@ -48,8 +48,8 @@ export const metadata: Metadata = {
 export default function ExtractCodeFromInstagramPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'TechArticle',
-    headline: 'How to Extract Clean Code Blocks and Snippets from Instagram Reels',
+    '@type': 'HowTo',
+    name: 'How to Extract Clean Code Blocks and Snippets from Instagram Reels',
     description:
       'A complete developer guide to extracting syntax-highlighted code, shell commands, and framework logic from Instagram video tutorials using Reel Analyzer.',
     author: {
@@ -62,17 +62,22 @@ export default function ExtractCodeFromInstagramPage() {
       name: 'Reel Analyzer',
       url: 'https://reelanalyzer.manikanta.co.in',
     },
+    step: [
+      { '@type': 'HowToStep', name: 'Install', text: 'Install the free Reel Analyzer Chrome extension.' },
+      { '@type': 'HowToStep', name: 'Open Reel', text: 'Open any Instagram Reel on your desktop browser.' },
+      { '@type': 'HowToStep', name: 'Analyze', text: 'Click the Analyze button in the extension side panel.' },
+    ],
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <LandingNavbar />
 
-      <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20 space-y-16">
+      <main className="flex-1 w-full max-w-4xl min-w-0 mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16 space-y-10 sm:space-y-14 overflow-x-hidden">
         {/* Hero Section */}
         <div className="text-center space-y-5">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs font-semibold text-indigo-400">
@@ -80,7 +85,7 @@ export default function ExtractCodeFromInstagramPage() {
             <span>Developer Code OCR &amp; Syntax Extractor</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-zinc-100 tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-zinc-100 tracking-tight leading-tight">
             Extract <span className="text-indigo-400">Clean Code</span> from{' '}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white to-purple-300">
               Instagram Reels
@@ -88,6 +93,7 @@ export default function ExtractCodeFromInstagramPage() {
           </h1>
 
           <p className="text-sm sm:text-base text-zinc-400 max-w-2xl mx-auto leading-relaxed">
+            <strong className="text-zinc-200">Reel Analyzer is a free, local-first Chrome extension built by Manikanta Sandula that uses Meta AI to extract and summarize Instagram Reels without API keys.</strong> 
             Never pause at 0:24 to manually re-type 6 lines of code from a reel. <strong className="text-zinc-200">Reel Analyzer</strong> extracts formatted, syntax-highlighted code blocks, CLI flags, and architectural patterns directly into your clipboard.
           </p>
 
@@ -96,7 +102,7 @@ export default function ExtractCodeFromInstagramPage() {
               href={CHROME_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 transition-all active:scale-[0.98]"
+              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 min-h-[44px] transition-all active:scale-[0.98]"
             >
               <span>Add to Chrome &mdash; 100% Free</span>
               <ArrowRight className="w-4 h-4" />
