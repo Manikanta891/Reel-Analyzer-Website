@@ -17,9 +17,9 @@ const CHROME_STORE_URL =
   'https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci?utm_source=item-share-cb';
 
 export const metadata: Metadata = {
-  title: 'Instagram Reels to AI Prompts (Cursor) | Reel Analyzer',
+  title: 'Instagram Reels to AI Prompts (Cursor)',
   description:
-    'Turn Instagram Reel tutorials into prompts for Cursor IDE, Claude Code, and ChatGPT. Extract code snippets and system designs with Manikanta Sandula\'s tool.',
+    'Turn Instagram Reel tutorials into prompts for Cursor, Claude Code, and ChatGPT. Extract code and system designs with zero API keys.',
   alternates: {
     canonical: 'https://reelanalyzer.manikanta.co.in/use-cases/coding-agent-prompts',
   },
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     'Developer Reels Workflows',
   ],
   openGraph: {
-    title: 'Instagram Reels to AI Prompts (Cursor) | Reel Analyzer',
+    title: 'Instagram Reels to AI Prompts (Cursor)',
     description:
       'Turn 60-second video tutorials into executable prompts for Cursor, ChatGPT, and Claude Code with 1 click.',
     url: 'https://reelanalyzer.manikanta.co.in/use-cases/coding-agent-prompts',

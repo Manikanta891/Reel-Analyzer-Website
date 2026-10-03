@@ -18,9 +18,9 @@ const CHROME_STORE_URL =
   'https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci?utm_source=item-share-cb';
 
 export const metadata: Metadata = {
-  title: 'Free Instagram Reel Scraper & Transcriber | Reel Analyzer',
+  title: 'Free Instagram Reel Scraper & Transcriber',
   description:
-    'Scrape clean transcripts, code, and captions from Instagram Reels without API keys or Python scripts. Free, local-first extension by Manikanta Sandula.',
+    'Scrape clean transcripts, code, and captions from Instagram Reels with zero API keys or Python scripts. Free tool by Manikanta Sandula.',
   alternates: {
     canonical: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-reel-scraper',
   },
@@ -35,9 +35,9 @@ export const metadata: Metadata = {
     'Manikanta Sandula',
   ],
   openGraph: {
-    title: 'Free Instagram Reel Scraper & Transcriber | Reel Analyzer',
+    title: 'Free Instagram Reel Scraper & Transcriber',
     description:
-      'Scrape clean transcripts, code, and captions from Instagram Reels without API keys or Python scripts. Free & local-first by Manikanta Sandula.',
+      'Scrape clean transcripts, code, and captions from Instagram Reels without API keys. Free & private by Manikanta Sandula.',
     url: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-reel-scraper',
     images: ['https://reelanalyzer.manikanta.co.in/og-image.png'],
   },

@@ -13,9 +13,9 @@ import {
 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — Reel Analyzer by Manikanta Sandula',
+  title: 'Privacy Policy',
   description:
-    'Privacy Policy for Reel Analyzer Chrome Extension and Web Dashboard. 100% Local-First, Zero Data Tracking, and Chrome Web Store Limited Use Compliance.',
+    'Privacy Policy for Reel Analyzer Chrome Extension and Web Dashboard. 100% private, zero data tracking, and Chrome Web Store compliance.',
   alternates: {
     canonical: 'https://reelanalyzer.manikanta.co.in/privacy',
   },
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen overflow-y-auto bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200" style={{ scrollSnapType: 'none' }}>
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
       <LandingNavbar />
 
       {/* Main Content Area */}

@@ -21,9 +21,9 @@ const CHROME_STORE_URL =
   'https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci?utm_source=item-share-cb';
 
 export const metadata: Metadata = {
-  title: 'Export Instagram Reels to Notion Database | Reel Analyzer',
+  title: 'Export Instagram Reels to Notion',
   description:
-    'Save and organize Instagram Reels into Notion databases with clean Markdown, tags, and creator backlinks. Free, local-first tool by Manikanta Sandula.',
+    'Save and organize Instagram Reels into Notion databases with clean notes, tags, and creator links. Free tool by Manikanta Sandula.',
   alternates: {
     canonical: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-to-notion',
   },
@@ -37,9 +37,9 @@ export const metadata: Metadata = {
     'Notion Video Knowledge Base',
   ],
   openGraph: {
-    title: 'Export Instagram Reels to Notion Database | Reel Analyzer',
+    title: 'Export Instagram Reels to Notion',
     description:
-      'Save and organize Instagram Reels into Notion databases with clean Markdown, tags, and backlinks. Free & local-first by Manikanta Sandula.',
+      'Save and organize Instagram Reels into Notion databases with clean notes, tags, and creator links. Free & private by Manikanta Sandula.',
     url: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-to-notion',
     images: ['https://reelanalyzer.manikanta.co.in/og-image.png'],
   },

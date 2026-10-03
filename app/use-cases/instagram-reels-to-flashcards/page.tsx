@@ -21,9 +21,9 @@ const CHROME_STORE_URL =
   'https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci?utm_source=item-share-cb';
 
 export const metadata: Metadata = {
-  title: 'Turn Instagram Reels into Study Flashcards | Reel Analyzer',
+  title: 'Turn Instagram Reels into Study Flashcards',
   description:
-    'Convert educational Instagram Reels into interactive study flashcards and active recall notes. Free, local-first learning tool by Manikanta Sandula.',
+    'Convert educational Instagram Reels into interactive study flashcards and active recall notes. Free learning tool by Manikanta Sandula.',
   alternates: {
     canonical: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-reels-to-flashcards',
   },
@@ -37,9 +37,9 @@ export const metadata: Metadata = {
     'Student Knowledge Base Instagram',
   ],
   openGraph: {
-    title: 'Turn Instagram Reels into Study Flashcards | Reel Analyzer',
+    title: 'Turn Instagram Reels into Study Flashcards',
     description:
-      'Convert educational Instagram Reels into interactive study flashcards and active recall notes. Free & local-first by Manikanta Sandula.',
+      'Convert educational Instagram Reels into interactive study flashcards and active recall notes. Free & private by Manikanta Sandula.',
     url: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-reels-to-flashcards',
     images: ['https://reelanalyzer.manikanta.co.in/og-image.png'],
   },

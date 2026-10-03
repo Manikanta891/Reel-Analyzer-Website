@@ -52,7 +52,7 @@ export default function UninstallFeedbackPage() {
   };
 
   return (
-    <div className="min-h-screen overflow-y-auto bg-[#0b0c10] text-zinc-100 flex flex-col justify-between font-sans selection:bg-indigo-600 selection:text-white" style={{ scrollSnapType: 'none' }}>
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#0b0c10] text-zinc-100 flex flex-col justify-between font-sans selection:bg-indigo-600 selection:text-white">
       {/* Header */}
       <header className="w-full border-b border-white/[0.08] bg-[#0b0c10]/80 backdrop-blur-xl py-4 px-6">
         <div className="max-w-4xl mx-auto flex items-center justify-between">

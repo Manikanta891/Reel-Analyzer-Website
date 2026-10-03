@@ -21,9 +21,9 @@ const CHROME_STORE_URL =
   'https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci?utm_source=item-share-cb';
 
 export const metadata: Metadata = {
-  title: 'Extract Code & Snippets from Instagram Reels | Reel Analyzer',
+  title: 'Extract Code & Snippets from Instagram Reels',
   description:
-    'Extract clean syntax-highlighted code snippets from Instagram Reels without pausing or manual typing. Free, local-first developer tool by Manikanta Sandula.',
+    'Extract clean syntax-highlighted code from Instagram Reels without pausing or typing. Free developer tool by Manikanta Sandula.',
   alternates: {
     canonical: 'https://reelanalyzer.manikanta.co.in/use-cases/extract-code-from-instagram',
   },
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     'Turn Video Code into Markdown',
   ],
   openGraph: {
-    title: 'Extract Code & Snippets from Instagram Reels | Reel Analyzer',
+    title: 'Extract Code & Snippets from Instagram Reels',
     description:
       'Extract clean code snippets from Instagram Reels without pausing or typing. Free & local-first by Manikanta Sandula.',
     url: 'https://reelanalyzer.manikanta.co.in/use-cases/extract-code-from-instagram',

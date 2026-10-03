@@ -20,9 +20,9 @@ const CHROME_STORE_URL =
   'https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci?utm_source=item-share-cb';
 
 export const metadata: Metadata = {
-  title: 'Export Instagram Reels to Obsidian Notes | Reel Analyzer',
+  title: 'Export Instagram Reels to Obsidian Notes',
   description:
-    'Convert Instagram Reels into Obsidian Markdown notes with YAML frontmatter and bi-directional backlinks. Free, local-first tool by Manikanta Sandula.',
+    'Convert Instagram Reels into Obsidian notes with tags and creator links. Free and private tool by Manikanta Sandula.',
   alternates: {
     canonical: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-to-obsidian',
   },
@@ -36,9 +36,9 @@ export const metadata: Metadata = {
     'Personal Knowledge Management Instagram',
   ],
   openGraph: {
-    title: 'Export Instagram Reels to Obsidian Notes | Reel Analyzer',
+    title: 'Export Instagram Reels to Obsidian Notes',
     description:
-      'Convert Instagram Reels into Obsidian Markdown notes with YAML frontmatter and backlinks. Free & local-first by Manikanta Sandula.',
+      'Convert Instagram Reels into Obsidian notes with tags and creator links. Free & private by Manikanta Sandula.',
     url: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-to-obsidian',
     images: ['https://reelanalyzer.manikanta.co.in/og-image.png'],
   },

@@ -23,9 +23,9 @@ const CHROME_STORE_URL =
   'https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci?utm_source=item-share-cb';
 
 export const metadata: Metadata = {
-  title: 'Free Instagram Reel Transcript Generator & AI Notes | Reel Analyzer',
+  title: 'Free Instagram Reel Transcript Generator',
   description:
-    'Extract unlimited verbatim transcripts, AI summaries, and Obsidian notes from Instagram Reels for free. Zero paywalls, zero 10-transcript limits, and local-first privacy.',
+    'Extract free unlimited transcripts, AI summaries, and notes from Instagram Reels. Zero paywalls, no transcript limits, and 100% private.',
   alternates: {
     canonical: 'https://reelanalyzer.manikanta.co.in/use-cases/free-instagram-reel-transcript',
   },
@@ -43,9 +43,9 @@ export const metadata: Metadata = {
     'Manikanta Sandula',
   ],
   openGraph: {
-    title: 'Free Instagram Reel Transcript Generator & AI Notes | Reel Analyzer',
+    title: 'Free Instagram Reel Transcript Generator',
     description:
-      'Extract unlimited transcripts, code snippets, and Obsidian notes from Instagram Reels 100% free. The local-first alternative to iShort and Skimming AI.',
+      'Extract free unlimited transcripts, code snippets, and notes from Instagram Reels. Zero paywalls and 100% private.',
     url: 'https://reelanalyzer.manikanta.co.in/use-cases/free-instagram-reel-transcript',
     images: ['https://reelanalyzer.manikanta.co.in/og-image.png'],
   },
