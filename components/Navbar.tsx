@@ -7,11 +7,13 @@ import {
   Download,
   RefreshCw,
   CheckCircle2,
+  Cpu,
 } from 'lucide-react';
 
 interface NavbarProps {
   onOpenSync: () => void;
   onOpenExport: () => void;
+  onOpenMcp: () => void;
   uniqueVisitors?: number | null;
   isExtensionConnected: boolean;
   totalNotesCount?: number;
@@ -20,6 +22,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   onOpenSync,
   onOpenExport,
+  onOpenMcp,
   isExtensionConnected,
   totalNotesCount = 0,
 }) => {
@@ -73,6 +76,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <RefreshCw className="w-3.5 h-3.5 text-zinc-400 shrink-0" strokeWidth={1.5} />
             <span className="hidden sm:inline">Import</span>
+          </button>
+
+          {/* Connect Coding Agents (MCP) Button */}
+          <button
+            onClick={onOpenMcp}
+            title="Connect your saved reels to Cursor, Claude Code, or Antigravity via MCP"
+            className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-violet-600/90 to-indigo-600/90 hover:from-violet-500 hover:to-indigo-500 text-xs font-semibold text-white shadow-md shadow-violet-600/25 border border-violet-400/30 transition-all active:scale-[0.98]"
+          >
+            <Cpu className="w-3.5 h-3.5 shrink-0 text-violet-200" strokeWidth={1.75} />
+            <span className="hidden sm:inline">Connect to Cursor / Agents</span>
+            <span className="sm:hidden">MCP</span>
           </button>
 
           {/* Export Playbook Button */}

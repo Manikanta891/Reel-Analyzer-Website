@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Filter,
 } from 'lucide-react';
+import { SidebarAdSpot } from '@/components/ads/SidebarAdSpot';
 
 interface DomainSidebarProps {
   domains: string[];
@@ -244,6 +245,11 @@ export const DomainSidebar: React.FC<DomainSidebarProps> = ({
               </span>
             </div>
           </div>
+      </div>
+
+      {/* User-friendly native Sidebar Ad Spot */}
+      <div className="hidden lg:block">
+        <SidebarAdSpot slotId="vault-sidebar-ad-01" />
       </div>
     </aside>
   );

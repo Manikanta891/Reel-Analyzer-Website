@@ -24,8 +24,11 @@ import { ReelTableView } from '@/components/ReelTableView';
 import { SyncModal } from '@/components/SyncModal';
 import { PlaybookExportModal } from '@/components/PlaybookExportModal';
 import { ReelDetailModal } from '@/components/ReelDetailModal';
+import { McpModal } from '@/components/McpModal';
 import { Pagination } from '@/components/Pagination';
 import { SkeletonCard } from '@/components/SkeletonCard';
+import { FeedAdSpot } from '@/components/ads/FeedAdSpot';
+import { SidebarAdSpot } from '@/components/ads/SidebarAdSpot';
 
 export default function VaultPage() {
   const [reels, setReels] = useState<ReelItem[]>([]);
@@ -73,6 +76,7 @@ export default function VaultPage() {
 
   const [isSyncOpen, setIsSyncOpen] = useState<boolean>(false);
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
+  const [isMcpOpen, setIsMcpOpen] = useState<boolean>(false);
 
   const [uniqueVisitors, setUniqueVisitors] = useState<number | null>(null);
   const [isExtensionConnected, setIsExtensionConnected] = useState<boolean>(false);
@@ -97,12 +101,30 @@ export default function VaultPage() {
     setReels(loaded);
     setIsHydrating(false);
 
+    // Auto-sync initial reels to local MCP vault.json (background)
+    if (loaded && loaded.length > 0) {
+      fetch('/api/vault/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reels: loaded }),
+      }).catch(() => {});
+    }
+
     // 3. Subscribe to Chrome Extension direct bridge
     const unsubscribe = subscribeToExtensionBridge(
       (extensionReels) => {
         setIsExtensionConnected(true);
         setReels(extensionReels);
         saveStoredReels(extensionReels);
+
+        // Auto-sync extension reels to local MCP vault.json
+        if (extensionReels && extensionReels.length > 0) {
+          fetch('/api/vault/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reels: extensionReels }),
+          }).catch(() => {});
+        }
       },
       () => {
         setIsExtensionConnected(true);
@@ -366,6 +388,7 @@ export default function VaultPage() {
       <Navbar
         onOpenSync={() => setIsSyncOpen(true)}
         onOpenExport={() => setIsExportOpen(true)}
+        onOpenMcp={() => setIsMcpOpen(true)}
         uniqueVisitors={uniqueVisitors}
         isExtensionConnected={isExtensionConnected}
         totalNotesCount={reels.length}
@@ -529,16 +552,28 @@ export default function VaultPage() {
                   onDelete={handleDeleteReel}
                 />
               ) : (
-                /* Grid View */
+                /* Grid View with Native In-Feed Sponsor Card */
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 auto-rows-fr">
-                  {paginatedReels.map((item) => (
-                    <ReelCard
-                      key={item.url}
-                      item={item}
-                      onSelect={(reel) => setSelectedReelForModal(reel)}
-                      onEntityClick={handleEntityClick}
-                      onDelete={handleDeleteReel}
-                    />
+                  {paginatedReels.map((item, index) => (
+                    <React.Fragment key={item.url}>
+                      <ReelCard
+                        item={item}
+                        onSelect={(reel) => setSelectedReelForModal(reel)}
+                        onEntityClick={handleEntityClick}
+                        onDelete={handleDeleteReel}
+                      />
+                      {/* Inject user-friendly native feed ad card after 4th reel */}
+                      {index === 3 && (
+                        <FeedAdSpot
+                          slotId="vault-feed-ad-01"
+                          sponsorName="DevTools Cloud"
+                          category="Sponsored Developer Resource"
+                          title="Accelerate Your Full-Stack CI/CD & Deployments"
+                          description="High-performance edge compute, automated deployments, and instant preview branches for modern engineering teams."
+                          link="https://github.com"
+                        />
+                      )}
+                    </React.Fragment>
                   ))}
                 </div>
               )}
@@ -614,6 +649,13 @@ export default function VaultPage() {
         currentDomain={selectedDomain}
         currentSubdomain={selectedSubdomain}
         domains={domains}
+      />
+
+      {/* Connect AI Coding Agents (MCP) Modal */}
+      <McpModal
+        isOpen={isMcpOpen}
+        onClose={() => setIsMcpOpen(false)}
+        reels={reels}
       />
 
       {/* Minimal Footer with Option 4 Visitors Counter + Logo */}
