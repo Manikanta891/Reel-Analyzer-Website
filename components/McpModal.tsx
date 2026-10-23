@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   X,
   Copy,
@@ -9,6 +9,9 @@ import {
   Sparkles,
   Cpu,
   FolderOpen,
+  CheckCircle2,
+  AlertCircle,
+  Edit3,
 } from 'lucide-react';
 import { ReelItem } from '@/types';
 
@@ -18,25 +21,97 @@ interface McpModalProps {
   reels: ReelItem[];
 }
 
-// Suggested folder where the user places both downloaded files.
-// Shown in IDE config snippets so paths are immediately usable.
-const WIN_DIR  = 'C:\\Users\\YourName\\reel-vault';
-const MAC_DIR  = '~/reel-vault';
+// Whether the browser supports the File System Access API
+// (Chrome 86+, Edge 86+ — covers ~95% of developers)
+const supportsFilePicker =
+  typeof window !== 'undefined' && 'showDirectoryPicker' in window;
+
+type SetupState =
+  | 'idle'          // Nothing done yet
+  | 'picking'       // Folder picker is open
+  | 'writing'       // Writing files to disk
+  | 'done'          // Files written successfully
+  | 'error'         // Something went wrong
+  | 'manual';       // User chose manual path input fallback
 
 export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose, reels }) => {
-  const [activeTab, setActiveTab] = useState<'cursor' | 'claude' | 'antigravity'>('cursor');
-  const [copied, setCopied] = useState<string | null>(null);
-  const [downloadDone, setDownloadDone] = useState(false);
+  const [activeTab, setActiveTab]   = useState<'cursor' | 'claude' | 'antigravity'>('cursor');
+  const [copied, setCopied]         = useState<string | null>(null);
+  const [setupState, setSetupState] = useState<SetupState>('idle');
+  const [chosenPath, setChosenPath] = useState('');   // Actual path user picked / typed
+  const [manualPath, setManualPath] = useState('');   // Text input for manual fallback
+  const [errorMsg, setErrorMsg]     = useState('');
 
   if (!isOpen) return null;
 
-  /* ── helpers ─────────────────────────────────────────────── */
+  /* ─────────────────────────────────────────────
+     Helpers
+  ───────────────────────────────────────────── */
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopied(key);
     setTimeout(() => setCopied(null), 2000);
   };
+
+  const fetchServerScript = async (): Promise<string> => {
+    const res = await fetch('/api/mcp-server-script');
+    if (!res.ok) throw new Error('Could not fetch mcp-server.mjs');
+    return res.text();
+  };
+
+  /* ─────────────────────────────────────────────
+     File System Access API flow (Chrome/Edge)
+     User picks a folder → we write both files
+     directly → we know the exact path
+  ───────────────────────────────────────────── */
+
+  const handlePickFolder = useCallback(async () => {
+    setSetupState('picking');
+    setErrorMsg('');
+    try {
+      // Open the native OS folder picker
+      // @ts-expect-error — showDirectoryPicker is not yet in TS lib types
+      const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+
+      setSetupState('writing');
+
+      // ── Write vault.json ──────────────────────
+      const vaultHandle = await dirHandle.getFileHandle('vault.json', { create: true });
+      const vaultWriter = await vaultHandle.createWritable();
+      await vaultWriter.write(JSON.stringify(reels, null, 2));
+      await vaultWriter.close();
+
+      // ── Write mcp-server.mjs ──────────────────
+      const serverCode   = await fetchServerScript();
+      const serverHandle = await dirHandle.getFileHandle('mcp-server.mjs', { create: true });
+      const serverWriter = await serverHandle.createWritable();
+      await serverWriter.write(serverCode);
+      await serverWriter.close();
+
+      // ── Derive path hint from folder name ─────
+      // FileSystemDirectoryHandle only gives us the name (last segment),
+      // not the full path — browser security restriction.
+      // We show the folder name and ask the user to confirm the full path.
+      const folderName: string = dirHandle.name;
+      // Pre-fill with the most common location based on the folder name chosen
+      const guessedPath = `C:\\Users\\<YourName>\\${folderName}`;
+      setChosenPath(guessedPath);
+      setSetupState('done');
+    } catch (err: unknown) {
+      // User cancelled the picker → go back to idle quietly
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setSetupState('idle');
+        return;
+      }
+      setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
+      setSetupState('error');
+    }
+  }, [reels]);
+
+  /* ─────────────────────────────────────────────
+     Fallback — manual downloads + path input
+  ───────────────────────────────────────────── */
 
   const triggerDownload = (content: string, filename: string, mime: string) => {
     const blob = new Blob([content], { type: mime });
@@ -50,101 +125,77 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose, reels }) =>
     URL.revokeObjectURL(url);
   };
 
-  // Downloads vault.json — the user's reel data snapshot
-  const downloadVaultJson = () => {
+  const handleManualDownloadAll = async () => {
     triggerDownload(JSON.stringify(reels, null, 2), 'vault.json', 'application/json');
-  };
-
-  // Downloads mcp-server.mjs — the local MCP server the IDE will run
-  const downloadServerScript = async () => {
+    await new Promise(r => setTimeout(r, 500));
     try {
-      const res = await fetch('/api/mcp-server-script');
-      if (!res.ok) throw new Error('not ok');
-      const code = await res.text();
+      const code = await fetchServerScript();
       triggerDownload(code, 'mcp-server.mjs', 'application/javascript');
     } catch {
-      // Fallback: open GitHub raw file in new tab
       window.open(
         'https://github.com/Manikanta891/Reel-Analyzer-Website/blob/main/scripts/mcp-server.mjs',
         '_blank',
       );
     }
+    setSetupState('manual');
   };
 
-  // One-click: download both files, then mark step 1 done
-  const handleDownloadAll = async () => {
-    downloadVaultJson();
-    await new Promise(r => setTimeout(r, 500));
-    await downloadServerScript();
-    setDownloadDone(true);
-  };
+  /* ─────────────────────────────────────────────
+     IDE config generation
+     Uses the confirmed path (from picker or manual input)
+  ───────────────────────────────────────────── */
 
-  /* ── IDE config snippets ─────────────────────────────────── */
+  // The effective path: from picker (done state) or manual input
+  const effectivePath = setupState === 'done'
+    ? chosenPath
+    : manualPath || 'C:\\Users\\YourName\\reel-vault';
 
-  const cursorConfig = `{
+  // Normalise separators based on active tab
+  const pathForConfig = activeTab === 'antigravity'
+    ? effectivePath.replace(/\\/g, '/')
+    : effectivePath;
+
+  const sep = activeTab === 'antigravity' ? '/' : '\\\\';
+
+  const configJson = `{
   "mcpServers": {
     "reel-vault": {
       "command": "node",
-      "args": ["${WIN_DIR}\\\\mcp-server.mjs"],
+      "args": ["${pathForConfig}${sep}mcp-server.mjs"],
       "env": {
-        "VAULT_PATH": "${WIN_DIR}\\\\vault.json"
+        "VAULT_PATH": "${pathForConfig}${sep}vault.json"
       }
     }
   }
 }`;
-
-  const claudeConfig = `{
-  "mcpServers": {
-    "reel-vault": {
-      "command": "node",
-      "args": ["${WIN_DIR}\\\\mcp-server.mjs"],
-      "env": {
-        "VAULT_PATH": "${WIN_DIR}\\\\vault.json"
-      }
-    }
-  }
-}`;
-
-  const antigravityConfig = `{
-  "mcpServers": {
-    "reel-vault": {
-      "command": "node",
-      "args": ["${MAC_DIR}/mcp-server.mjs"],
-      "env": {
-        "VAULT_PATH": "${MAC_DIR}/vault.json"
-      }
-    }
-  }
-}`;
-
-  const activeConfig =
-    activeTab === 'cursor' ? cursorConfig :
-    activeTab === 'claude' ? claudeConfig :
-    antigravityConfig;
 
   const configHint =
-    activeTab === 'cursor'      ? 'Paste into  .cursor/mcp.json' :
-    activeTab === 'claude'      ? 'Paste into  %APPDATA%/Claude/claude_desktop_config.json' :
-                                  'Paste into  agent MCP settings';
+    activeTab === 'cursor'      ? '.cursor/mcp.json' :
+    activeTab === 'claude'      ? '%APPDATA%/Claude/claude_desktop_config.json' :
+                                  'Antigravity MCP settings';
 
-  /* ── render ──────────────────────────────────────────────── */
+  /* ─────────────────────────────────────────────
+     Render
+  ───────────────────────────────────────────── */
+
+  const pathIsPlaceholder = !chosenPath && !manualPath;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Connect AI Coding Agents via MCP"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
       onClick={onClose}
     >
       <div
         className="relative w-full max-w-2xl bg-[#0e1017] border border-white/[0.12] rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.08] bg-[#12141d]/80">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.08] bg-[#12141d]/80 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shadow-inner">
+            <div className="p-2.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
               <Cpu className="w-5 h-5" strokeWidth={1.5} />
             </div>
             <div>
@@ -171,123 +222,197 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose, reels }) =>
           </button>
         </div>
 
-        {/* ── Body ── */}
-        <div className="p-6 overflow-y-auto space-y-6 text-xs text-zinc-300 custom-scrollbar">
+        {/* Body */}
+        <div className="p-6 overflow-y-auto space-y-5 text-xs text-zinc-300 custom-scrollbar">
 
-          {/* STEP 1 ── Download both files */}
-          <div className={`p-4 rounded-2xl border transition-colors ${downloadDone ? 'bg-emerald-950/30 border-emerald-500/20' : 'bg-[#141622] border-white/[0.08]'}`}>
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] text-white ${downloadDone ? 'bg-emerald-500' : 'bg-indigo-600'}`}>
-                {downloadDone ? <Check className="w-3 h-3" /> : '1'}
+          {/* ── STEP 1: Save Files ── */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] text-white shrink-0 ${setupState === 'done' ? 'bg-emerald-500' : 'bg-indigo-600'}`}>
+                {setupState === 'done' ? <Check className="w-3 h-3" /> : '1'}
               </span>
-              <span className="text-xs font-bold text-zinc-200">Download Both Files</span>
+              <span className="text-xs font-bold text-zinc-200">Save Files to Your Machine</span>
             </div>
-            <p className="text-[11px] text-zinc-400 leading-relaxed mb-3 max-w-lg">
-              You need <strong className="text-zinc-200">2 files</strong> on your machine:{' '}
-              <code className="text-indigo-300 bg-indigo-500/10 px-1 rounded">vault.json</code> (your reel data) and{' '}
-              <code className="text-indigo-300 bg-indigo-500/10 px-1 rounded">mcp-server.mjs</code> (the local server your IDE runs).{' '}
-              Save them together in one folder, e.g.{' '}
-              <code className="text-zinc-300 bg-zinc-800/60 px-1 rounded">C:\Users\YourName\reel-vault\</code>
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={handleDownloadAll}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/20 transition-all active:scale-95"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Download Both Files</span>
-              </button>
-              <button
-                onClick={downloadVaultJson}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs transition-all active:scale-95"
-              >
-                vault.json only
-              </button>
-              <button
-                onClick={downloadServerScript}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs transition-all active:scale-95"
-              >
-                mcp-server.mjs only
-              </button>
-            </div>
-            {downloadDone && (
-              <p className="mt-3 text-[11px] text-emerald-400 flex items-center gap-1.5">
-                <Check className="w-3.5 h-3.5" />
-                Both files downloaded! Move them to the same folder before Step 2.
-              </p>
+
+            {/* Primary: File System Picker */}
+            {supportsFilePicker && setupState !== 'manual' && (
+              <div className={`p-4 rounded-2xl border transition-all mb-3 ${
+                setupState === 'done'
+                  ? 'bg-emerald-950/30 border-emerald-500/25'
+                  : 'bg-[#141622] border-white/[0.08]'
+              }`}>
+                {setupState === 'idle' || setupState === 'picking' || setupState === 'writing' || setupState === 'error' ? (
+                  <>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed mb-3">
+                      <strong className="text-zinc-200">Recommended:</strong> Pick a folder on your machine — we write{' '}
+                      <code className="text-indigo-300 bg-indigo-500/10 px-1 rounded">vault.json</code> and{' '}
+                      <code className="text-indigo-300 bg-indigo-500/10 px-1 rounded">mcp-server.mjs</code> directly into it.
+                      Your IDE config is then generated with the exact correct path automatically.
+                    </p>
+                    <button
+                      onClick={handlePickFolder}
+                      disabled={setupState === 'picking' || setupState === 'writing'}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-wait text-white font-semibold text-xs shadow-md shadow-indigo-600/20 transition-all active:scale-95"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5" />
+                      {setupState === 'picking'
+                        ? 'Opening folder picker…'
+                        : setupState === 'writing'
+                        ? 'Writing files…'
+                        : 'Choose Folder & Save Files'}
+                    </button>
+                    {setupState === 'error' && (
+                      <p className="mt-2 text-[11px] text-red-400 flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        {errorMsg || 'Something went wrong. Try the manual download below.'}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  /* Done state */
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-emerald-400 font-semibold text-[11px]">
+                      <CheckCircle2 className="w-4 h-4" />
+                      Both files saved! Now confirm the exact folder path below.
+                    </div>
+                    <p className="text-[11px] text-zinc-400">
+                      Browser security doesn&apos;t expose the full path — please type or confirm it:
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={chosenPath}
+                        onChange={(e) => setChosenPath(e.target.value)}
+                        placeholder="e.g. C:\Users\Manik\reel-vault"
+                        className="flex-1 bg-[#090a0f] border border-white/[0.12] rounded-xl px-3 py-2 text-[11px] text-zinc-200 font-mono placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/60 transition-colors"
+                        spellCheck={false}
+                      />
+                      <Edit3 className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                    </div>
+                    <p className="text-[10px] text-zinc-600">
+                      The config below updates live as you type ↑
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Divider */}
+            {supportsFilePicker && setupState !== 'done' && (
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex-1 h-px bg-white/[0.06]" />
+                <span className="text-[10px] text-zinc-600 font-medium">or download manually</span>
+                <div className="flex-1 h-px bg-white/[0.06]" />
+              </div>
+            )}
+
+            {/* Fallback: Manual download + path input */}
+            {(setupState !== 'done') && (
+              <div className={`p-4 rounded-2xl border transition-all ${
+                setupState === 'manual' ? 'bg-[#141622] border-white/[0.08]' : 'border-white/[0.05] bg-transparent'
+              }`}>
+                <p className="text-[11px] text-zinc-500 mb-3">
+                  Download both files to <strong className="text-zinc-400">Downloads</strong>, then move them to a folder of your choice.
+                </p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <button
+                    onClick={handleManualDownloadAll}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs transition-all active:scale-95"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download Both Files
+                  </button>
+                </div>
+                {(setupState === 'manual') && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] text-zinc-400">
+                      Where did you put the files? Type the full folder path:
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={manualPath}
+                        onChange={(e) => setManualPath(e.target.value)}
+                        placeholder="e.g. C:\Users\Manik\reel-vault"
+                        className="flex-1 bg-[#090a0f] border border-white/[0.12] rounded-xl px-3 py-2 text-[11px] text-zinc-200 font-mono placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/60 transition-colors"
+                        spellCheck={false}
+                      />
+                      <Edit3 className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                    </div>
+                    <p className="text-[10px] text-zinc-600">Config below updates live as you type ↑</p>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
-          {/* STEP 2 ── Place files & update path */}
-          <div className="p-4 rounded-2xl bg-[#141622] border border-white/[0.08]">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">2</span>
-              <span className="text-xs font-bold text-zinc-200">Place Files & Update the Path</span>
-            </div>
-            <p className="text-[11px] text-zinc-400 leading-relaxed max-w-lg">
-              Move both downloaded files into one folder on your machine.
-              Then replace <code className="text-amber-300 bg-amber-500/10 px-1 rounded">YourName</code> in the config below with your actual Windows username (or the full path you chose).
-            </p>
-          </div>
-
-          {/* STEP 3 ── Add IDE Config */}
+          {/* ── STEP 2: IDE Config ── */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">3</span>
-              <span className="text-xs font-bold text-zinc-200">Add MCP Config to Your IDE</span>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0">2</span>
+              <span className="text-xs font-bold text-zinc-200">Add Config to Your IDE</span>
             </div>
 
             {/* IDE Tabs */}
-            <div className="flex items-center gap-2 p-1 rounded-xl bg-[#12141d] border border-white/[0.06] mb-3">
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#12141d] border border-white/[0.06] mb-3">
               {(['cursor', 'claude', 'antigravity'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-1.5 px-3 rounded-lg font-medium text-xs transition-all ${
+                  className={`flex-1 py-1.5 px-2 rounded-lg font-medium text-xs transition-all ${
                     activeTab === tab
                       ? 'bg-indigo-600 text-white shadow-sm font-semibold'
                       : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  {tab === 'cursor' ? 'Cursor IDE' : tab === 'claude' ? 'Claude Desktop' : 'Antigravity / VS Code'}
+                  {tab === 'cursor' ? 'Cursor IDE' : tab === 'claude' ? 'Claude Desktop' : 'Antigravity'}
                 </button>
               ))}
             </div>
 
-            {/* Config Code Block */}
+            {/* Config block */}
             <div className="relative rounded-2xl bg-[#090a0f] border border-white/[0.08] p-4 font-mono text-[11px] text-zinc-300">
               <div className="flex justify-between items-center mb-2 pb-2 border-b border-white/[0.06] text-zinc-500 text-[10px]">
                 <span className="flex items-center gap-1.5">
                   <FolderOpen className="w-3 h-3" />
-                  {configHint}
+                  Paste into: <strong className="text-zinc-400 ml-1">{configHint}</strong>
                 </span>
                 <button
-                  onClick={() => handleCopy(activeConfig, 'config')}
+                  onClick={() => handleCopy(configJson, 'config')}
                   className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors"
                 >
                   {copied === 'config' ? (
                     <><Check className="w-3.5 h-3.5 text-emerald-400" /><span className="text-emerald-400">Copied!</span></>
                   ) : (
-                    <><Copy className="w-3.5 h-3.5" /><span>Copy Config</span></>
+                    <><Copy className="w-3.5 h-3.5" /><span>Copy</span></>
                   )}
                 </button>
               </div>
+
+              {/* Live path highlight */}
+              {pathIsPlaceholder && (
+                <div className="mb-2 px-2 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] flex items-center gap-1.5">
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  Complete Step 1 first — the path below will auto-fill with your real folder.
+                </div>
+              )}
+
               <pre className="overflow-x-auto text-indigo-200/90 leading-relaxed whitespace-pre-wrap">
-                {activeConfig}
+                {configJson}
               </pre>
             </div>
+
             <p className="mt-2 text-[11px] text-zinc-500">
-              After saving the config, restart your IDE — it will spawn the MCP server automatically.
+              After saving the config, <strong className="text-zinc-400">restart your IDE</strong> — it will spawn the MCP server automatically.
             </p>
           </div>
 
-          {/* STEP 4 ── Try example prompts */}
+          {/* ── STEP 3: Try prompts ── */}
           <div className="pt-2 border-t border-white/[0.06]">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">4</span>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0">3</span>
               <span className="text-xs font-bold text-zinc-200">Ask Your Agent While You Code</span>
             </div>
-            <p className="text-[11px] text-zinc-400 mb-3">Once connected, try these in your IDE chat:</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {[
                 'Search my reel vault for Docker rollouts',
@@ -305,11 +430,7 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose, reels }) =>
                     className="text-zinc-500 hover:text-indigo-400 shrink-0"
                     title="Copy prompt"
                   >
-                    {copied === `prompt-${i}` ? (
-                      <Check className="w-3 h-3 text-emerald-400" />
-                    ) : (
-                      <Copy className="w-3 h-3" />
-                    )}
+                    {copied === `prompt-${i}` ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   </button>
                 </div>
               ))}
@@ -317,8 +438,8 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose, reels }) =>
           </div>
         </div>
 
-        {/* ── Footer ── */}
-        <div className="px-6 py-4 border-t border-white/[0.08] bg-[#12141d]/60 flex items-center justify-between">
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-white/[0.08] bg-[#12141d]/60 flex items-center justify-between shrink-0">
           <span className="text-[11px] text-zinc-500 flex items-center gap-1.5">
             <Sparkles className="w-3 h-3 text-indigo-400" />
             100% local — your data never leaves your machine
