@@ -29,3 +29,10 @@ Document known technical traps, edge cases, and framework nuances here so all ag
 * **Symptom:** `/api/analytics/view` returns static cached counts instead of live DB metrics.
 * **Root Cause:** Next.js 15 aggressively optimizes route handlers unless explicitly configured as dynamic.
 * **Fix:** Always add `export const dynamic = 'force-dynamic';` at the top of API route files that query live databases or inspect incoming request headers/cookies.
+
+---
+
+### Gotcha 5: Minified React Error #310 (Early Return Before Hooks)
+* **Symptom:** Production error `Minified React error #310; visit https://react.dev/errors/310` ("Rendered more hooks than during the previous render").
+* **Root Cause:** Placing an early return like `if (!isOpen) return null;` before other hooks (such as `useCallback`, `useEffect`, `useState`). When `isOpen` toggles from false to true, the number of hooks called increases, breaking React's hook order invariant.
+* **Fix:** Never call hooks after conditional returns. Place all hooks at the top level of the component unconditionally, or conditionally mount the component in the parent: `{isOpen && <Modal ... />}`.

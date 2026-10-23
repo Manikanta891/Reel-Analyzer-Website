@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   X,
   Copy,
@@ -42,10 +42,8 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose, reels }) =>
   const [manualPath, setManualPath] = useState('');   // Text input for manual fallback
   const [errorMsg, setErrorMsg]     = useState('');
 
-  if (!isOpen) return null;
-
   /* ─────────────────────────────────────────────
-     Helpers
+     Helpers (Strictly standard functions, NO hooks after early returns)
   ───────────────────────────────────────────── */
 
   const handleCopy = (text: string, key: string) => {
@@ -66,7 +64,7 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose, reels }) =>
      directly → we know the exact path
   ───────────────────────────────────────────── */
 
-  const handlePickFolder = useCallback(async () => {
+  const handlePickFolder = async () => {
     setSetupState('picking');
     setErrorMsg('');
     try {
@@ -90,11 +88,7 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose, reels }) =>
       await serverWriter.close();
 
       // ── Derive path hint from folder name ─────
-      // FileSystemDirectoryHandle only gives us the name (last segment),
-      // not the full path — browser security restriction.
-      // We show the folder name and ask the user to confirm the full path.
       const folderName: string = dirHandle.name;
-      // Pre-fill with the most common location based on the folder name chosen
       const guessedPath = `C:\\Users\\<YourName>\\${folderName}`;
       setChosenPath(guessedPath);
       setSetupState('done');
@@ -107,7 +101,7 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose, reels }) =>
       setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
       setSetupState('error');
     }
-  }, [reels]);
+  };
 
   /* ─────────────────────────────────────────────
      Fallback — manual downloads + path input
@@ -177,6 +171,8 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose, reels }) =>
   /* ─────────────────────────────────────────────
      Render
   ───────────────────────────────────────────── */
+
+  if (!isOpen) return null;
 
   const pathIsPlaceholder = !chosenPath && !manualPath;
 

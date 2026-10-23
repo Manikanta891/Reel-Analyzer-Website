@@ -652,11 +652,13 @@ export default function VaultPage() {
       />
 
       {/* Connect AI Coding Agents (MCP) Modal */}
-      <McpModal
-        isOpen={isMcpOpen}
-        onClose={() => setIsMcpOpen(false)}
-        reels={reels}
-      />
+      {isMcpOpen && (
+        <McpModal
+          isOpen={isMcpOpen}
+          onClose={() => setIsMcpOpen(false)}
+          reels={reels}
+        />
+      )}
 
       {/* Minimal Footer with Option 4 Visitors Counter + Logo */}
       <footer className="border-t border-white/[0.06] py-6 bg-[#0b0c10] text-xs text-zinc-500 mt-12">
