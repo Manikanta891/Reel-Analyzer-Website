@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "reel-vault": {
+      "command": "node",
+      "args": [
+        "c:/Users/manik/Desktop/Projects/Instagram-Reels-Summarizer/website/scripts/mcp-server.mjs"
+      ]
+    }
+  }
+}

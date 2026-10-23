@@ -16,7 +16,13 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DATA_FILE = path.join(__dirname, '..', 'data', 'vault.json');
+
+// Support VAULT_PATH env var (set by user in IDE config) so the server can
+// read the vault.json from wherever the user saved it on their machine.
+// Falls back to vault.json next to this script file for local dev.
+const DATA_FILE =
+  process.env.VAULT_PATH ||
+  path.join(__dirname, 'vault.json');
 
 /**
  * Helper to read reels from data/vault.json

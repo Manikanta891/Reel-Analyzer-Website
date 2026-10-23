@@ -6,13 +6,9 @@ import {
   Copy,
   Check,
   Download,
-  Terminal,
   Sparkles,
-  ExternalLink,
-  Code2,
   Cpu,
-  Layers,
-  ArrowRight,
+  FolderOpen,
 } from 'lucide-react';
 import { ReelItem } from '@/types';
 
@@ -22,15 +18,19 @@ interface McpModalProps {
   reels: ReelItem[];
 }
 
-export const McpModal: React.FC<McpModalProps> = ({
-  isOpen,
-  onClose,
-  reels,
-}) => {
+// Suggested folder where the user places both downloaded files.
+// Shown in IDE config snippets so paths are immediately usable.
+const WIN_DIR  = 'C:\\Users\\YourName\\reel-vault';
+const MAC_DIR  = '~/reel-vault';
+
+export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose, reels }) => {
   const [activeTab, setActiveTab] = useState<'cursor' | 'claude' | 'antigravity'>('cursor');
   const [copied, setCopied] = useState<string | null>(null);
+  const [downloadDone, setDownloadDone] = useState(false);
 
   if (!isOpen) return null;
+
+  /* ── helpers ─────────────────────────────────────────────── */
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -38,49 +38,57 @@ export const McpModal: React.FC<McpModalProps> = ({
     setTimeout(() => setCopied(null), 2000);
   };
 
-  // 1-Click Vault JSON Exporter for MCP
-  const handleDownloadVaultJson = () => {
-    const dataStr = JSON.stringify(reels, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+  const triggerDownload = (content: string, filename: string, mime: string) => {
+    const blob = new Blob([content], { type: mime });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
     a.href = url;
-    a.download = 'vault.json';
+    a.download = filename;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  // 1-Click MCP Server Runner Script Downloader
-  const handleDownloadServerScript = async () => {
+  // Downloads vault.json — the user's reel data snapshot
+  const downloadVaultJson = () => {
+    triggerDownload(JSON.stringify(reels, null, 2), 'vault.json', 'application/json');
+  };
+
+  // Downloads mcp-server.mjs — the local MCP server the IDE will run
+  const downloadServerScript = async () => {
     try {
-      const res = await fetch('/scripts/mcp-server.mjs');
-      let code = '';
-      if (res.ok) {
-        code = await res.text();
-      } else {
-        // Fallback fetch from api or bundled string
-        const apiRes = await fetch('/api/vault/sync');
-        code = `// Reel Analyzer MCP Runner\nconsole.log("Connect to your reel knowledge vault");`;
-      }
-      const blob = new Blob([code], { type: 'application/javascript' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'mcp-server.mjs';
-      a.click();
-      URL.revokeObjectURL(url);
+      const res = await fetch('/api/mcp-server-script');
+      if (!res.ok) throw new Error('not ok');
+      const code = await res.text();
+      triggerDownload(code, 'mcp-server.mjs', 'application/javascript');
     } catch {
-      handleDownloadVaultJson();
+      // Fallback: open GitHub raw file in new tab
+      window.open(
+        'https://github.com/Manikanta891/Reel-Analyzer-Website/blob/main/scripts/mcp-server.mjs',
+        '_blank',
+      );
     }
   };
+
+  // One-click: download both files, then mark step 1 done
+  const handleDownloadAll = async () => {
+    downloadVaultJson();
+    await new Promise(r => setTimeout(r, 500));
+    await downloadServerScript();
+    setDownloadDone(true);
+  };
+
+  /* ── IDE config snippets ─────────────────────────────────── */
 
   const cursorConfig = `{
   "mcpServers": {
     "reel-vault": {
       "command": "node",
-      "args": [
-        "${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/mcp-server.mjs"
-      ]
+      "args": ["${WIN_DIR}\\\\mcp-server.mjs"],
+      "env": {
+        "VAULT_PATH": "${WIN_DIR}\\\\vault.json"
+      }
     }
   }
 }`;
@@ -89,7 +97,10 @@ export const McpModal: React.FC<McpModalProps> = ({
   "mcpServers": {
     "reel-vault": {
       "command": "node",
-      "args": ["C:/path/to/mcp-server.mjs"]
+      "args": ["${WIN_DIR}\\\\mcp-server.mjs"],
+      "env": {
+        "VAULT_PATH": "${WIN_DIR}\\\\vault.json"
+      }
     }
   }
 }`;
@@ -98,10 +109,25 @@ export const McpModal: React.FC<McpModalProps> = ({
   "mcpServers": {
     "reel-vault": {
       "command": "node",
-      "args": ["scripts/mcp-server.mjs"]
+      "args": ["${MAC_DIR}/mcp-server.mjs"],
+      "env": {
+        "VAULT_PATH": "${MAC_DIR}/vault.json"
+      }
     }
   }
 }`;
+
+  const activeConfig =
+    activeTab === 'cursor' ? cursorConfig :
+    activeTab === 'claude' ? claudeConfig :
+    antigravityConfig;
+
+  const configHint =
+    activeTab === 'cursor'      ? 'Paste into  .cursor/mcp.json' :
+    activeTab === 'claude'      ? 'Paste into  %APPDATA%/Claude/claude_desktop_config.json' :
+                                  'Paste into  agent MCP settings';
+
+  /* ── render ──────────────────────────────────────────────── */
 
   return (
     <div
@@ -115,7 +141,7 @@ export const McpModal: React.FC<McpModalProps> = ({
         className="relative w-full max-w-2xl bg-[#0e1017] border border-white/[0.12] rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
+        {/* ── Header ── */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.08] bg-[#12141d]/80">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shadow-inner">
@@ -131,7 +157,8 @@ export const McpModal: React.FC<McpModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-zinc-400 mt-0.5">
-                Allow Cursor, Claude Code, or Antigravity to query your {reels.length} saved reel notes & code snippets.
+                Let Cursor, Claude Code, or Antigravity query your{' '}
+                <strong className="text-indigo-300">{reels.length} saved reel notes</strong>.
               </p>
             </div>
           </div>
@@ -144,136 +171,123 @@ export const McpModal: React.FC<McpModalProps> = ({
           </button>
         </div>
 
-        {/* Modal Body */}
+        {/* ── Body ── */}
         <div className="p-6 overflow-y-auto space-y-6 text-xs text-zinc-300 custom-scrollbar">
-          {/* STEP 1: Knowledge Snapshot */}
-          <div className="p-4 rounded-2xl bg-[#141622] border border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">
-                  1
-                </span>
-                <span className="text-xs font-bold text-zinc-200">
-                  Get Your Knowledge Vault File
-                </span>
-              </div>
-              <p className="text-[11px] text-zinc-400 leading-relaxed max-w-md">
-                Your browser contains <strong className="text-indigo-300">{reels.length} curated reel insights</strong>. Download your JSON snapshot so your local coding agent can read it offline.
-              </p>
+
+          {/* STEP 1 ── Download both files */}
+          <div className={`p-4 rounded-2xl border transition-colors ${downloadDone ? 'bg-emerald-950/30 border-emerald-500/20' : 'bg-[#141622] border-white/[0.08]'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] text-white ${downloadDone ? 'bg-emerald-500' : 'bg-indigo-600'}`}>
+                {downloadDone ? <Check className="w-3 h-3" /> : '1'}
+              </span>
+              <span className="text-xs font-bold text-zinc-200">Download Both Files</span>
             </div>
-            <button
-              onClick={handleDownloadVaultJson}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/20 transition-all shrink-0 active:scale-95"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Download vault.json</span>
-            </button>
+            <p className="text-[11px] text-zinc-400 leading-relaxed mb-3 max-w-lg">
+              You need <strong className="text-zinc-200">2 files</strong> on your machine:{' '}
+              <code className="text-indigo-300 bg-indigo-500/10 px-1 rounded">vault.json</code> (your reel data) and{' '}
+              <code className="text-indigo-300 bg-indigo-500/10 px-1 rounded">mcp-server.mjs</code> (the local server your IDE runs).{' '}
+              Save them together in one folder, e.g.{' '}
+              <code className="text-zinc-300 bg-zinc-800/60 px-1 rounded">C:\Users\YourName\reel-vault\</code>
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={handleDownloadAll}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/20 transition-all active:scale-95"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download Both Files</span>
+              </button>
+              <button
+                onClick={downloadVaultJson}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs transition-all active:scale-95"
+              >
+                vault.json only
+              </button>
+              <button
+                onClick={downloadServerScript}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs transition-all active:scale-95"
+              >
+                mcp-server.mjs only
+              </button>
+            </div>
+            {downloadDone && (
+              <p className="mt-3 text-[11px] text-emerald-400 flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5" />
+                Both files downloaded! Move them to the same folder before Step 2.
+              </p>
+            )}
           </div>
 
-          {/* STEP 2: Configure Your IDE */}
+          {/* STEP 2 ── Place files & update path */}
+          <div className="p-4 rounded-2xl bg-[#141622] border border-white/[0.08]">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">2</span>
+              <span className="text-xs font-bold text-zinc-200">Place Files & Update the Path</span>
+            </div>
+            <p className="text-[11px] text-zinc-400 leading-relaxed max-w-lg">
+              Move both downloaded files into one folder on your machine.
+              Then replace <code className="text-amber-300 bg-amber-500/10 px-1 rounded">YourName</code> in the config below with your actual Windows username (or the full path you chose).
+            </p>
+          </div>
+
+          {/* STEP 3 ── Add IDE Config */}
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">
-                2
-              </span>
-              <span className="text-xs font-bold text-zinc-200">
-                Add MCP Config to Your IDE
-              </span>
+              <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">3</span>
+              <span className="text-xs font-bold text-zinc-200">Add MCP Config to Your IDE</span>
             </div>
 
-            {/* IDE Selector Tabs */}
+            {/* IDE Tabs */}
             <div className="flex items-center gap-2 p-1 rounded-xl bg-[#12141d] border border-white/[0.06] mb-3">
-              <button
-                onClick={() => setActiveTab('cursor')}
-                className={`flex-1 py-1.5 px-3 rounded-lg font-medium text-xs transition-all ${
-                  activeTab === 'cursor'
-                    ? 'bg-indigo-600 text-white shadow-sm font-semibold'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                Cursor IDE
-              </button>
-              <button
-                onClick={() => setActiveTab('claude')}
-                className={`flex-1 py-1.5 px-3 rounded-lg font-medium text-xs transition-all ${
-                  activeTab === 'claude'
-                    ? 'bg-indigo-600 text-white shadow-sm font-semibold'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                Claude Desktop
-              </button>
-              <button
-                onClick={() => setActiveTab('antigravity')}
-                className={`flex-1 py-1.5 px-3 rounded-lg font-medium text-xs transition-all ${
-                  activeTab === 'antigravity'
-                    ? 'bg-indigo-600 text-white shadow-sm font-semibold'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                Antigravity / VS Code
-              </button>
+              {(['cursor', 'claude', 'antigravity'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex-1 py-1.5 px-3 rounded-lg font-medium text-xs transition-all ${
+                    activeTab === tab
+                      ? 'bg-indigo-600 text-white shadow-sm font-semibold'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  {tab === 'cursor' ? 'Cursor IDE' : tab === 'claude' ? 'Claude Desktop' : 'Antigravity / VS Code'}
+                </button>
+              ))}
             </div>
 
-            {/* Config Code Box */}
+            {/* Config Code Block */}
             <div className="relative rounded-2xl bg-[#090a0f] border border-white/[0.08] p-4 font-mono text-[11px] text-zinc-300">
               <div className="flex justify-between items-center mb-2 pb-2 border-b border-white/[0.06] text-zinc-500 text-[10px]">
-                <span>
-                  {activeTab === 'cursor'
-                    ? 'Paste into .cursor/mcp.json'
-                    : activeTab === 'claude'
-                    ? 'Paste into %APPDATA%/Claude/claude_desktop_config.json'
-                    : 'Paste into agent mcp settings'}
+                <span className="flex items-center gap-1.5">
+                  <FolderOpen className="w-3 h-3" />
+                  {configHint}
                 </span>
                 <button
-                  onClick={() =>
-                    handleCopy(
-                      activeTab === 'cursor'
-                        ? cursorConfig
-                        : activeTab === 'claude'
-                        ? claudeConfig
-                        : antigravityConfig,
-                      'config'
-                    )
-                  }
+                  onClick={() => handleCopy(activeConfig, 'config')}
                   className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors"
                 >
                   {copied === 'config' ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-400">Copied!</span>
-                    </>
+                    <><Check className="w-3.5 h-3.5 text-emerald-400" /><span className="text-emerald-400">Copied!</span></>
                   ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copy Config</span>
-                    </>
+                    <><Copy className="w-3.5 h-3.5" /><span>Copy Config</span></>
                   )}
                 </button>
               </div>
-              <pre className="overflow-x-auto text-indigo-200/90 leading-relaxed">
-                {activeTab === 'cursor'
-                  ? cursorConfig
-                  : activeTab === 'claude'
-                  ? claudeConfig
-                  : antigravityConfig}
+              <pre className="overflow-x-auto text-indigo-200/90 leading-relaxed whitespace-pre-wrap">
+                {activeConfig}
               </pre>
             </div>
+            <p className="mt-2 text-[11px] text-zinc-500">
+              After saving the config, restart your IDE — it will spawn the MCP server automatically.
+            </p>
           </div>
 
-          {/* STEP 3: What Your Agent Can Ask */}
+          {/* STEP 4 ── Try example prompts */}
           <div className="pt-2 border-t border-white/[0.06]">
             <div className="flex items-center gap-2 mb-2">
-              <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">
-                3
-              </span>
-              <span className="text-xs font-bold text-zinc-200">
-                Ask Your Agent While You Code
-              </span>
+              <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">4</span>
+              <span className="text-xs font-bold text-zinc-200">Ask Your Agent While You Code</span>
             </div>
-            <p className="text-[11px] text-zinc-400 mb-3">
-              Once connected, simply ask your coding agent in chat:
-            </p>
+            <p className="text-[11px] text-zinc-400 mb-3">Once connected, try these in your IDE chat:</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {[
                 'Search my reel vault for Docker rollouts',
@@ -303,10 +317,11 @@ export const McpModal: React.FC<McpModalProps> = ({
           </div>
         </div>
 
-        {/* Modal Footer */}
+        {/* ── Footer ── */}
         <div className="px-6 py-4 border-t border-white/[0.08] bg-[#12141d]/60 flex items-center justify-between">
-          <span className="text-[11px] text-zinc-500">
-            Powered by standard JSON-RPC Stdio Protocol
+          <span className="text-[11px] text-zinc-500 flex items-center gap-1.5">
+            <Sparkles className="w-3 h-3 text-indigo-400" />
+            100% local — your data never leaves your machine
           </span>
           <button
             onClick={onClose}
