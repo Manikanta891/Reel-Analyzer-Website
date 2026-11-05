@@ -23,7 +23,7 @@ const CHROME_STORE_URL =
 export const metadata: Metadata = {
   title: 'Turn Instagram Reels into Study Flashcards',
   description:
-    'Convert educational Instagram Reels into interactive study flashcards and active recall notes. Free learning tool by Manikanta Sandula.',
+    'Turn educational Instagram Reels into interactive study flashcards and spaced-repetition notes. Study faster with local-first AI. 100% free to use.',
   alternates: {
     canonical: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-reels-to-flashcards',
   },
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Turn Instagram Reels into Study Flashcards',
     description:
-      'Convert educational Instagram Reels into interactive study flashcards and active recall notes. Free & private by Manikanta Sandula.',
+      'Turn educational Instagram Reels into interactive study flashcards and spaced-repetition notes. Study faster with local-first AI. 100% free to use.',
     url: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-reels-to-flashcards',
     images: ['https://reelanalyzer.manikanta.co.in/og-image.png'],
   },
@@ -69,11 +69,25 @@ export default function InstagramToFlashcardsPage() {
     ],
   };
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://reelanalyzer.manikanta.co.in' },
+      { '@type': 'ListItem', position: 2, name: 'Use Cases', item: 'https://reelanalyzer.manikanta.co.in/#use-cases' },
+      { '@type': 'ListItem', position: 3, name: 'Turn Instagram Reels into Study Flashcards', item: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-reels-to-flashcards' },
+    ],
+  };
+
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <LandingNavbar />
 

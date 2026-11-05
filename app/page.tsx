@@ -12,7 +12,9 @@ import { CreatorContactSection } from '@/components/landing/CreatorContactSectio
 import { LandingFooter } from '@/components/landing/LandingFooter';
 
 export const metadata: Metadata = {
-  title: 'Free Instagram Reels AI Summarizer',
+  title: {
+    absolute: 'Reel Analyzer — Free Instagram Reels AI Summarizer & Scraper',
+  },
   description: 'Extract Instagram Reels into structured AI summaries, transcripts, code blocks, and Obsidian notes. Free & private tool by Manikanta Sandula.',
 };
 

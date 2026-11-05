@@ -25,7 +25,7 @@ const CHROME_STORE_URL =
 export const metadata: Metadata = {
   title: 'Free Instagram Reel Transcript Generator',
   description:
-    'Extract free unlimited transcripts, AI summaries, and notes from Instagram Reels. Zero paywalls, no transcript limits, and 100% private.',
+    'Generate accurate, free transcripts and AI summaries from any Instagram Reel in seconds. No paywalls, unlimited usage, and 100% private in your browser.',
   alternates: {
     canonical: 'https://reelanalyzer.manikanta.co.in/use-cases/free-instagram-reel-transcript',
   },
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Free Instagram Reel Transcript Generator',
     description:
-      'Extract free unlimited transcripts, code snippets, and notes from Instagram Reels. Zero paywalls and 100% private.',
+      'Generate accurate, free transcripts and AI summaries from any Instagram Reel in seconds. No paywalls, unlimited usage, and 100% private in your browser.',
     url: 'https://reelanalyzer.manikanta.co.in/use-cases/free-instagram-reel-transcript',
     images: ['https://reelanalyzer.manikanta.co.in/og-image.png'],
   },
@@ -55,6 +55,14 @@ export default function FreeInstagramReelTranscriptPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://reelanalyzer.manikanta.co.in' },
+          { '@type': 'ListItem', position: 2, name: 'Use Cases', item: 'https://reelanalyzer.manikanta.co.in/#use-cases' },
+          { '@type': 'ListItem', position: 3, name: 'Free Instagram Reel Transcript Generator', item: 'https://reelanalyzer.manikanta.co.in/use-cases/free-instagram-reel-transcript' },
+        ],
+      },
       {
         '@type': 'HowTo',
         name: 'How to Extract Unlimited Free Transcripts from Instagram Reels',

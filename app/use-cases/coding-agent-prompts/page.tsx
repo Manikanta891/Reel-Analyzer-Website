@@ -19,7 +19,7 @@ const CHROME_STORE_URL =
 export const metadata: Metadata = {
   title: 'Instagram Reels to AI Prompts (Cursor)',
   description:
-    'Turn Instagram Reel tutorials into prompts for Cursor, Claude Code, and ChatGPT. Extract code and system designs with zero API keys.',
+    'Convert Instagram Reel tutorials into copy-ready AI coding prompts for Cursor IDE, Claude 3.5, and ChatGPT with architecture context. 100% free tool.',
   alternates: {
     canonical: 'https://reelanalyzer.manikanta.co.in/use-cases/coding-agent-prompts',
   },
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Instagram Reels to AI Prompts (Cursor)',
     description:
-      'Turn 60-second video tutorials into executable prompts for Cursor, ChatGPT, and Claude Code with 1 click.',
+      'Convert Instagram Reel tutorials into copy-ready AI coding prompts for Cursor IDE, Claude 3.5, and ChatGPT with architecture context. 100% free tool.',
     url: 'https://reelanalyzer.manikanta.co.in/use-cases/coding-agent-prompts',
     images: ['https://reelanalyzer.manikanta.co.in/og-image.png'],
   },
@@ -65,11 +65,25 @@ export default function CodingAgentPromptsPage() {
     ],
   };
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://reelanalyzer.manikanta.co.in' },
+      { '@type': 'ListItem', position: 2, name: 'Use Cases', item: 'https://reelanalyzer.manikanta.co.in/#use-cases' },
+      { '@type': 'ListItem', position: 3, name: 'Instagram Reels to AI Prompts (Cursor)', item: 'https://reelanalyzer.manikanta.co.in/use-cases/coding-agent-prompts' },
+    ],
+  };
+
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <LandingNavbar />
 

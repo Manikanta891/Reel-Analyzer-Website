@@ -22,7 +22,7 @@ const CHROME_STORE_URL =
 export const metadata: Metadata = {
   title: 'Export Instagram Reels to Obsidian Notes',
   description:
-    'Convert Instagram Reels into Obsidian notes with tags and creator links. Free and private tool by Manikanta Sandula.',
+    '1-Click export saved Instagram Reels into formatted Markdown notes with YAML frontmatter, backlinks & code blocks for Obsidian. 100% free & local-first.',
   alternates: {
     canonical: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-to-obsidian',
   },
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Export Instagram Reels to Obsidian Notes',
     description:
-      'Convert Instagram Reels into Obsidian notes with tags and creator links. Free & private by Manikanta Sandula.',
+      '1-Click export saved Instagram Reels into formatted Markdown notes with YAML frontmatter, backlinks & code blocks for Obsidian. 100% free & local-first.',
     url: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-to-obsidian',
     images: ['https://reelanalyzer.manikanta.co.in/og-image.png'],
   },
@@ -68,11 +68,25 @@ export default function InstagramToObsidianPage() {
     ],
   };
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://reelanalyzer.manikanta.co.in' },
+      { '@type': 'ListItem', position: 2, name: 'Use Cases', item: 'https://reelanalyzer.manikanta.co.in/#use-cases' },
+      { '@type': 'ListItem', position: 3, name: 'Export Instagram Reels to Obsidian Notes', item: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-to-obsidian' },
+    ],
+  };
+
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <LandingNavbar />
 

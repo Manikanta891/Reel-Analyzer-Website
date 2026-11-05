@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { trackEvent } from '@/components/analytics/PostHogProvider';
 import {
   ArrowRight,
   ShieldCheck,
@@ -40,6 +41,7 @@ export const HeroSection: React.FC = () => {
 
   const handleAddToChrome = (e: React.MouseEvent) => {
     e.preventDefault();
+    trackEvent('install_extension_clicked', { source: 'hero_cta' });
     window.open(CHROME_STORE_URL, '_blank', 'noopener,noreferrer');
     router.push('/vault');
   };
@@ -78,7 +80,9 @@ export const HeroSection: React.FC = () => {
 
           {/* Headline (SEO Optimized for 'Instagram Reels' & 'Reel Analyzer') */}
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-zinc-100 tracking-tight leading-[1.15] sm:leading-[1.12]">
-            Turn <span className="text-indigo-400">Instagram Reels</span> into{' '}
+            Reel Analyzer &mdash; Turn{' '}
+            <span className="text-indigo-400">Instagram Reels</span>{' '}
+            into{' '}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white to-purple-300">
               Permanent Knowledge
             </span>

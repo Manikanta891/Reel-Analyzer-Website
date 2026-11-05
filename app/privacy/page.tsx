@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy',
+  title: 'Privacy Policy & Zero Tracking Guarantee',
   description:
     'Privacy Policy for Reel Analyzer Chrome Extension and Web Dashboard. 100% private, zero data tracking, and Chrome Web Store compliance.',
   alternates: {
@@ -234,7 +234,7 @@ export default function PrivacyPage() {
               <strong>Third-Party AI Services:</strong> When you generate notes, prompts are submitted directly inside your personal, authenticated web session on <a href="https://www.meta.ai" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">Meta AI</a>. Your interaction with Meta AI is governed by Meta&apos;s Privacy Policy and Terms of Service. Reel Analyzer does not act as an AI proxy or middleman.
             </p>
             <p>
-              <strong>Website Analytics (Web Dashboard Only):</strong> When visiting the companion web app at <code className="text-zinc-300 font-mono">reelanalyzer.manikanta.co.in</code>, aggregate page views and unique visitor counters are calculated using a privacy-preserving, one-way cryptographic hash (<code className="text-zinc-300 font-mono">SHA-256(IP + UserAgent)</code>). <strong>Raw IP addresses are never stored in the database.</strong> If you voluntarily submit a message via the feedback form, only the message text and any optional email you supply are stored to assist with product development.
+              <strong>Website Analytics (Web Dashboard Only):</strong> When visiting the companion web app at <code className="text-zinc-300 font-mono">reelanalyzer.manikanta.co.in</code>, aggregate page views and interface telemetry may be recorded using privacy-focused analytics services (such as PostHog and privacy-preserving one-way cryptographic visitor counters). We do <strong>NOT</strong> collect personal identifying information (PII), passwords, or private data—all text inputs are masked. This telemetry is strictly used to evaluate feature popularity, improve site navigation, and diagnose errors. If you voluntarily submit a message via the feedback form, only the message text and any optional email you supply are stored to assist with product development.
             </p>
           </section>
 

@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Fira_Code } from 'next/font/google';
 import Script from 'next/script';
 import JsonLd from '@/components/seo/JsonLd';
 import { SiteVisitorTracker } from '@/components/analytics/SiteVisitorTracker';
+import { PostHogProvider } from '@/components/analytics/PostHogProvider';
 import './globals.css';
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -165,7 +166,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-zinc-950 text-zinc-100 font-sans antialiased selection:bg-brand-600 selection:text-white">
         <SiteVisitorTracker />
-        {children}
+        <PostHogProvider>{children}</PostHogProvider>
       </body>
     </html>
   );

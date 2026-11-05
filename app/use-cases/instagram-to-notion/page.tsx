@@ -21,9 +21,9 @@ const CHROME_STORE_URL =
   'https://chromewebstore.google.com/detail/nfoegekloemokpjdmhbkfaihnokfecci?utm_source=item-share-cb';
 
 export const metadata: Metadata = {
-  title: 'Export Instagram Reels to Notion',
+  title: 'Export Instagram Reels to Notion Databases',
   description:
-    'Save and organize Instagram Reels into Notion databases with clean notes, tags, and creator links. Free tool by Manikanta Sandula.',
+    'Export saved Instagram Reels into Notion databases with structured AI notes, creator links, tags, and code snippets. Free, local-first, no account required.',
   alternates: {
     canonical: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-to-notion',
   },
@@ -37,9 +37,9 @@ export const metadata: Metadata = {
     'Notion Video Knowledge Base',
   ],
   openGraph: {
-    title: 'Export Instagram Reels to Notion',
+    title: 'Export Instagram Reels to Notion Databases',
     description:
-      'Save and organize Instagram Reels into Notion databases with clean notes, tags, and creator links. Free & private by Manikanta Sandula.',
+      'Export saved Instagram Reels into Notion databases with structured AI notes, creator links, tags, and code snippets. Free, local-first, no account required.',
     url: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-to-notion',
     images: ['https://reelanalyzer.manikanta.co.in/og-image.png'],
   },
@@ -69,11 +69,25 @@ export default function InstagramToNotionPage() {
     ],
   };
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://reelanalyzer.manikanta.co.in' },
+      { '@type': 'ListItem', position: 2, name: 'Use Cases', item: 'https://reelanalyzer.manikanta.co.in/#use-cases' },
+      { '@type': 'ListItem', position: 3, name: 'Export Instagram Reels to Notion Databases', item: 'https://reelanalyzer.manikanta.co.in/use-cases/instagram-to-notion' },
+    ],
+  };
+
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#0b0c10] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <LandingNavbar />
 
